@@ -1,0 +1,62 @@
+[
+    {
+        "category": "C++ ООП",
+        "title": "unique_ptr",
+        "theory": "Умный указатель для уникального владения объектом. Автоматически освобождает память при выходе из области видимости. Нельзя копировать, только перемещать.",
+        "code": "std::unique_ptr<int> ptr = std::make_unique<int>(42);\nstd::cout << *ptr << std::endl;\n\n// Передача владения\nauto ptr2 = std::move(ptr);\n// ptr теперь nullptr"
+    },
+    {
+        "category": "C++ ООП",
+        "title": "shared_ptr",
+        "theory": "Умный указатель с разделяемым владением. Использует счётчик ссылок. Память освобождается когда последний shared_ptr уничтожен.",
+        "code": "auto ptr1 = std::make_shared<int>(42);\nauto ptr2 = ptr1; // Копирование OK\n\nstd::cout << ptr1.use_count(); // 2\nstd::cout << *ptr1 << std::endl;"
+    },
+    {
+        "category": "C++ ООП",
+        "title": "weak_ptr",
+        "theory": "Слабая ссылка на объект, управляемый shared_ptr. Не увеличивает счётчик ссылок. Используется для разрыва циклических ссылок.",
+        "code": "auto shared = std::make_shared<int>(42);\nstd::weak_ptr<int> weak = shared;\n\nif (auto locked = weak.lock()) {\n    std::cout << *locked << std::endl;\n}"
+    },
+    {
+        "category": "C++ Шаблоны",
+        "title": "Template Basics",
+        "theory": "Шаблоны позволяют писать обобщённый код, работающий с разными типами данных. Компилятор генерирует отдельную версию функции/класса для каждого используемого типа.",
+        "code": "template<typename T>\nT max(T a, T b) {\n    return (a > b) ? a : b;\n}\n\nint i = max(5, 10);\ndouble d = max(3.14, 2.71);"
+    },
+    {
+        "category": "C++ STL",
+        "title": "std::vector",
+        "theory": "Динамический массив с автоматическим управлением памятью. Элементы хранятся последовательно в памяти. Быстрый доступ по индексу O(1), добавление в конец амортизированно O(1).",
+        "code": "std::vector<int> vec = {1, 2, 3};\nvec.push_back(4);\nvec.emplace_back(5);\n\nfor (const auto& val : vec) {\n    std::cout << val << \" \";\n}"
+    },
+    {
+        "category": "C++ STL",
+        "title": "std::map",
+        "theory": "Ассоциативный контейнер, хранящий пары ключ-значение. Реализован как красно-чёрное дерево. Автоматическая сортировка по ключу. Поиск, вставка, удаление O(log n).",
+        "code": "std::map<std::string, int> ages;\nages[\"Alice\"] = 25;\nages.insert({\"Bob\", 30});\n\nfor (const auto& [name, age] : ages) {\n    std::cout << name << \": \" << age;\n}"
+    },
+    {
+        "category": "C++ Move Semantics",
+        "title": "std::move",
+        "theory": "Преобразует объект в rvalue ссылку, позволяя передать его ресурсы другому объекту без копирования. Оригинальный объект остаётся в валидном, но неопределённом состоянии.",
+        "code": "std::string str = \"Hello\";\nstd::string str2 = std::move(str);\n// str теперь пустая, ресурсы переданы\n\nstd::vector<int> v1 = {1, 2, 3};\nauto v2 = std::move(v1);"
+    },
+    {
+        "category": "C++ Lambda",
+        "title": "Lambda Expressions",
+        "theory": "Анонимные функции, которые можно создавать на месте. Могут захватывать переменные из окружающей области видимости. Синтаксис: [capture](params) -> return_type { body }",
+        "code": "auto add = [](int a, int b) { return a + b; };\nint x = 10;\nauto print = [x]() { std::cout << x; };\n\nstd::vector<int> v = {3, 1, 2};\nstd::sort(v.begin(), v.end(), [](int a, int b) { return a > b; });"
+    },
+    {
+        "category": "C++ RAII",
+        "title": "RAII Pattern",
+        "theory": "Resource Acquisition Is Initialization. Ресурсы (память, файлы, мьютексы) получаются в конструкторе и освобождаются в деструкторе. Гарантирует освобождение даже при исключениях.",
+        "code": "class FileHandler {\n    FILE* file;\npublic:\n    FileHandler(const char* name) {\n        file = fopen(name, \"r\");\n    }\n    ~FileHandler() {\n        if (file) fclose(file);\n    }\n};"
+    },
+    {
+        "category": "C++ Constexpr",
+        "title": "constexpr",
+        "theory": "Вычисление выражений на этапе компиляции. Функции constexpr выполняются компилятором, если все аргументы известны на этапе компиляции. Улучшает производительность.",
+        "code": "constexpr int square(int x) {\n    return x * x;\n}\n\nconstexpr int result = square(5); // 25\nint arr[square(3)]; // массив из 9 элементов"
+    }
+]

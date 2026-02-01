@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Learn Cards</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #000000;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card-container {
+            position: absolute;
+            width: 100%;
+            max-width: 500px;
+            height: 85vh;
+            max-height: 700px;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .card-container:active {
+            cursor: grabbing;
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .card::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .card::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+
+        .card::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .card-category {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+
+        .card-theory {
+            font-size: 16px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            flex-grow: 1;
+        }
+
+        .card-code {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+
+        .card-code pre {
+            margin: 0;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .card-code code {
+            background: none !important;
+            padding: 0 !important;
+        }
+
+        .swipe-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 80px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .swipe-indicator.left {
+            left: 40px;
+        }
+
+        .swipe-indicator.right {
+            right: 40px;
+        }
+
+        .counter {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 600px) {
+            #app {
+                padding: 16px;
+            }
+
+            .card {
+                padding: 24px;
+                gap: 16px;
+            }
+
+            .card-title {
+                font-size: 28px;
+            }
+
+            .card-theory {
+                font-size: 15px;
+            }
+
+            .swipe-indicator {
+                font-size: 60px;
+            }
+
+            .swipe-indicator.left {
+                left: 20px;
+            }
+
+            .swipe-indicator.right {
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="card-container" id="cardContainer">
+            <div class="card" id="card">
+                <div class="card-category" id="category"></div>
+                <div class="card-title" id="title"></div>
+                <div class="card-theory" id="theory"></div>
+                <div class="card-code" id="codeBlock" style="display: none;">
+                    <pre><code class="language-cpp" id="code"></code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="swipe-indicator left">👈</div>
+        <div class="swipe-indicator right">👉</div>
+        <div class="counter" id="counter">Карточка 1 из 5</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
