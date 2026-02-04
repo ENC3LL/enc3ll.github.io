@@ -1,11 +1,7 @@
-// Структура данных
-let allDecks = [];           // Все колоды карточек
-let currentDeckIndex = 0;    // Текущая колода
-let currentCardIndex = 0;    // Текущая карточка в колоде
-let deckRepeatCount = 0;     // Сколько раз прошли текущую колоду
-let cardOrder = [];          // Рандомный порядок карточек в текущей колоде
-
-const REPEATS_PER_DECK = 3;  // Сколько раз повторяем колоду
+// Карточки (потом будут загружаться из cards.json)
+let cardsData = [];
+let currentCardIndex = 0;
+let cardOrder = []; // Массив с индексами для рандомного порядка
 
 // Элементы DOM
 const cardContainer = document.getElementById('cardContainer');
@@ -30,45 +26,87 @@ let isDragging = false;
 async function loadCards() {
     try {
         const response = await fetch('cards.json');
-        allDecks = await response.json();
-        initializeDeck();
+        cardsData = await response.json();
+        initializeCardOrder();
         showCard(cardOrder[currentCardIndex]);
     } catch (error) {
         console.error('Ошибка загрузки карточек:', error);
-        allDecks = getDefaultDecks();
-        initializeDeck();
+        // Fallback: используем встроенные карточки
+        cardsData = getDefaultCards();
+        initializeCardOrder();
         showCard(cardOrder[currentCardIndex]);
     }
 }
 
-// Дефолтные колоды
-function getDefaultDecks() {
+// Дефолтные карточки на случай отсутствия cards.json
+function getDefaultCards() {
     return [
         {
-            name: "Move Semantics",
-            cards: [
-                {
-                    title: "lvalue и rvalue",
-                    theory: "В C++ есть два типа значений. lvalue — это объект с именем и адресом в памяти (например, переменная). rvalue — временное значение, которое существует только в момент вычисления.",
-                    code: `int x = 42;\n// x — это lvalue (можно взять адрес &x)\n\nint y = x + 5;\n// (x + 5) — это rvalue (временное значение)`
-                }
-            ]
+            category: "C++ ООП",
+            title: "unique_ptr",
+            theory: "Умный указатель для уникального владения объектом. Автоматически освобождает память при выходе из области видимости. Нельзя копировать, только перемещать.",
+            code: `std::unique_ptr<int> ptr = std::make_unique<int>(42);
+std::cout << *ptr << std::endl;
+
+// Передача владения
+auto ptr2 = std::move(ptr);
+// ptr теперь nullptr`
+        },
+        {
+            category: "C++ ООП",
+            title: "shared_ptr",
+            theory: "Умный указатель с разделяемым владением. Использует счётчик ссылок. Память освобождается когда последний shared_ptr уничтожен.",
+            code: `auto ptr1 = std::make_shared<int>(42);
+auto ptr2 = ptr1; // Копирование OK
+
+std::cout << ptr1.use_count(); // 2
+std::cout << *ptr1 << std::endl;`
+        },
+        {
+            category: "C++ ООП",
+            title: "weak_ptr",
+            theory: "Слабая ссылка на объект, управляемый shared_ptr. Не увеличивает счётчик ссылок. Используется для разрыва циклических ссылок.",
+            code: `auto shared = std::make_shared<int>(42);
+std::weak_ptr<int> weak = shared;
+
+if (auto locked = weak.lock()) {
+    std::cout << *locked << std::endl;
+}`
+        },
+        {
+            category: "C++ Шаблоны",
+            title: "Template Basics",
+            theory: "Шаблоны позволяют писать обобщённый код, работающий с разными типами данных. Компилятор генерирует отдельную версию функции/класса для каждого используемого типа.",
+            code: `template<typename T>
+T max(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+int i = max(5, 10);
+double d = max(3.14, 2.71);`
+        },
+        {
+            category: "C++ STL",
+            title: "std::vector",
+            theory: "Динамический массив с автоматическим управлением памятью. Элементы хранятся последовательно в памяти. Быстрый доступ по индексу O(1), добавление в конец амортизированно O(1).",
+            code: `std::vector<int> vec = {1, 2, 3};
+vec.push_back(4);
+vec.emplace_back(5);
+
+for (const auto& val : vec) {
+    std::cout << val << " ";
+}`
         }
     ];
 }
 
-// Инициализация колоды
-function initializeDeck() {
-    if (allDecks.length === 0) return;
-    
-    const currentDeck = allDecks[currentDeckIndex];
-    cardOrder = Array.from({length: currentDeck.cards.length}, (_, i) => i);
+// Инициализация массива с рандомным порядком
+function initializeCardOrder() {
+    cardOrder = Array.from({length: cardsData.length}, (_, i) => i);
     shuffleArray(cardOrder);
-    currentCardIndex = 0;
-    deckRepeatCount = 0;
 }
 
-// Рандомизация массива (Fisher-Yates)
+// Рандомизация массива (Fisher-Yates shuffle)
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -77,11 +115,10 @@ function shuffleArray(array) {
 }
 
 // Показать карточку
-function showCard(cardIdx) {
-    const currentDeck = allDecks[currentDeckIndex];
-    const cardData = currentDeck.cards[cardIdx];
+function showCard(index) {
+    const cardData = cardsData[index];
     
-    categoryEl.textContent = currentDeck.name;
+    categoryEl.textContent = cardData.category;
     titleEl.textContent = cardData.title;
     theoryEl.textContent = cardData.theory;
     
@@ -98,37 +135,17 @@ function showCard(cardIdx) {
 
 // Обновить счётчик
 function updateCounter() {
-    const currentDeck = allDecks[currentDeckIndex];
-    const totalCards = currentDeck.cards.length;
-    const progress = deckRepeatCount + 1;
-    
-    counterEl.textContent = `${currentDeck.name} | Карточка ${currentCardIndex + 1}/${totalCards} | Круг ${progress}/${REPEATS_PER_DECK}`;
+    counterEl.textContent = `Карточка ${currentCardIndex + 1} из ${cardsData.length}`;
 }
 
 // Следующая карточка
 function nextCard() {
     currentCardIndex++;
     
-    // Если дошли до конца колоды
+    // Если дошли до конца, перемешиваем и начинаем сначала
     if (currentCardIndex >= cardOrder.length) {
         currentCardIndex = 0;
-        deckRepeatCount++;
-        
-        // Если повторили колоду достаточно раз
-        if (deckRepeatCount >= REPEATS_PER_DECK) {
-            // Переходим к следующей колоде
-            currentDeckIndex++;
-            
-            // Если закончились все колоды, начинаем сначала
-            if (currentDeckIndex >= allDecks.length) {
-                currentDeckIndex = 0;
-            }
-            
-            initializeDeck();
-        } else {
-            // Перемешиваем карточки для следующего круга
-            shuffleArray(cardOrder);
-        }
+        shuffleArray(cardOrder);
     }
     
     resetCardPosition();
@@ -139,8 +156,9 @@ function nextCard() {
 function resetCardPosition() {
     cardContainer.style.transition = 'none';
     cardContainer.style.transform = 'translate(0, 0) rotate(0deg)';
-    card.scrollTop = 0;
+    card.scrollTop = 0; // Прокрутка вверх
     
+    // Убираем transition после сброса
     setTimeout(() => {
         cardContainer.style.transition = '';
     }, 0);
@@ -161,8 +179,9 @@ function handleSwipe(direction) {
 
 // Touch events
 cardContainer.addEventListener('touchstart', (e) => {
+    // Проверяем, что касание не на области с прокруткой
     if (e.target.closest('.card') && e.target.closest('.card').scrollHeight > e.target.closest('.card').clientHeight) {
-        return;
+        return; // Разрешаем прокрутку
     }
     
     isDragging = true;
@@ -177,6 +196,7 @@ cardContainer.addEventListener('touchmove', (e) => {
     currentX = e.touches[0].clientX - startX;
     currentY = e.touches[0].clientY - startY;
     
+    // Если вертикальное движение больше горизонтального, отменяем свайп
     if (Math.abs(currentY) > Math.abs(currentX)) {
         return;
     }
@@ -186,6 +206,7 @@ cardContainer.addEventListener('touchmove', (e) => {
     const rotation = currentX / 20;
     cardContainer.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rotation}deg)`;
     
+    // Показываем индикаторы
     if (Math.abs(currentX) > 50) {
         if (currentX > 0) {
             swipeRight.style.opacity = Math.min(currentX / 200, 1);
@@ -220,8 +241,9 @@ cardContainer.addEventListener('touchend', () => {
     currentY = 0;
 });
 
-// Mouse events
+// Mouse events (для десктопа)
 cardContainer.addEventListener('mousedown', (e) => {
+    // Проверяем прокрутку
     if (e.target.closest('.card') && e.target.closest('.card').scrollHeight > e.target.closest('.card').clientHeight) {
         return;
     }
@@ -276,7 +298,7 @@ document.addEventListener('mouseup', () => {
     currentY = 0;
 });
 
-// Клавиатура
+// Клавиатура (стрелки)
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') {
         handleSwipe('left');
