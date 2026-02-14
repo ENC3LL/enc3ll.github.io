@@ -12,13 +12,14 @@ const state = {
 };
 
 // ============================================================================
-// STORAGE HELPERS
+// STORAGE HELPERS (using localStorage for GitHub Pages compatibility)
 // ============================================================================
 
 async function getStorageKey(key, shared = false) {
     try {
-        const result = await window.storage.get(key, shared);
-        return result ? JSON.parse(result.value) : null;
+        const storageKey = shared ? `shared:${key}` : `user:${key}`;
+        const value = localStorage.getItem(storageKey);
+        return value ? JSON.parse(value) : null;
     } catch (error) {
         console.log(`Key ${key} not found`);
         return null;
@@ -27,7 +28,8 @@ async function getStorageKey(key, shared = false) {
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        await window.storage.set(key, JSON.stringify(value), shared);
+        const storageKey = shared ? `shared:${key}` : `user:${key}`;
+        localStorage.setItem(storageKey, JSON.stringify(value));
         return true;
     } catch (error) {
         console.error('Storage error:', error);
@@ -37,7 +39,8 @@ async function setStorageKey(key, value, shared = false) {
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        await window.storage.delete(key, shared);
+        const storageKey = shared ? `shared:${key}` : `user:${key}`;
+        localStorage.removeItem(storageKey);
         return true;
     } catch (error) {
         console.error('Delete error:', error);
@@ -47,8 +50,15 @@ async function deleteStorageKey(key, shared = false) {
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        const result = await window.storage.list(prefix, shared);
-        return result ? result.keys : [];
+        const storagePrefix = shared ? `shared:${prefix}` : `user:${prefix}`;
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(storagePrefix)) {
+                keys.push(key.replace(shared ? 'shared:' : 'user:', ''));
+            }
+        }
+        return keys;
     } catch (error) {
         console.error('List error:', error);
         return [];
@@ -214,7 +224,7 @@ async function loadDefaultPacks() {
     
     // Load from uploaded file
     try {
-        const response = await fetch('/cards__1_.json');
+        const response = await fetch('cards__1_.json');
         const defaultCards = await response.json();
         
         // Create default pack
@@ -224,7 +234,7 @@ async function loadDefaultPacks() {
             defaultCards
         );
     } catch (error) {
-        console.log('No default cards file found');
+        console.log('No default cards file found, will create empty state');
     }
 }
 
@@ -829,12 +839,6 @@ window.toggleRoadmapItem = toggleRoadmapItem;
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if running in artifact (has window.storage)
-    if (!window.storage) {
-        document.body.innerHTML = '<div style="display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px;"><div><h1 style="font-size: 24px; margin-bottom: 10px;">⚠️ Storage Not Available</h1><p style="color: rgba(255,255,255,0.7);">This app requires persistent storage to work properly. Please run it as a Claude artifact.</p></div></div>';
-        return;
-    }
-    
     // Load default packs
     await loadDefaultPacks();
     
