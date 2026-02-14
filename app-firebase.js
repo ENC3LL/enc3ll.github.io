@@ -1,4 +1,23 @@
 // ============================================================================
+// FIREBASE REALTIME DATABASE
+// ============================================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBIGxcMkbDM-GhMCCTQlUfUB5MvTA4FYo4",
+  authDomain: "learn-cards-1ff17.firebaseapp.com",
+  databaseURL: "https://learn-cards-1ff17-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "learn-cards-1ff17",
+  storageBucket: "learn-cards-1ff17.firebasestorage.app",
+  messagingSenderId: "778357247094",
+  appId: "1:778357247094:web:9430b43f53d729d7c4a357"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+console.log('🔥 Firebase Realtime Database initialized');
+
+// ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
 
@@ -7,98 +26,42 @@ const state = {
     currentPack: null,
     currentCardIndex: 0,
     cardOrder: [],
-    token: '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',
     startTime: null,
     sessionTime: 0
 };
 
 // ============================================================================
-// STORAGE HELPERS (using IndexedDB for Safari compatibility)
+// STORAGE HELPERS (Firebase Realtime Database)
 // ============================================================================
-
-const DB_NAME = 'LearnCardsDB';
-const DB_VERSION = 1;
-let db = null;
-
-// Initialize IndexedDB
-async function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-            db = request.result;
-            resolve(db);
-        };
-        
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            
-            // Create object stores if they don't exist
-            if (!db.objectStoreNames.contains('shared')) {
-                db.createObjectStore('shared', { keyPath: 'key' });
-            }
-            if (!db.objectStoreNames.contains('user')) {
-                db.createObjectStore('user', { keyPath: 'key' });
-            }
-        };
-    });
-}
 
 async function getStorageKey(key, shared = false) {
     try {
-        if (!db) await initDB();
-        
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.get(key);
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-                const result = request.result;
-                resolve(result ? result.value : null);
-            };
-            request.onerror = () => resolve(null);
-        });
+        const path = shared ? `shared/${key}` : `users/${key}`;
+        const snapshot = await database.ref(path).once('value');
+        return snapshot.val();
     } catch (error) {
-        console.log(`Key ${key} not found or storage blocked`);
+        console.error('Get error:', error);
         return null;
     }
 }
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        if (!db) await initDB();
-        
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.put({ key, value });
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
-        });
+        const path = shared ? `shared/${key}` : `users/${key}`;
+        await database.ref(path).set(value);
+        console.log(`✅ Saved: ${path}`);
+        return true;
     } catch (error) {
-        console.error('Storage error:', error);
+        console.error('Set error:', error);
         return false;
     }
 }
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        if (!db) await initDB();
-        
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.delete(key);
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
-        });
+        const path = shared ? `shared/${key}` : `users/${key}`;
+        await database.ref(path).remove();
+        return true;
     } catch (error) {
         console.error('Delete error:', error);
         return false;
@@ -107,21 +70,10 @@ async function deleteStorageKey(key, shared = false) {
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        if (!db) await initDB();
-        
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.getAllKeys();
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-                const allKeys = request.result;
-                const filteredKeys = allKeys.filter(key => key.startsWith(prefix));
-                resolve(filteredKeys);
-            };
-            request.onerror = () => resolve([]);
-        });
+        const path = shared ? 'shared' : 'users';
+        const snapshot = await database.ref(path).once('value');
+        const data = snapshot.val() || {};
+        return Object.keys(data).filter(k => k.startsWith(prefix));
     } catch (error) {
         console.error('List error:', error);
         return [];
@@ -929,17 +881,7 @@ window.toggleRoadmapItem = toggleRoadmapItem;
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
-    
-    // Initialize IndexedDB
-    try {
-        console.log('Initializing IndexedDB...');
-        await initDB();
-        console.log('IndexedDB initialized successfully');
-    } catch (error) {
-        console.error('Failed to initialize IndexedDB:', error);
-        alert('Storage initialization failed. Please try refreshing the page or use a different browser.');
-        return;
-    }
+    console.log('🔥 Using Firebase Realtime Database for sync');
     
     // Load default packs
     console.log('Loading default packs...');
