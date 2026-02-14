@@ -12,8 +12,18 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const firestore = firebase.firestore();
+let firestore = null;
+let isFirebaseAvailable = false;
+
+try {
+    firebase.initializeApp(firebaseConfig);
+    firestore = firebase.firestore();
+    isFirebaseAvailable = true;
+    console.log('✅ Firebase initialized - syncing enabled');
+} catch (error) {
+    console.warn('⚠️ Firebase unavailable, using IndexedDB fallback');
+    isFirebaseAvailable = false;
+}
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -29,32 +39,84 @@ const state = {
 };
 
 // ============================================================================
-// STORAGE HELPERS (using Firestore)
+// STORAGE HELPERS (Firebase + IndexedDB fallback)
 // ============================================================================
+
+const DB_NAME = 'LearnCardsDB';
+const DB_VERSION = 1;
+let db = null;
+
+// Initialize IndexedDB (fallback)
+async function initDB() {
+    if (isFirebaseAvailable) return null;
+    
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            
+            if (!db.objectStoreNames.contains('shared')) {
+                db.createObjectStore('shared', { keyPath: 'key' });
+            }
+            if (!db.objectStoreNames.contains('user')) {
+                db.createObjectStore('user', { keyPath: 'key' });
+            }
+        };
+    });
+}
 
 async function getStorageKey(key, shared = false) {
     try {
-        const collection = shared ? 'shared' : 'user';
-        const doc = await firestore.collection(collection).doc(key).get();
-        
-        if (doc.exists) {
-            return doc.data().value;
+        if (isFirebaseAvailable && firestore) {
+            const collection = shared ? 'shared' : 'user';
+            const doc = await firestore.collection(collection).doc(key).get();
+            return doc.exists ? doc.data().value : null;
+        } else {
+            if (!db) await initDB();
+            const storeName = shared ? 'shared' : 'user';
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.get(key);
+            
+            return new Promise((resolve) => {
+                request.onsuccess = () => resolve(request.result ? request.result.value : null);
+                request.onerror = () => resolve(null);
+            });
         }
-        return null;
     } catch (error) {
-        console.log(`Key ${key} not found or error:`, error);
+        console.log(`Key ${key} not found`);
         return null;
     }
 }
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        const collection = shared ? 'shared' : 'user';
-        await firestore.collection(collection).doc(key).set({
-            value: value,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        return true;
+        if (isFirebaseAvailable && firestore) {
+            const collection = shared ? 'shared' : 'user';
+            await firestore.collection(collection).doc(key).set({
+                value: value,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return true;
+        } else {
+            if (!db) await initDB();
+            const storeName = shared ? 'shared' : 'user';
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.put({ key, value });
+            
+            return new Promise((resolve) => {
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => resolve(false);
+            });
+        }
     } catch (error) {
         console.error('Storage error:', error);
         return false;
@@ -63,9 +125,22 @@ async function setStorageKey(key, value, shared = false) {
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        const collection = shared ? 'shared' : 'user';
-        await firestore.collection(collection).doc(key).delete();
-        return true;
+        if (isFirebaseAvailable && firestore) {
+            const collection = shared ? 'shared' : 'user';
+            await firestore.collection(collection).doc(key).delete();
+            return true;
+        } else {
+            if (!db) await initDB();
+            const storeName = shared ? 'shared' : 'user';
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.delete(key);
+            
+            return new Promise((resolve) => {
+                request.onsuccess = () => resolve(true);
+                request.onerror = () => resolve(false);
+            });
+        }
     } catch (error) {
         console.error('Delete error:', error);
         return false;
@@ -74,26 +149,29 @@ async function deleteStorageKey(key, shared = false) {
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        const collection = shared ? 'shared' : 'user';
-        const snapshot = await firestore.collection(collection)
-            .where(firebase.firestore.FieldPath.documentId(), '>=', prefix)
-            .where(firebase.firestore.FieldPath.documentId(), '<', prefix + '\uf8ff')
-            .get();
-        
-        return snapshot.docs.map(doc => doc.id);
-    } catch (error) {
-        console.error('List error:', error);
-        return [];
-    }
-}
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-                const allKeys = request.result;
-                const filteredKeys = allKeys.filter(key => key.startsWith(prefix));
-                resolve(filteredKeys);
-            };
-            request.onerror = () => resolve([]);
-        });
+        if (isFirebaseAvailable && firestore) {
+            const collection = shared ? 'shared' : 'user';
+            const snapshot = await firestore.collection(collection)
+                .where(firebase.firestore.FieldPath.documentId(), '>=', prefix)
+                .where(firebase.firestore.FieldPath.documentId(), '<', prefix + '\uf8ff')
+                .get();
+            return snapshot.docs.map(doc => doc.id);
+        } else {
+            if (!db) await initDB();
+            const storeName = shared ? 'shared' : 'user';
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAllKeys();
+            
+            return new Promise((resolve) => {
+                request.onsuccess = () => {
+                    const allKeys = request.result;
+                    const filteredKeys = allKeys.filter(key => key.startsWith(prefix));
+                    resolve(filteredKeys);
+                };
+                request.onerror = () => resolve([]);
+            });
+        }
     } catch (error) {
         console.error('List error:', error);
         return [];
@@ -902,14 +980,18 @@ window.toggleRoadmapItem = toggleRoadmapItem;
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
     
-    // Initialize IndexedDB
+    // Initialize storage (Firebase or IndexedDB)
     try {
-        console.log('Initializing IndexedDB...');
-        await initDB();
-        console.log('IndexedDB initialized successfully');
+        if (isFirebaseAvailable) {
+            console.log('✅ Using Firebase - data will sync across devices');
+        } else {
+            console.log('⚠️ Using IndexedDB - data stored locally only');
+            await initDB();
+            console.log('IndexedDB initialized');
+        }
     } catch (error) {
-        console.error('Failed to initialize IndexedDB:', error);
-        alert('Storage initialization failed. Please try refreshing the page or use a different browser.');
+        console.error('Storage initialization failed:', error);
+        alert('Storage initialization failed. Please refresh the page.');
         return;
     }
     
@@ -940,6 +1022,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             await renderPackSelection();
             await renderStats();
             console.log('Auto-login complete');
+            
+            // Show sync status
+            if (!isFirebaseAvailable) {
+                console.warn('💡 Tip: Connect to internet and reload to enable sync');
+            }
         }
     }
     
