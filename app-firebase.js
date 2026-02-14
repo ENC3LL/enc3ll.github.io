@@ -1,4 +1,21 @@
 // ============================================================================
+// FIREBASE CONFIGURATION
+// ============================================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBIGxcMkbDM-GhMCCTQlUfUB5MvTA4FYo4",
+  authDomain: "learn-cards-1ff17.firebaseapp.com",
+  projectId: "learn-cards-1ff17",
+  storageBucket: "learn-cards-1ff17.firebasestorage.app",
+  messagingSenderId: "778357247094",
+  appId: "1:778357247094:web:9430b43f53d729d7c4a357"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const firestore = firebase.firestore();
+
+// ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
 
@@ -12,73 +29,32 @@ const state = {
 };
 
 // ============================================================================
-// STORAGE HELPERS (using IndexedDB for Safari compatibility)
+// STORAGE HELPERS (using Firestore)
 // ============================================================================
-
-const DB_NAME = 'LearnCardsDB';
-const DB_VERSION = 1;
-let db = null;
-
-// Initialize IndexedDB
-async function initDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-            db = request.result;
-            resolve(db);
-        };
-        
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            
-            // Create object stores if they don't exist
-            if (!db.objectStoreNames.contains('shared')) {
-                db.createObjectStore('shared', { keyPath: 'key' });
-            }
-            if (!db.objectStoreNames.contains('user')) {
-                db.createObjectStore('user', { keyPath: 'key' });
-            }
-        };
-    });
-}
 
 async function getStorageKey(key, shared = false) {
     try {
-        if (!db) await initDB();
+        const collection = shared ? 'shared' : 'user';
+        const doc = await firestore.collection(collection).doc(key).get();
         
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.get(key);
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => {
-                const result = request.result;
-                resolve(result ? result.value : null);
-            };
-            request.onerror = () => resolve(null);
-        });
+        if (doc.exists) {
+            return doc.data().value;
+        }
+        return null;
     } catch (error) {
-        console.log(`Key ${key} not found or storage blocked`);
+        console.log(`Key ${key} not found or error:`, error);
         return null;
     }
 }
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        if (!db) await initDB();
-        
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.put({ key, value });
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
+        const collection = shared ? 'shared' : 'user';
+        await firestore.collection(collection).doc(key).set({
+            value: value,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        return true;
     } catch (error) {
         console.error('Storage error:', error);
         return false;
@@ -87,17 +63,9 @@ async function setStorageKey(key, value, shared = false) {
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        if (!db) await initDB();
-        
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readwrite');
-        const store = transaction.objectStore(storeName);
-        const request = store.delete(key);
-        
-        return new Promise((resolve, reject) => {
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
-        });
+        const collection = shared ? 'shared' : 'user';
+        await firestore.collection(collection).doc(key).delete();
+        return true;
     } catch (error) {
         console.error('Delete error:', error);
         return false;
@@ -106,13 +74,18 @@ async function deleteStorageKey(key, shared = false) {
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        if (!db) await initDB();
+        const collection = shared ? 'shared' : 'user';
+        const snapshot = await firestore.collection(collection)
+            .where(firebase.firestore.FieldPath.documentId(), '>=', prefix)
+            .where(firebase.firestore.FieldPath.documentId(), '<', prefix + '\uf8ff')
+            .get();
         
-        const storeName = shared ? 'shared' : 'user';
-        const transaction = db.transaction([storeName], 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.getAllKeys();
-        
+        return snapshot.docs.map(doc => doc.id);
+    } catch (error) {
+        console.error('List error:', error);
+        return [];
+    }
+}
         return new Promise((resolve, reject) => {
             request.onsuccess = () => {
                 const allKeys = request.result;
