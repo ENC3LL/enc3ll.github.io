@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Learn Cards</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #222;
+            border-radius: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #log {
+            background: #111;
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { color: #34C759; }
+        .error { color: #FF3B30; }
+        .info { color: #007AFF; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Learn Cards - Debug Mode</h1>
+    
+    <div class="test-section">
+        <h2>IndexedDB Test</h2>
+        <button onclick="testIndexedDB()">Test IndexedDB</button>
+        <button onclick="clearIndexedDB()">Clear IndexedDB</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Login Test</h2>
+        <input type="text" id="testUsername" placeholder="Enter username" value="TestUser">
+        <button onclick="testLogin()">Test Login</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Log</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Go to Main App</h2>
+        <button onclick="goToMainApp()">Open Main App</button>
+    </div>
+
+    <script>
+        // Logging
+        const logEl = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            logEl.innerHTML += `<div class="${color}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logEl.innerHTML = '';
+        }
+        
+        // IndexedDB Test
+        async function testIndexedDB() {
+            try {
+                log('Testing IndexedDB...', 'info');
+                
+                const request = indexedDB.open('TestDB', 1);
+                
+                request.onerror = () => {
+                    log('❌ IndexedDB not supported or blocked', 'error');
+                };
+                
+                request.onsuccess = () => {
+                    log('✅ IndexedDB is working!', 'success');
+                    request.result.close();
+                    indexedDB.deleteDatabase('TestDB');
+                };
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    db.createObjectStore('test', { keyPath: 'id' });
+                    log('✅ IndexedDB initialized', 'success');
+                };
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function clearIndexedDB() {
+            try {
+                log('Clearing IndexedDB...', 'info');
+                await indexedDB.deleteDatabase('LearnCardsDB');
+                log('✅ IndexedDB cleared', 'success');
+            } catch (error) {
+                log('❌ Error clearing: ' + error.message, 'error');
+            }
+        }
+        
+        // Login Test
+        async function testLogin() {
+            const username = document.getElementById('testUsername').value;
+            
+            if (!username.trim()) {
+                log('❌ Please enter a username', 'error');
+                return;
+            }
+            
+            log(`Testing login with username: ${username}`, 'info');
+            
+            try {
+                // Initialize DB
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('LearnCardsDB', 1);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('user')) {
+                            db.createObjectStore('user', { keyPath: 'key' });
+                        }
+                    };
+                });
+                
+                log('✅ Database opened', 'success');
+                
+                // Create user
+                const user = {
+                    username: username,
+                    createdAt: Date.now(),
+                    stats: {
+                        totalCards: 0,
+                        totalTime: 0,
+                        lastActive: Date.now(),
+                        streak: 0,
+                        dailyActivity: {}
+                    }
+                };
+                
+                const transaction = db.transaction(['user'], 'readwrite');
+                const store = transaction.objectStore('user');
+                await store.put({ key: `user-${username}`, value: user });
+                
+                log('✅ User created successfully!', 'success');
+                log(`User data: ${JSON.stringify(user, null, 2)}`, 'info');
+                
+                db.close();
+            } catch (error) {
+                log('❌ Login test failed: ' + error.message, 'error');
+            }
+        }
+        
+        function goToMainApp() {
+            window.location.href = 'index.html';
+        }
+        
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            log('🚀 Debug mode loaded', 'success');
+            log('Browser: ' + navigator.userAgent, 'info');
+            testIndexedDB();
+        });
+    </script>
+</body>
+</html>
