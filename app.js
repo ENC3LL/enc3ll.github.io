@@ -746,10 +746,12 @@ function updateStatsDisplay() {
     const today = new Date().toISOString().split('T')[0];
     const todayStats = state.currentUser.stats.dailyActivity[today] || { cards: 0, time: 0 };
     
-    document.getElementById('todayCards')?.textContent = todayStats.cards.toString();
+    const todayCardsEl = document.getElementById('todayCards');
+    if (todayCardsEl) todayCardsEl.textContent = todayStats.cards.toString();
     
     const minutes = Math.floor(todayStats.time / 60);
-    document.getElementById('todayTime')?.textContent = `${minutes}m`;
+    const todayTimeEl = document.getElementById('todayTime');
+    if (todayTimeEl) todayTimeEl.textContent = `${minutes}m`;
 }
 
 // ============================================================================
@@ -907,8 +909,11 @@ window.toggleRoadmapItem = toggleRoadmapItem;
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded');
+    
     // Initialize IndexedDB
     try {
+        console.log('Initializing IndexedDB...');
         await initDB();
         console.log('IndexedDB initialized successfully');
     } catch (error) {
@@ -918,20 +923,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Load default packs
+    console.log('Loading default packs...');
     await loadDefaultPacks();
+    console.log('Default packs loaded');
     
     // Login button
-    document.getElementById('loginButton').addEventListener('click', async () => {
+    const loginButton = document.getElementById('loginButton');
+    if (!loginButton) {
+        console.error('Login button not found!');
+        return;
+    }
+    
+    loginButton.addEventListener('click', async () => {
+        console.log('Login button clicked');
         const username = document.getElementById('usernameInput').value;
+        console.log('Username:', username);
+        
         const success = await loginUser(username);
+        console.log('Login success:', success);
         
         if (success) {
+            console.log('Showing main app...');
             showScreen('mainApp');
-            document.getElementById('sidebarUsername').textContent = state.currentUser.username;
-            document.getElementById('settingsUsername').textContent = state.currentUser.username;
+            
+            const sidebarUsername = document.getElementById('sidebarUsername');
+            const settingsUsername = document.getElementById('settingsUsername');
+            
+            if (sidebarUsername) sidebarUsername.textContent = state.currentUser.username;
+            if (settingsUsername) settingsUsername.textContent = state.currentUser.username;
+            
             updateStatsDisplay();
             await renderPackSelection();
             await renderStats();
+            console.log('Login complete');
         } else {
             alert('Please enter a username');
         }
