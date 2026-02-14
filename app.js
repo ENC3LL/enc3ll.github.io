@@ -349,8 +349,22 @@ async function toggleRoadmapItem(itemId) {
 // ============================================================================
 
 function showScreen(screenId) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId)?.classList.add('active');
+    console.log('showScreen called with:', screenId);
+    const screens = document.querySelectorAll('.screen');
+    console.log('Found screens:', screens.length);
+    
+    screens.forEach(s => {
+        s.classList.remove('active');
+        console.log('Removed active from:', s.id);
+    });
+    
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) {
+        targetScreen.classList.add('active');
+        console.log('Added active to:', screenId);
+    } else {
+        console.error('Screen not found:', screenId);
+    }
 }
 
 function showView(viewId) {
@@ -962,20 +976,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     // Enter key on login
-    document.getElementById('usernameInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('loginButton').click();
-        }
-    });
+    const usernameInput = document.getElementById('usernameInput');
+    if (usernameInput) {
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                console.log('Enter key pressed');
+                loginButton.click();
+            }
+        });
+    }
     
     // Logout
-    document.getElementById('logoutButton').addEventListener('click', logoutUser);
-    document.getElementById('mobileLogoutButton').addEventListener('click', logoutUser);
+    const logoutButton = document.getElementById('logoutButton');
+    const mobileLogoutButton = document.getElementById('mobileLogoutButton');
+    
+    if (logoutButton) logoutButton.addEventListener('click', logoutUser);
+    if (mobileLogoutButton) mobileLogoutButton.addEventListener('click', logoutUser);
     
     // Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', async () => {
             const view = item.dataset.view;
+            console.log('Navigating to view:', view);
             showView(view + 'View');
             
             // Load view data
@@ -986,25 +1008,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     // Pack controls
-    document.getElementById('backToPacks')?.addEventListener('click', backToPacks);
-    document.getElementById('restartPack')?.addEventListener('click', restartPack);
-    document.getElementById('selectNewPack')?.addEventListener('click', () => {
-        hideModal('packCompleteModal');
-        backToPacks();
-    });
+    const backToPacksBtn = document.getElementById('backToPacks');
+    const restartPackBtn = document.getElementById('restartPack');
+    const selectNewPackBtn = document.getElementById('selectNewPack');
+    
+    if (backToPacksBtn) backToPacksBtn.addEventListener('click', backToPacks);
+    if (restartPackBtn) restartPackBtn.addEventListener('click', restartPack);
+    if (selectNewPackBtn) {
+        selectNewPackBtn.addEventListener('click', () => {
+            hideModal('packCompleteModal');
+            backToPacks();
+        });
+    }
     
     // Pack editor
-    document.getElementById('createPackButton')?.addEventListener('click', () => openPackEditor());
-    document.getElementById('addCardButton')?.addEventListener('click', addEditorCard);
-    document.getElementById('savePackButton')?.addEventListener('click', savePackFromEditor);
-    document.getElementById('cancelPackEdit')?.addEventListener('click', () => hideModal('packEditorModal'));
-    document.getElementById('closePackEditor')?.addEventListener('click', () => hideModal('packEditorModal'));
+    const createPackButton = document.getElementById('createPackButton');
+    const addCardButton = document.getElementById('addCardButton');
+    const savePackButton = document.getElementById('savePackButton');
+    const cancelPackEdit = document.getElementById('cancelPackEdit');
+    const closePackEditor = document.getElementById('closePackEditor');
+    
+    if (createPackButton) createPackButton.addEventListener('click', () => openPackEditor());
+    if (addCardButton) addCardButton.addEventListener('click', addEditorCard);
+    if (savePackButton) savePackButton.addEventListener('click', savePackFromEditor);
+    if (cancelPackEdit) cancelPackEdit.addEventListener('click', () => hideModal('packEditorModal'));
+    if (closePackEditor) closePackEditor.addEventListener('click', () => hideModal('packEditorModal'));
     
     // Roadmap editor
-    document.getElementById('createRoadmapButton')?.addEventListener('click', () => showModal('roadmapEditorModal'));
-    document.getElementById('saveRoadmapButton')?.addEventListener('click', saveRoadmapFromEditor);
-    document.getElementById('cancelRoadmapEdit')?.addEventListener('click', () => hideModal('roadmapEditorModal'));
-    document.getElementById('closeRoadmapEditor')?.addEventListener('click', () => hideModal('roadmapEditorModal'));
+    const createRoadmapButton = document.getElementById('createRoadmapButton');
+    const saveRoadmapButton = document.getElementById('saveRoadmapButton');
+    const cancelRoadmapEdit = document.getElementById('cancelRoadmapEdit');
+    const closeRoadmapEditor = document.getElementById('closeRoadmapEditor');
+    
+    if (createRoadmapButton) createRoadmapButton.addEventListener('click', () => showModal('roadmapEditorModal'));
+    if (saveRoadmapButton) saveRoadmapButton.addEventListener('click', saveRoadmapFromEditor);
+    if (cancelRoadmapEdit) cancelRoadmapEdit.addEventListener('click', () => hideModal('roadmapEditorModal'));
+    if (closeRoadmapEditor) closeRoadmapEditor.addEventListener('click', () => hideModal('roadmapEditorModal'));
     
     // Initialize swipe
     initializeSwipe();
@@ -1015,4 +1054,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             await saveUserStats();
         }
     }, 30000); // Every 30 seconds
+    
+    console.log('All event listeners initialized');
 });
