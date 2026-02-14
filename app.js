@@ -171,6 +171,10 @@ async function logoutUser() {
     if (state.currentUser) {
         await saveUserStats();
     }
+    
+    // Forget remembered user
+    localStorage.removeItem('rememberedUsername');
+    
     state.currentUser = null;
     showScreen('loginScreen');
 }
@@ -941,6 +945,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadDefaultPacks();
     console.log('Default packs loaded');
     
+    // Check for remembered user
+    const rememberedUser = localStorage.getItem('rememberedUsername');
+    if (rememberedUser) {
+        console.log('Found remembered user:', rememberedUser);
+        document.getElementById('usernameInput').value = rememberedUser;
+        
+        // Auto-login
+        const success = await loginUser(rememberedUser);
+        if (success) {
+            console.log('Auto-login successful');
+            showScreen('mainApp');
+            
+            const sidebarUsername = document.getElementById('sidebarUsername');
+            const settingsUsername = document.getElementById('settingsUsername');
+            
+            if (sidebarUsername) sidebarUsername.textContent = state.currentUser.username;
+            if (settingsUsername) settingsUsername.textContent = state.currentUser.username;
+            
+            updateStatsDisplay();
+            await renderPackSelection();
+            await renderStats();
+            console.log('Auto-login complete');
+        }
+    }
+    
     // Login button
     const loginButton = document.getElementById('loginButton');
     if (!loginButton) {
@@ -957,6 +986,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Login success:', success);
         
         if (success) {
+            // Remember username
+            localStorage.setItem('rememberedUsername', username);
+            
             console.log('Showing main app...');
             showScreen('mainApp');
             
