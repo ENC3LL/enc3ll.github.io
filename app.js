@@ -12,14 +12,54 @@ const state = {
 };
 
 // ============================================================================
-// STORAGE HELPERS (using localStorage for GitHub Pages compatibility)
+// STORAGE HELPERS (using IndexedDB for Safari compatibility)
 // ============================================================================
+
+const DB_NAME = 'LearnCardsDB';
+const DB_VERSION = 1;
+let db = null;
+
+// Initialize IndexedDB
+async function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+            db = request.result;
+            resolve(db);
+        };
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            
+            // Create object stores if they don't exist
+            if (!db.objectStoreNames.contains('shared')) {
+                db.createObjectStore('shared', { keyPath: 'key' });
+            }
+            if (!db.objectStoreNames.contains('user')) {
+                db.createObjectStore('user', { keyPath: 'key' });
+            }
+        };
+    });
+}
 
 async function getStorageKey(key, shared = false) {
     try {
-        const storageKey = shared ? `shared-${key}` : `user-${key}`;
-        const value = localStorage.getItem(storageKey);
-        return value ? JSON.parse(value) : null;
+        if (!db) await initDB();
+        
+        const storeName = shared ? 'shared' : 'user';
+        const transaction = db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.get(key);
+        
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                const result = request.result;
+                resolve(result ? result.value : null);
+            };
+            request.onerror = () => resolve(null);
+        });
     } catch (error) {
         console.log(`Key ${key} not found or storage blocked`);
         return null;
@@ -28,23 +68,36 @@ async function getStorageKey(key, shared = false) {
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        const storageKey = shared ? `shared-${key}` : `user-${key}`;
-        localStorage.setItem(storageKey, JSON.stringify(value));
-        return true;
+        if (!db) await initDB();
+        
+        const storeName = shared ? 'shared' : 'user';
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.put({ key, value });
+        
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(true);
+            request.onerror = () => resolve(false);
+        });
     } catch (error) {
         console.error('Storage error:', error);
-        if (error.name === 'QuotaExceededError') {
-            alert('Storage quota exceeded. Please clear some data.');
-        }
         return false;
     }
 }
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        const storageKey = shared ? `shared-${key}` : `user-${key}`;
-        localStorage.removeItem(storageKey);
-        return true;
+        if (!db) await initDB();
+        
+        const storeName = shared ? 'shared' : 'user';
+        const transaction = db.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.delete(key);
+        
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => resolve(true);
+            request.onerror = () => resolve(false);
+        });
     } catch (error) {
         console.error('Delete error:', error);
         return false;
@@ -53,15 +106,21 @@ async function deleteStorageKey(key, shared = false) {
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        const storagePrefix = shared ? `shared-${prefix}` : `user-${prefix}`;
-        const keys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith(storagePrefix)) {
-                keys.push(key.replace(shared ? 'shared-' : 'user-', ''));
-            }
-        }
-        return keys;
+        if (!db) await initDB();
+        
+        const storeName = shared ? 'shared' : 'user';
+        const transaction = db.transaction([storeName], 'readonly');
+        const store = transaction.objectStore(storeName);
+        const request = store.getAllKeys();
+        
+        return new Promise((resolve, reject) => {
+            request.onsuccess = () => {
+                const allKeys = request.result;
+                const filteredKeys = allKeys.filter(key => key.startsWith(prefix));
+                resolve(filteredKeys);
+            };
+            request.onerror = () => resolve([]);
+        });
     } catch (error) {
         console.error('List error:', error);
         return [];
@@ -848,6 +907,16 @@ window.toggleRoadmapItem = toggleRoadmapItem;
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize IndexedDB
+    try {
+        await initDB();
+        console.log('IndexedDB initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize IndexedDB:', error);
+        alert('Storage initialization failed. Please try refreshing the page or use a different browser.');
+        return;
+    }
+    
     // Load default packs
     await loadDefaultPacks();
     
