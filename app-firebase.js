@@ -7,6 +7,7 @@ const state = {
     currentPack: null,
     currentCardIndex: 0,
     cardOrder: [],
+    token: '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',
     startTime: null,
     sessionTime: 0
 };
