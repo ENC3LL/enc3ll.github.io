@@ -17,29 +17,32 @@ const state = {
 
 async function getStorageKey(key, shared = false) {
     try {
-        const storageKey = shared ? `shared:${key}` : `user:${key}`;
+        const storageKey = shared ? `shared-${key}` : `user-${key}`;
         const value = localStorage.getItem(storageKey);
         return value ? JSON.parse(value) : null;
     } catch (error) {
-        console.log(`Key ${key} not found`);
+        console.log(`Key ${key} not found or storage blocked`);
         return null;
     }
 }
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        const storageKey = shared ? `shared:${key}` : `user:${key}`;
+        const storageKey = shared ? `shared-${key}` : `user-${key}`;
         localStorage.setItem(storageKey, JSON.stringify(value));
         return true;
     } catch (error) {
         console.error('Storage error:', error);
+        if (error.name === 'QuotaExceededError') {
+            alert('Storage quota exceeded. Please clear some data.');
+        }
         return false;
     }
 }
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        const storageKey = shared ? `shared:${key}` : `user:${key}`;
+        const storageKey = shared ? `shared-${key}` : `user-${key}`;
         localStorage.removeItem(storageKey);
         return true;
     } catch (error) {
@@ -50,12 +53,12 @@ async function deleteStorageKey(key, shared = false) {
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        const storagePrefix = shared ? `shared:${prefix}` : `user:${prefix}`;
+        const storagePrefix = shared ? `shared-${prefix}` : `user-${prefix}`;
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith(storagePrefix)) {
-                keys.push(key.replace(shared ? 'shared:' : 'user:', ''));
+                keys.push(key.replace(shared ? 'shared-' : 'user-', ''));
             }
         }
         return keys;
@@ -73,30 +76,36 @@ async function loginUser(username) {
     const trimmedUsername = username.trim();
     if (!trimmedUsername) return false;
     
-    // Get or create user
-    let user = await getStorageKey(`user:${trimmedUsername}`);
-    
-    if (!user) {
-        user = {
-            username: trimmedUsername,
-            createdAt: Date.now(),
-            stats: {
-                totalCards: 0,
-                totalTime: 0,
-                lastActive: Date.now(),
-                streak: 0,
-                dailyActivity: {}
-            }
-        };
-        await setStorageKey(`user:${trimmedUsername}`, user);
-    } else {
-        // Update last active
-        user.stats.lastActive = Date.now();
-        await setStorageKey(`user:${trimmedUsername}`, user);
+    try {
+        // Get or create user
+        let user = await getStorageKey(`user-${trimmedUsername}`);
+        
+        if (!user) {
+            user = {
+                username: trimmedUsername,
+                createdAt: Date.now(),
+                stats: {
+                    totalCards: 0,
+                    totalTime: 0,
+                    lastActive: Date.now(),
+                    streak: 0,
+                    dailyActivity: {}
+                }
+            };
+            await setStorageKey(`user-${trimmedUsername}`, user);
+        } else {
+            // Update last active
+            user.stats.lastActive = Date.now();
+            await setStorageKey(`user-${trimmedUsername}`, user);
+        }
+        
+        state.currentUser = user;
+        return true;
+    } catch (error) {
+        console.error('Login error:', error);
+        alert('Error accessing storage. Please check browser settings and disable tracking prevention for this site.');
+        return false;
     }
-    
-    state.currentUser = user;
-    return true;
 }
 
 async function logoutUser() {
@@ -135,7 +144,7 @@ async function saveUserStats() {
         state.currentUser.stats.streak = Math.max(state.currentUser.stats.streak, 1);
     }
     
-    await setStorageKey(`user:${state.currentUser.username}`, state.currentUser);
+    await setStorageKey(`user-${state.currentUser.username}`, state.currentUser);
 }
 
 async function updateUserActivity(cardsViewed, timeSpent) {
@@ -174,7 +183,7 @@ async function updateUserActivity(cardsViewed, timeSpent) {
 // ============================================================================
 
 async function getAllPacks() {
-    const packKeys = await listStorageKeys('pack:', true);
+    const packKeys = await listStorageKeys('pack-', true);
     const packs = [];
     
     for (const key of packKeys) {
@@ -187,7 +196,7 @@ async function getAllPacks() {
 }
 
 async function createPack(name, description, cards) {
-    const packId = `pack:${Date.now()}`;
+    const packId = `pack-${Date.now()}`;
     const pack = {
         id: packId,
         name,
@@ -244,7 +253,7 @@ async function loadDefaultPacks() {
 
 async function getRoadmap() {
     if (!state.currentUser) return null;
-    return await getStorageKey(`roadmap:${state.currentUser.username}`);
+    return await getStorageKey(`roadmap-${state.currentUser.username}`);
 }
 
 async function saveRoadmap(title, items) {
@@ -260,7 +269,7 @@ async function saveRoadmap(title, items) {
         createdAt: Date.now()
     };
     
-    await setStorageKey(`roadmap:${state.currentUser.username}`, roadmap);
+    await setStorageKey(`roadmap-${state.currentUser.username}`, roadmap);
     return true;
 }
 
@@ -271,7 +280,7 @@ async function toggleRoadmapItem(itemId) {
     const item = roadmap.items.find(i => i.id === itemId);
     if (item) {
         item.completed = !item.completed;
-        await setStorageKey(`roadmap:${state.currentUser.username}`, roadmap);
+        await setStorageKey(`roadmap-${state.currentUser.username}`, roadmap);
         renderRoadmap();
     }
 }
