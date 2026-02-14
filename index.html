@@ -3,206 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Learn Cards</title>
+    <title>Learn Cards - Smart Learning System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #000000;
-            color: #ffffff;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #app {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .card-container {
-            position: absolute;
-            width: 100%;
-            max-width: 500px;
-            height: 85vh;
-            max-height: 700px;
-            cursor: grab;
-            user-select: none;
-            touch-action: none;
-        }
-
-        .card-container:active {
-            cursor: grabbing;
-        }
-
-        .card {
-            width: 100%;
-            height: 100%;
-            background: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .card::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .card::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 2px;
-        }
-
-        .card::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-        }
-
-        .card-category {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .card-title {
-            font-size: 32px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.5px;
-        }
-
-        .card-theory {
-            font-size: 16px;
-            line-height: 1.6;
-            color: rgba(255, 255, 255, 0.85);
-            flex-grow: 1;
-        }
-
-        .card-code {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 16px;
-            overflow-x: auto;
-        }
-
-        .card-code pre {
-            margin: 0;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .card-code code {
-            background: none !important;
-            padding: 0 !important;
-        }
-
-        .swipe-indicator {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 80px;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-        }
-
-        .swipe-indicator.left {
-            left: 40px;
-        }
-
-        .swipe-indicator.right {
-            right: 40px;
-        }
-
-        .counter {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(28, 28, 30, 0.8);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        @media (max-width: 600px) {
-            #app {
-                padding: 16px;
-            }
-
-            .card {
-                padding: 24px;
-                gap: 16px;
-            }
-
-            .card-title {
-                font-size: 28px;
-            }
-
-            .card-theory {
-                font-size: 15px;
-            }
-
-            .swipe-indicator {
-                font-size: 60px;
-            }
-
-            .swipe-indicator.left {
-                left: 20px;
-            }
-
-            .swipe-indicator.right {
-                right: 20px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="app">
-        <div class="card-container" id="cardContainer">
-            <div class="card" id="card">
-                <div class="card-category" id="category"></div>
-                <div class="card-title" id="title"></div>
-                <div class="card-theory" id="theory"></div>
-                <div class="card-code" id="codeBlock" style="display: none;">
-                    <pre><code class="language-cpp" id="code"></code></pre>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="logo">📚</div>
+            <h1>Learn Cards</h1>
+            <p class="subtitle">Smart Learning System</p>
+            <div class="login-form">
+                <input type="text" id="usernameInput" placeholder="Enter your username" autocomplete="off">
+                <button id="loginButton" class="primary-button">Continue</button>
+            </div>
+            <p class="hint">Enter any username to continue. No password required.</p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="screen">
+        <!-- Sidebar (Desktop only) -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-details">
+                        <div class="user-name" id="sidebarUsername"></div>
+                        <button id="logoutButton" class="text-button">Logout</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="swipe-indicator left"> < </div>
-        <div class="swipe-indicator right"> > </div>
-        <div class="counter" id="counter">Карточка 1 из 5</div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="cards">
+                    <span class="nav-icon">🎴</span>
+                    <span class="nav-label">Cards</span>
+                </button>
+                <button class="nav-item" data-view="packs">
+                    <span class="nav-icon">📦</span>
+                    <span class="nav-label">Packs Manager</span>
+                </button>
+                <button class="nav-item" data-view="roadmap">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-label">Roadmap</span>
+                </button>
+                <button class="nav-item" data-view="stats">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-label">Statistics</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="today-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Today</span>
+                        <span class="stat-value" id="todayCards">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value" id="todayTime">0m</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile Bottom Nav -->
+        <nav id="bottomNav" class="bottom-nav">
+            <button class="nav-item active" data-view="cards">
+                <span class="nav-icon">🎴</span>
+                <span class="nav-label">Cards</span>
+            </button>
+            <button class="nav-item" data-view="roadmap">
+                <span class="nav-icon">🗺️</span>
+                <span class="nav-label">Roadmap</span>
+            </button>
+            <button class="nav-item" data-view="stats">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Stats</span>
+            </button>
+            <button class="nav-item" data-view="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main id="mainContent" class="main-content">
+            <!-- Cards View -->
+            <div id="cardsView" class="view active">
+                <!-- Pack Selection (Mobile) -->
+                <div id="packSelection" class="pack-selection mobile-only">
+                    <h2>Select a Pack</h2>
+                    <div id="packsList" class="packs-grid"></div>
+                </div>
+
+                <!-- Cards Container -->
+                <div id="cardsContainer" class="cards-container" style="display: none;">
+                    <div class="cards-header">
+                        <button id="backToPacks" class="icon-button mobile-only">
+                            <span>← Back</span>
+                        </button>
+                        <h2 id="currentPackName"></h2>
+                        <div class="pack-progress">
+                            <span id="cardCounter">0/0</span>
+                        </div>
+                    </div>
+
+                    <div class="card-stage">
+                        <div class="card-container" id="cardContainer">
+                            <div class="card" id="card">
+                                <div class="card-category" id="category"></div>
+                                <div class="card-title" id="title"></div>
+                                <div class="card-theory" id="theory"></div>
+                                <div class="card-code" id="codeBlock" style="display: none;">
+                                    <pre><code class="language-cpp" id="code"></code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="swipe-indicator left">👈</div>
+                        <div class="swipe-indicator right">👉</div>
+                    </div>
+
+                    <!-- Pack Complete Modal -->
+                    <div id="packCompleteModal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-icon">🎉</div>
+                            <h3>Pack Complete!</h3>
+                            <p>You've reviewed all cards in this pack.</p>
+                            <div class="modal-actions">
+                                <button id="restartPack" class="secondary-button">Review Again</button>
+                                <button id="selectNewPack" class="primary-button">Choose New Pack</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Packs Manager View (Desktop Only) -->
+            <div id="packsView" class="view desktop-only">
+                <div class="view-header">
+                    <h1>Packs Manager</h1>
+                    <button id="createPackButton" class="primary-button">+ Create Pack</button>
+                </div>
+
+                <div class="packs-manager">
+                    <div id="packsManagerList" class="packs-list"></div>
+                </div>
+
+                <!-- Create/Edit Pack Modal -->
+                <div id="packEditorModal" class="modal">
+                    <div class="modal-content large">
+                        <div class="modal-header">
+                            <h3 id="packEditorTitle">Create Pack</h3>
+                            <button class="modal-close" id="closePackEditor">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Pack Name</label>
+                                <input type="text" id="packNameInput" placeholder="e.g., C++ Smart Pointers">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea id="packDescInput" placeholder="Brief description of this pack..." rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Cards</label>
+                                <div id="cardsEditor" class="cards-editor"></div>
+                                <button id="addCardButton" class="secondary-button">+ Add Card</button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="cancelPackEdit" class="secondary-button">Cancel</button>
+                            <button id="savePackButton" class="primary-button">Save Pack</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roadmap View -->
+            <div id="roadmapView" class="view">
+                <div class="view-header">
+                    <h1>Learning Roadmap</h1>
+                    <button id="createRoadmapButton" class="primary-button desktop-only">+ Create Roadmap</button>
+                </div>
+
+                <div class="roadmap-container">
+                    <div id="roadmapContent" class="roadmap-content"></div>
+                </div>
+
+                <!-- Roadmap Editor Modal (Desktop Only) -->
+                <div id="roadmapEditorModal" class="modal desktop-only">
+                    <div class="modal-content large">
+                        <div class="modal-header">
+                            <h3>Create Roadmap</h3>
+                            <button class="modal-close" id="closeRoadmapEditor">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Roadmap Title</label>
+                                <input type="text" id="roadmapTitleInput" placeholder="e.g., C++ Mastery Path">
+                            </div>
+                            <div class="form-group">
+                                <label>Milestones (one per line, use format: 1. Milestone name)</label>
+                                <textarea id="roadmapItemsInput" placeholder="1. Learn C++ Basics&#10;2. Master Smart Pointers&#10;3. Understand Move Semantics" rows="10"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="cancelRoadmapEdit" class="secondary-button">Cancel</button>
+                            <button id="saveRoadmapButton" class="primary-button">Save Roadmap</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics View -->
+            <div id="statsView" class="view">
+                <div class="view-header">
+                    <h1>Statistics</h1>
+                </div>
+
+                <div class="stats-container">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📚</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Total Cards Reviewed</div>
+                                <div class="stat-value large" id="totalCardsReviewed">0</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Total Time Spent</div>
+                                <div class="stat-value large" id="totalTimeSpent">0h 0m</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">🔥</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Current Streak</div>
+                                <div class="stat-value large" id="currentStreak">0 days</div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-info">
+                                <div class="stat-label">Today's Progress</div>
+                                <div class="stat-value large" id="todayProgress">0 cards</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="activity-calendar">
+                        <h3>Activity Calendar</h3>
+                        <div id="activityGrid" class="activity-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View (Mobile Only) -->
+            <div id="settingsView" class="view mobile-only">
+                <div class="view-header">
+                    <h1>Settings</h1>
+                </div>
+
+                <div class="settings-container">
+                    <div class="settings-section">
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <div class="setting-label">Username</div>
+                                <div class="setting-value" id="settingsUsername"></div>
+                            </div>
+                        </div>
+                        <button id="mobileLogoutButton" class="danger-button">Logout</button>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Pack Selection</h3>
+                        <div id="settingsPacksList" class="settings-packs"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
