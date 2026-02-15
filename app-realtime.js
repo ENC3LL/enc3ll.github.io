@@ -1,4 +1,32 @@
 // ============================================================================
+// LUCIDE ICONS INITIALIZATION
+// ============================================================================
+
+// Initialize Lucide icons on page load
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    console.log('✨ Lucide icons initialized');
+});
+
+// Re-initialize icons after any dynamic content changes
+const reinitIcons = () => {
+    setTimeout(() => {
+        lucide.createIcons();
+        console.log('🔄 Lucide icons refreshed');
+    }, 0);
+};
+
+// Add this observer to watch for DOM changes
+const observer = new MutationObserver(() => {
+    lucide.createIcons();
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+// ============================================================================
 // FIREBASE REALTIME DATABASE
 // ============================================================================
 
@@ -319,6 +347,7 @@ function showScreen(screenId) {
     if (targetScreen) {
         targetScreen.classList.add('active');
         console.log('Added active to:', screenId);
+        reinitIcons();
     } else {
         console.error('Screen not found:', screenId);
     }
@@ -332,10 +361,13 @@ function showView(viewId) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.view === viewId.replace('View', ''));
     });
+    
+    reinitIcons();
 }
 
 function showModal(modalId) {
     document.getElementById(modalId)?.classList.add('active');
+    reinitIcons();
 }
 
 function hideModal(modalId) {
@@ -365,6 +397,7 @@ async function selectPack(pack) {
     document.getElementById('currentPackName').textContent = pack.name;
     
     showCard();
+    reinitIcons();
 }
 
 function showCard() {
@@ -447,6 +480,7 @@ async function backToPacks() {
     document.getElementById('cardsContainer').style.display = 'none';
     state.currentPack = null;
     await renderPackSelection();
+    reinitIcons();
 }
 
 // ============================================================================
@@ -605,7 +639,9 @@ async function renderPackSelection() {
     
     const html = packs.map(pack => `
         <div class="pack-card" onclick="selectPackById('${pack.id}')">
-            <div class="pack-card-icon">📦</div>
+            <div class="pack-card-icon">
+                <i data-lucide="package"></i>
+            </div>
             <div class="pack-card-name">${pack.name}</div>
             <div class="pack-card-desc">${pack.description || ''}</div>
             <div class="pack-card-count">${pack.cards.length} cards</div>
@@ -614,6 +650,8 @@ async function renderPackSelection() {
     
     if (packsList) packsList.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary);">No packs available. Create one from desktop.</p>';
     if (settingsPacksList) settingsPacksList.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary);">No packs available.</p>';
+    
+    reinitIcons();
 }
 
 async function renderPacksManager() {
@@ -634,6 +672,7 @@ async function renderPacksManager() {
     `).join('');
     
     container.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary); padding: 40px;">No packs yet. Create your first pack!</p>';
+    reinitIcons();
 }
 
 async function renderRoadmap() {
@@ -647,6 +686,7 @@ async function renderRoadmap() {
                 <button class="primary-button desktop-only" onclick="showModal('roadmapEditorModal')" style="margin-top: 20px;">Create Roadmap</button>
             </div>
         `;
+        reinitIcons();
         return;
     }
     
@@ -678,6 +718,8 @@ async function renderRoadmap() {
             ${itemsHtml}
         </div>
     `;
+    
+    reinitIcons();
 }
 
 async function renderStats() {
@@ -763,7 +805,9 @@ function renderCardsEditor() {
         <div class="card-editor-item">
             <div class="card-editor-header">
                 <span class="card-editor-index">Card ${index + 1}</span>
-                <button class="delete-card-button" onclick="deleteEditorCard(${index})">✕</button>
+                <button class="delete-card-button" onclick="deleteEditorCard(${index})">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
             <div class="card-editor-fields">
                 <input type="text" placeholder="Category" value="${card.category || ''}" onchange="updateEditorCard(${index}, 'category', this.value)">
@@ -775,6 +819,7 @@ function renderCardsEditor() {
     `).join('');
     
     container.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary); padding: 20px;">No cards yet. Click "Add Card" to start.</p>';
+    reinitIcons();
 }
 
 function addEditorCard() {
@@ -1031,4 +1076,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 30000); // Every 30 seconds
     
     console.log('All event listeners initialized');
+    
+    // Final icons initialization
+    reinitIcons();
 });
