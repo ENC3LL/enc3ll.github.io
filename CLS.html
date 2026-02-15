@@ -6,12 +6,15 @@
     <title>Learn Cards - Smart Learning System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <!-- Login Screen -->
     <div id="loginScreen" class="screen active">
         <div class="login-container">
-            <div class="logo">📚</div>
+            <div class="logo">
+                <i data-lucide="graduation-cap"></i>
+            </div>
             <h1>Learn Cards</h1>
             <p class="subtitle">Smart Learning System</p>
             <div class="login-form">
@@ -28,7 +31,9 @@
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <div class="user-info">
-                    <div class="user-avatar">👤</div>
+                    <div class="user-avatar">
+                        <i data-lucide="user"></i>
+                    </div>
                     <div class="user-details">
                         <div class="user-name" id="sidebarUsername"></div>
                         <button id="logoutButton" class="text-button">Logout</button>
@@ -38,19 +43,19 @@
 
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-view="cards">
-                    <span class="nav-icon">🎴</span>
+                    <i data-lucide="layers" class="nav-icon"></i>
                     <span class="nav-label">Cards</span>
                 </button>
                 <button class="nav-item" data-view="packs">
-                    <span class="nav-icon">📦</span>
+                    <i data-lucide="package" class="nav-icon"></i>
                     <span class="nav-label">Packs Manager</span>
                 </button>
                 <button class="nav-item" data-view="roadmap">
-                    <span class="nav-icon">🗺️</span>
+                    <i data-lucide="map" class="nav-icon"></i>
                     <span class="nav-label">Roadmap</span>
                 </button>
                 <button class="nav-item" data-view="stats">
-                    <span class="nav-icon">📊</span>
+                    <i data-lucide="bar-chart-3" class="nav-icon"></i>
                     <span class="nav-label">Statistics</span>
                 </button>
             </nav>
@@ -72,19 +77,19 @@
         <!-- Mobile Bottom Nav -->
         <nav id="bottomNav" class="bottom-nav">
             <button class="nav-item active" data-view="cards">
-                <span class="nav-icon">🎴</span>
+                <i data-lucide="layers" class="nav-icon"></i>
                 <span class="nav-label">Cards</span>
             </button>
             <button class="nav-item" data-view="roadmap">
-                <span class="nav-icon">🗺️</span>
+                <i data-lucide="map" class="nav-icon"></i>
                 <span class="nav-label">Roadmap</span>
             </button>
             <button class="nav-item" data-view="stats">
-                <span class="nav-icon">📊</span>
+                <i data-lucide="bar-chart-3" class="nav-icon"></i>
                 <span class="nav-label">Stats</span>
             </button>
             <button class="nav-item" data-view="settings">
-                <span class="nav-icon">⚙️</span>
+                <i data-lucide="settings" class="nav-icon"></i>
                 <span class="nav-label">Settings</span>
             </button>
         </nav>
@@ -103,7 +108,8 @@
                 <div id="cardsContainer" class="cards-container" style="display: none;">
                     <div class="cards-header">
                         <button id="backToPacks" class="icon-button mobile-only">
-                            <span>← Back</span>
+                            <i data-lucide="arrow-left"></i>
+                            <span>Back</span>
                         </button>
                         <h2 id="currentPackName"></h2>
                         <div class="pack-progress">
@@ -122,14 +128,20 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="swipe-indicator left">👈</div>
-                        <div class="swipe-indicator right">👉</div>
+                        <div class="swipe-indicator left">
+                            <i data-lucide="chevron-left"></i>
+                        </div>
+                        <div class="swipe-indicator right">
+                            <i data-lucide="chevron-right"></i>
+                        </div>
                     </div>
 
                     <!-- Pack Complete Modal -->
                     <div id="packCompleteModal" class="modal">
                         <div class="modal-content">
-                            <div class="modal-icon">🎉</div>
+                            <div class="modal-icon">
+                                <i data-lucide="party-popper"></i>
+                            </div>
                             <h3>Pack Complete!</h3>
                             <p>You've reviewed all cards in this pack.</p>
                             <div class="modal-actions">
@@ -145,7 +157,10 @@
             <div id="packsView" class="view desktop-only">
                 <div class="view-header">
                     <h1>Packs Manager</h1>
-                    <button id="createPackButton" class="primary-button">+ Create Pack</button>
+                    <button id="createPackButton" class="primary-button">
+                        <i data-lucide="plus"></i>
+                        Create Pack
+                    </button>
                 </div>
 
                 <div class="packs-manager">
@@ -157,7 +172,9 @@
                     <div class="modal-content large">
                         <div class="modal-header">
                             <h3 id="packEditorTitle">Create Pack</h3>
-                            <button class="modal-close" id="closePackEditor">✕</button>
+                            <button class="modal-close" id="closePackEditor">
+                                <i data-lucide="x"></i>
+                            </button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
@@ -171,7 +188,10 @@
                             <div class="form-group">
                                 <label>Cards</label>
                                 <div id="cardsEditor" class="cards-editor"></div>
-                                <button id="addCardButton" class="secondary-button">+ Add Card</button>
+                                <button id="addCardButton" class="secondary-button">
+                                    <i data-lucide="plus"></i>
+                                    Add Card
+                                </button>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -186,7 +206,10 @@
             <div id="roadmapView" class="view">
                 <div class="view-header">
                     <h1>Learning Roadmap</h1>
-                    <button id="createRoadmapButton" class="primary-button desktop-only">+ Create Roadmap</button>
+                    <button id="createRoadmapButton" class="primary-button desktop-only">
+                        <i data-lucide="plus"></i>
+                        Create Roadmap
+                    </button>
                 </div>
 
                 <div class="roadmap-container">
@@ -198,7 +221,9 @@
                     <div class="modal-content large">
                         <div class="modal-header">
                             <h3>Create Roadmap</h3>
-                            <button class="modal-close" id="closeRoadmapEditor">✕</button>
+                            <button class="modal-close" id="closeRoadmapEditor">
+                                <i data-lucide="x"></i>
+                            </button>
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
@@ -227,7 +252,9 @@
                 <div class="stats-container">
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-icon">📚</div>
+                            <div class="stat-icon">
+                                <i data-lucide="book-open"></i>
+                            </div>
                             <div class="stat-info">
                                 <div class="stat-label">Total Cards Reviewed</div>
                                 <div class="stat-value large" id="totalCardsReviewed">0</div>
@@ -235,7 +262,9 @@
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon">⏱️</div>
+                            <div class="stat-icon">
+                                <i data-lucide="clock"></i>
+                            </div>
                             <div class="stat-info">
                                 <div class="stat-label">Total Time Spent</div>
                                 <div class="stat-value large" id="totalTimeSpent">0h 0m</div>
@@ -243,7 +272,9 @@
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon">🔥</div>
+                            <div class="stat-icon">
+                                <i data-lucide="flame"></i>
+                            </div>
                             <div class="stat-info">
                                 <div class="stat-label">Current Streak</div>
                                 <div class="stat-value large" id="currentStreak">0 days</div>
@@ -251,7 +282,9 @@
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon">🎯</div>
+                            <div class="stat-icon">
+                                <i data-lucide="target"></i>
+                            </div>
                             <div class="stat-info">
                                 <div class="stat-label">Today's Progress</div>
                                 <div class="stat-value large" id="todayProgress">0 cards</div>
@@ -294,10 +327,10 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
-    
-<!-- Замените Firebase скрипты на: -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script src="app-realtime.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+    <script src="app.js"></script>
 </body>
 </html>
