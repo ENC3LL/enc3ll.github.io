@@ -2,28 +2,34 @@
 // LUCIDE ICONS INITIALIZATION
 // ============================================================================
 
-// Initialize Lucide icons on page load
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    console.log('✨ Lucide icons initialized');
-});
-
-// Re-initialize icons after any dynamic content changes
+// Helper function to manually reinit icons when needed
 const reinitIcons = () => {
-    setTimeout(() => {
+    if (window.lucide) {
         lucide.createIcons();
-        console.log('🔄 Lucide icons refreshed');
-    }, 0);
+    }
 };
 
-// Add this observer to watch for DOM changes
-const observer = new MutationObserver(() => {
-    lucide.createIcons();
-});
-
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit for lucide to load
+    setTimeout(() => {
+        if (window.lucide) {
+            lucide.createIcons();
+            console.log('✨ Lucide icons initialized');
+            
+            // Watch for DOM changes and reinitialize icons
+            const observer = new MutationObserver(() => {
+                lucide.createIcons();
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        } else {
+            console.error('❌ Lucide not loaded');
+        }
+    }, 100);
 });
 
 // ============================================================================
