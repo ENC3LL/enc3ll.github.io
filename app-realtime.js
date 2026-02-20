@@ -12,13 +12,12 @@ const firebaseConfig = {
   appId: "1:778357247094:web:9430b43f53d729d7c4a357"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 console.log('🔥 Firebase Realtime Database initialized');
 
 // ============================================================================
-// STATE MANAGEMENT
+// STATE
 // ============================================================================
 
 const state = {
@@ -26,58 +25,40 @@ const state = {
     currentPack: null,
     currentCardIndex: 0,
     cardOrder: [],
-    startTime: null,
-    sessionTime: 0
+    startTime: null
 };
 
 // ============================================================================
-// STORAGE HELPERS (Firebase Realtime Database)
+// STORAGE HELPERS
 // ============================================================================
 
 async function getStorageKey(key, shared = false) {
     try {
-        const path = shared ? `shared/${key}` : `users/${key}`;
-        const snapshot = await database.ref(path).once('value');
-        return snapshot.val();
-    } catch (error) {
-        console.error('Get error:', error);
-        return null;
-    }
+        const snap = await database.ref((shared ? 'shared/' : 'users/') + key).once('value');
+        return snap.val();
+    } catch (e) { return null; }
 }
 
 async function setStorageKey(key, value, shared = false) {
     try {
-        const path = shared ? `shared/${key}` : `users/${key}`;
-        await database.ref(path).set(value);
-        console.log(`✅ Saved: ${path}`);
+        await database.ref((shared ? 'shared/' : 'users/') + key).set(value);
         return true;
-    } catch (error) {
-        console.error('Set error:', error);
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 async function deleteStorageKey(key, shared = false) {
     try {
-        const path = shared ? `shared/${key}` : `users/${key}`;
-        await database.ref(path).remove();
+        await database.ref((shared ? 'shared/' : 'users/') + key).remove();
         return true;
-    } catch (error) {
-        console.error('Delete error:', error);
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 async function listStorageKeys(prefix, shared = false) {
     try {
-        const path = shared ? 'shared' : 'users';
-        const snapshot = await database.ref(path).once('value');
-        const data = snapshot.val() || {};
+        const snap = await database.ref(shared ? 'shared' : 'users').once('value');
+        const data = snap.val() || {};
         return Object.keys(data).filter(k => k.startsWith(prefix));
-    } catch (error) {
-        console.error('List error:', error);
-        return [];
-    }
+    } catch (e) { return []; }
 }
 
 // ============================================================================
@@ -85,43 +66,29 @@ async function listStorageKeys(prefix, shared = false) {
 // ============================================================================
 
 async function loginUser(username) {
-    const trimmedUsername = username.trim();
-    if (!trimmedUsername) return false;
-    
+    const u = username.trim();
+    if (!u) return false;
     try {
-        let user = await getStorageKey(`user-${trimmedUsername}`);
-        
+        let user = await getStorageKey(`user-${u}`);
         if (!user) {
             user = {
-                username: trimmedUsername,
-                createdAt: Date.now(),
-                stats: {
-                    totalCards: 0,
-                    totalTime: 0,
-                    lastActive: Date.now(),
-                    streak: 0,
-                    dailyActivity: {}
-                }
+                username: u, createdAt: Date.now(),
+                stats: { totalCards: 0, totalTime: 0, lastActive: Date.now(), streak: 0, dailyActivity: {} }
             };
-            await setStorageKey(`user-${trimmedUsername}`, user);
         } else {
             user.stats.lastActive = Date.now();
-            await setStorageKey(`user-${trimmedUsername}`, user);
         }
-        
+        await setStorageKey(`user-${u}`, user);
         state.currentUser = user;
         return true;
-    } catch (error) {
-        console.error('Login error:', error);
-        alert('Error accessing storage. Please check browser settings and disable tracking prevention for this site.');
+    } catch (e) {
+        alert('Error accessing storage.');
         return false;
     }
 }
 
 async function logoutUser() {
-    if (state.currentUser) {
-        await saveUserStats();
-    }
+    if (state.currentUser) await saveUserStats();
     localStorage.removeItem('rememberedUsername');
     state.currentUser = null;
     showScreen('loginScreen');
@@ -129,54 +96,22 @@ async function logoutUser() {
 
 async function saveUserStats() {
     if (!state.currentUser) return;
-    
-    const today = new Date().toISOString().split('T')[0];
-    
-    if (!state.currentUser.stats.dailyActivity[today]) {
-        state.currentUser.stats.dailyActivity[today] = { cards: 0, time: 0 };
-    }
-    
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const hasYesterdayActivity = state.currentUser.stats.dailyActivity[yesterday];
-    const hasTodayActivity = state.currentUser.stats.dailyActivity[today].cards > 0;
-    
-    if (hasTodayActivity) {
-        if (hasYesterdayActivity || state.currentUser.stats.streak === 0) {
-            // continue
-        } else {
-            state.currentUser.stats.streak = 0;
-        }
-        state.currentUser.stats.streak = Math.max(state.currentUser.stats.streak, 1);
-    }
-    
     await setStorageKey(`user-${state.currentUser.username}`, state.currentUser);
 }
 
 async function updateUserActivity(cardsViewed, timeSpent) {
     if (!state.currentUser) return;
-    
     const today = new Date().toISOString().split('T')[0];
-    
-    if (!state.currentUser.stats.dailyActivity[today]) {
-        state.currentUser.stats.dailyActivity[today] = { cards: 0, time: 0 };
-    }
-    
-    state.currentUser.stats.dailyActivity[today].cards += cardsViewed;
-    state.currentUser.stats.dailyActivity[today].time += timeSpent;
+    const act = state.currentUser.stats.dailyActivity;
+    if (!act[today]) act[today] = { cards: 0, time: 0 };
+    act[today].cards += cardsViewed;
+    act[today].time  += timeSpent;
     state.currentUser.stats.totalCards += cardsViewed;
-    state.currentUser.stats.totalTime += timeSpent;
-    
+    state.currentUser.stats.totalTime  += timeSpent;
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    const hasYesterdayActivity = state.currentUser.stats.dailyActivity[yesterday];
-    
-    if (state.currentUser.stats.dailyActivity[today].cards === cardsViewed) {
-        if (hasYesterdayActivity) {
-            state.currentUser.stats.streak++;
-        } else {
-            state.currentUser.stats.streak = 1;
-        }
+    if (act[today].cards === cardsViewed) {
+        state.currentUser.stats.streak = act[yesterday] ? state.currentUser.stats.streak + 1 : 1;
     }
-    
     await saveUserStats();
     updateStatsDisplay();
 }
@@ -186,77 +121,56 @@ async function updateUserActivity(cardsViewed, timeSpent) {
 // ============================================================================
 
 async function getAllPacks() {
-    const packKeys = await listStorageKeys('pack-', true);
-    const packs = [];
-    
-    for (const key of packKeys) {
-        const pack = await getStorageKey(key, true);
-        if (pack) packs.push(pack);
-    }
-    
-    return packs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const keys = await listStorageKeys('pack-', true);
+    const packs = await Promise.all(keys.map(k => getStorageKey(k, true)));
+    return packs.filter(Boolean).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 async function createPack(name, description, cards) {
-    const packId = `pack-${Date.now()}`;
-    const pack = { id: packId, name, description, cards, createdAt: Date.now() };
-    await setStorageKey(packId, pack, true);
+    const id = `pack-${Date.now()}`;
+    const pack = { id, name, description, cards, createdAt: Date.now() };
+    await setStorageKey(id, pack, true);
     return pack;
 }
 
 async function updatePack(packId, name, description, cards) {
     const pack = await getStorageKey(packId, true);
     if (!pack) return false;
-    pack.name = name;
-    pack.description = description;
-    pack.cards = cards;
-    pack.updatedAt = Date.now();
+    Object.assign(pack, { name, description, cards, updatedAt: Date.now() });
     await setStorageKey(packId, pack, true);
     return true;
 }
 
 async function deletePack(packId) {
-    return await deleteStorageKey(packId, true);
+    return deleteStorageKey(packId, true);
 }
 
 async function loadDefaultPacks() {
     const packs = await getAllPacks();
     if (packs.length > 0) return;
-    
     try {
-        const response = await fetch('cards__1_.json');
-        const defaultCards = await response.json();
-        await createPack(
-            'C++ Complete Guide',
-            'Comprehensive C++ learning pack covering Move Semantics, Smart Pointers, Templates, and Threading',
-            defaultCards
-        );
-    } catch (error) {
-        console.log('No default cards file found, will create empty state');
-    }
+        const r = await fetch('cards__1_.json');
+        const defaultCards = await r.json();
+        await createPack('C++ Complete Guide', 'Comprehensive C++ learning pack', defaultCards);
+    } catch (e) { console.log('No default cards file'); }
 }
 
 // ============================================================================
-// ROADMAP MANAGEMENT
+// ROADMAP
 // ============================================================================
 
 async function getRoadmap() {
     if (!state.currentUser) return null;
-    return await getStorageKey(`roadmap-${state.currentUser.username}`);
+    return getStorageKey(`roadmap-${state.currentUser.username}`);
 }
 
 async function saveRoadmap(title, items) {
     if (!state.currentUser) return false;
-    const roadmap = {
+    await setStorageKey(`roadmap-${state.currentUser.username}`, {
         title,
-        items: items.map((text, index) => ({
-            id: `item-${Date.now()}-${index}`,
-            text,
-            completed: false
-        })),
+        items: items.map((text, i) => ({ id: `item-${Date.now()}-${i}`, text, completed: false })),
         createdAt: Date.now()
-    };
-    await setStorageKey(`roadmap-${state.currentUser.username}`, roadmap);
+    });
     return true;
 }
 
@@ -275,495 +189,435 @@ async function toggleRoadmapItem(itemId) {
 // UI HELPERS
 // ============================================================================
 
-function showScreen(screenId) {
+function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId)?.classList.add('active');
+    document.getElementById(id)?.classList.add('active');
 }
 
-function showView(viewId) {
+function showView(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(viewId)?.classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.view === viewId.replace('View', ''));
-    });
+    document.getElementById(id)?.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item =>
+        item.classList.toggle('active', item.dataset.view === id.replace('View', '')));
 }
 
-function showModal(modalId) {
-    document.getElementById(modalId)?.classList.add('active');
-}
-
-function hideModal(modalId) {
-    document.getElementById(modalId)?.classList.remove('active');
-}
+function showModal(id) { document.getElementById(id)?.classList.add('active'); }
+function hideModal(id) { document.getElementById(id)?.classList.remove('active'); }
 
 // ============================================================================
-// CARDS FUNCTIONALITY
+// VIRTUALIZED CARD FEED
 // ============================================================================
+// Only 3 slot elements exist in the DOM at any time:
+//   slots[0] = prev  (above viewport)
+//   slots[1] = curr  (in viewport)
+//   slots[2] = next  (below viewport)
+//
+// On navigation we shift the cyclic array and refill the recycled slot.
+// This keeps the DOM tiny regardless of pack size → no lag with 62+ cards.
 
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
+let slots = [];
+let isAnimating = false;
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [arr[i], arr[j]] = [arr[j], arr[i]];
     }
 }
 
-async function selectPack(pack) {
-    state.currentPack = pack;
-    state.currentCardIndex = 0;
-    state.cardOrder = Array.from({length: pack.cards.length}, (_, i) => i);
-    shuffleArray(state.cardOrder);
-    state.startTime = Date.now();
-    
-    document.getElementById('packSelection').style.display = 'none';
-    
-    const container = document.getElementById('cardsContainer');
-    container.style.display = 'flex';
-    document.getElementById('currentPackName').textContent = pack.name;
-    
-    // Lock body scroll while cards are open
-    document.body.classList.add('cards-open');
-    document.body.style.overflow = 'hidden';
-    
-    buildCardFeed();
-    goToCard(0, false);
+// ── Fill a slot with card data at cardIndex ─────────────────────────────────
+function fillSlot(slotEl, cardIndex) {
+    const inner = slotEl.querySelector('.card');
+    inner.innerHTML = '';
+    inner.scrollTop = 0;
+
+    if (cardIndex < 0 || cardIndex >= state.currentPack.cards.length) {
+        slotEl.dataset.cardIndex = -1;
+        return;
+    }
+
+    slotEl.dataset.cardIndex = cardIndex;
+    const data = state.currentPack.cards[state.cardOrder[cardIndex]];
+
+    if (data.category) {
+        const el = document.createElement('div');
+        el.className = 'card-category';
+        el.textContent = data.category;
+        inner.appendChild(el);
+    }
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'card-title';
+    titleEl.textContent = data.title || '';
+    inner.appendChild(titleEl);
+
+    if (data.theory) {
+        const el = document.createElement('div');
+        el.className = 'card-theory';
+        el.textContent = data.theory;
+        inner.appendChild(el);
+    }
+
+    if (data.code) {
+        const wrap = document.createElement('div');
+        wrap.className = 'card-code';
+        // touch-action: pan-x lets the browser handle horizontal scroll natively
+        // so it won't interfere with our vertical swipe gesture
+        wrap.style.touchAction = 'pan-x pinch-zoom';
+        const pre  = document.createElement('pre');
+        pre.style.touchAction = 'pan-x pinch-zoom';
+        const code = document.createElement('code');
+        code.className = 'language-cpp';
+        code.textContent = data.code;
+        pre.appendChild(code);
+        wrap.appendChild(pre);
+        inner.appendChild(wrap);
+        // Defer highlight so it doesn't block the transition frame
+        setTimeout(() => hljs.highlightElement(code), 0);
+    }
 }
 
-/**
- * Build the vertical feed DOM: one .card-slide per card
- */
-function buildCardFeed() {
+// ── Create 3 slot DOM elements ──────────────────────────────────────────────
+function buildSlots() {
     const stage = document.getElementById('cardStage');
-    let feed = document.getElementById('cardFeed');
-    
-    // Create feed wrapper if it doesn't exist
-    if (!feed) {
-        feed = document.createElement('div');
-        feed.id = 'cardFeed';
-        feed.className = 'card-feed';
-        stage.appendChild(feed);
-    }
-    feed.innerHTML = '';
-    
-    // Build progress dots
-    renderProgressDots();
-    
-    // Create one slide per card
-    state.cardOrder.forEach((cardIdx, slideIdx) => {
-        const cardData = state.currentPack.cards[cardIdx];
-        
-        const slide = document.createElement('div');
-        slide.className = 'card-slide';
-        slide.dataset.slideIndex = slideIdx;
-        
-        const cardEl = document.createElement('div');
-        cardEl.className = 'card-container';
-        
+    stage.querySelectorAll('.card-slot').forEach(s => s.remove());
+    slots = [];
+
+    for (let i = 0; i < 3; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'card-slot';
+        const container = document.createElement('div');
+        container.className = 'card-container';
         const inner = document.createElement('div');
         inner.className = 'card';
-        
-        // Category badge
-        if (cardData.category) {
-            const cat = document.createElement('div');
-            cat.className = 'card-category';
-            cat.textContent = cardData.category;
-            inner.appendChild(cat);
+        container.appendChild(inner);
+        slot.appendChild(container);
+        stage.appendChild(slot);
+        slots.push(slot);
+    }
+}
+
+// ── Set slot positions (no-animate or animate) ──────────────────────────────
+function setSlotPositions(animate) {
+    const h = document.getElementById('cardStage').clientHeight;
+    const offsets = [-h, 0, h];
+    slots.forEach((slot, i) => {
+        if (animate) {
+            slot.style.transition = 'transform 0.44s cubic-bezier(0.32, 0.72, 0, 1)';
+        } else {
+            slot.style.transition = 'none';
         }
-        
-        // Title
-        const title = document.createElement('div');
-        title.className = 'card-title';
-        title.textContent = cardData.title || '';
-        inner.appendChild(title);
-        
-        // Theory
-        if (cardData.theory) {
-            const theory = document.createElement('div');
-            theory.className = 'card-theory';
-            theory.textContent = cardData.theory;
-            inner.appendChild(theory);
-        }
-        
-        // Code block
-        if (cardData.code) {
-            const codeWrap = document.createElement('div');
-            codeWrap.className = 'card-code';
-            const pre = document.createElement('pre');
-            const code = document.createElement('code');
-            code.className = 'language-cpp';
-            code.textContent = cardData.code;
-            pre.appendChild(code);
-            codeWrap.appendChild(pre);
-            inner.appendChild(codeWrap);
-            // Highlight async to not block render
-            requestAnimationFrame(() => hljs.highlightElement(code));
-        }
-        
-        cardEl.appendChild(inner);
-        slide.appendChild(cardEl);
-        feed.appendChild(slide);
+        slot.style.transform = `translateY(${offsets[i]}px)`;
     });
 }
+
+// ── Called on pack open ──────────────────────────────────────────────────────
+function initCardFeed() {
+    buildSlots();
+    fillSlot(slots[0], state.currentCardIndex - 1);
+    fillSlot(slots[1], state.currentCardIndex);
+    fillSlot(slots[2], state.currentCardIndex + 1);
+    setSlotPositions(false);
+    updateCardCounter();
+    updateProgressDots(state.currentCardIndex);
+}
+
+// ── Move forward (+1) or backward (-1) ──────────────────────────────────────
+function navigateCard(direction) {
+    if (isAnimating) return;
+
+    const total = state.currentPack.cards.length;
+    const next  = state.currentCardIndex + direction;
+
+    if (next < 0) return;
+    if (next >= total) { showPackComplete(); return; }
+
+    isAnimating = true;
+    const h = document.getElementById('cardStage').clientHeight;
+
+    // Slide all 3 slots in the swipe direction
+    slots.forEach(slot => {
+        const cur = parseTranslateY(slot);
+        slot.style.transition = 'transform 0.44s cubic-bezier(0.32, 0.72, 0, 1)';
+        slot.style.transform  = `translateY(${cur - direction * h}px)`;
+    });
+
+    setTimeout(() => {
+        state.currentCardIndex = next;
+
+        if (direction === 1) {
+            // The slot that slid off the top (prev) → recycle as new next
+            const recycled = slots.shift();
+            recycled.style.transition = 'none';
+            recycled.style.transform  = `translateY(${h}px)`;
+            fillSlot(recycled, state.currentCardIndex + 1);
+            slots.push(recycled);
+        } else {
+            // The slot that slid off the bottom (next) → recycle as new prev
+            const recycled = slots.pop();
+            recycled.style.transition = 'none';
+            recycled.style.transform  = `translateY(${-h}px)`;
+            fillSlot(recycled, state.currentCardIndex - 1);
+            slots.unshift(recycled);
+        }
+
+        // Scroll active card to top
+        slots[1].querySelector('.card').scrollTop = 0;
+
+        updateCardCounter();
+        updateProgressDots(state.currentCardIndex);
+        isAnimating = false;
+    }, 450);
+}
+
+function parseTranslateY(el) {
+    const m = new DOMMatrix(getComputedStyle(el).transform);
+    return m.m42;
+}
+
+// ── Drag all slots interactively (rubber-band feel) ─────────────────────────
+function dragSlotsBy(deltaY) {
+    const h = document.getElementById('cardStage').clientHeight;
+    slots.forEach((slot, i) => {
+        const base = (i - 1) * h; // prev=-h, curr=0, next=+h
+        slot.style.transition = 'none';
+        slot.style.transform  = `translateY(${base + deltaY}px)`;
+    });
+}
+
+// ── Snap back with spring animation ─────────────────────────────────────────
+function snapBack() {
+    setSlotPositions(true);
+}
+
+// ============================================================================
+// PROGRESS & COUNTER
+// ============================================================================
 
 function renderProgressDots() {
     const stage = document.getElementById('cardStage');
-    
-    // Remove old dots
-    const oldDots = stage.querySelector('.card-progress-dots');
-    if (oldDots) oldDots.remove();
-    
+    stage.querySelectorAll('.card-progress-dots').forEach(e => e.remove());
     if (!state.currentPack) return;
-    
-    const totalCards = state.currentPack.cards.length;
-    // Only show dots if ≤ 30 cards (otherwise too many)
-    if (totalCards > 30) return;
-    
-    const dotsContainer = document.createElement('div');
-    dotsContainer.className = 'card-progress-dots';
-    
-    for (let i = 0; i < totalCards; i++) {
+    const total = state.currentPack.cards.length;
+    if (total > 40) return;
+
+    const container = document.createElement('div');
+    container.className = 'card-progress-dots';
+    for (let i = 0; i < total; i++) {
         const dot = document.createElement('div');
         dot.className = 'progress-dot';
         dot.dataset.dotIndex = i;
-        dotsContainer.appendChild(dot);
+        container.appendChild(dot);
     }
-    
-    stage.appendChild(dotsContainer);
+    stage.appendChild(container);
     updateProgressDots(0);
 }
 
-function updateProgressDots(activeIndex) {
-    const dots = document.querySelectorAll('.progress-dot');
-    dots.forEach((dot, i) => {
-        dot.classList.remove('active', 'passed');
-        if (i < activeIndex) dot.classList.add('passed');
-        else if (i === activeIndex) dot.classList.add('active');
+function updateProgressDots(active) {
+    document.querySelectorAll('.progress-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === active);
+        dot.classList.toggle('passed', i < active);
     });
 }
 
-/**
- * Animate the feed to the target card index
- */
-function goToCard(index, animate = true) {
-    if (!state.currentPack) return;
-    
-    const totalCards = state.currentPack.cards.length;
-    if (index >= totalCards) {
-        showPackComplete();
-        return;
-    }
-    
-    state.currentCardIndex = index;
-    
-    const feed = document.getElementById('cardFeed');
-    if (!feed) return;
-    
-    const slideHeight = document.getElementById('cardStage').clientHeight;
-    const targetY = -index * slideHeight;
-    
-    feed.style.transition = animate ? 'transform 0.42s cubic-bezier(0.32, 0.72, 0, 1)' : 'none';
-    feed.style.transform = `translateY(${targetY}px)`;
-    
-    // Update counter
-    const counter = document.getElementById('cardCounter');
-    if (counter) counter.textContent = `${index + 1}/${totalCards}`;
-    
-    updateProgressDots(index);
+function updateCardCounter() {
+    const el = document.getElementById('cardCounter');
+    if (el && state.currentPack)
+        el.textContent = `${state.currentCardIndex + 1}/${state.currentPack.cards.length}`;
 }
 
-async function nextCard() {
-    if (!state.currentPack) return;
-    
-    const timeSpent = Math.floor((Date.now() - state.startTime) / 1000);
-    await updateUserActivity(1, timeSpent);
-    state.startTime = Date.now();
-    
-    const newIndex = state.currentCardIndex + 1;
-    
-    if (newIndex >= state.currentPack.cards.length) {
-        showPackComplete();
-        return;
-    }
-    
-    goToCard(newIndex);
+// ============================================================================
+// PACK OPEN / CLOSE
+// ============================================================================
+
+async function selectPack(pack) {
+    state.currentPack    = pack;
+    state.currentCardIndex = 0;
+    state.cardOrder      = Array.from({ length: pack.cards.length }, (_, i) => i);
+    shuffleArray(state.cardOrder);
+    state.startTime      = Date.now();
+
+    document.getElementById('packSelection').style.display = 'none';
+    document.getElementById('desktopPacksList')?.closest('.desktop-pack-section') &&
+        (document.getElementById('desktopPacksList').closest('.desktop-pack-section').style.display = 'none');
+    document.getElementById('cardsContainer').style.display = 'flex';
+    document.getElementById('currentPackName').textContent  = pack.name;
+    document.body.classList.add('cards-open');
+
+    renderProgressDots();
+    initCardFeed();
 }
 
-async function prevCard() {
-    if (!state.currentPack) return;
-    if (state.currentCardIndex <= 0) return;
-    goToCard(state.currentCardIndex - 1);
+async function backToPacks() {
+    document.getElementById('packSelection').style.display = '';
+    const dp = document.getElementById('desktopPacksList')?.closest('.desktop-pack-section');
+    if (dp) dp.style.display = '';
+    document.getElementById('cardsContainer').style.display = 'none';
+    document.body.classList.remove('cards-open');
+    state.currentPack = null;
+    slots = [];
+    await renderPackSelection();
 }
 
-function showPackComplete() {
-    showModal('packCompleteModal');
-}
+function showPackComplete() { showModal('packCompleteModal'); }
 
 function restartPack() {
     hideModal('packCompleteModal');
     state.currentCardIndex = 0;
     shuffleArray(state.cardOrder);
     state.startTime = Date.now();
-    buildCardFeed();
-    goToCard(0, false);
+    renderProgressDots();
+    initCardFeed();
 }
 
-async function backToPacks() {
-    document.getElementById('packSelection').style.display = 'block';
-    document.getElementById('cardsContainer').style.display = 'none';
-    
-    // Restore body scroll
-    document.body.classList.remove('cards-open');
-    document.body.style.overflow = '';
-    
-    state.currentPack = null;
-    await renderPackSelection();
+async function nextCard() {
+    const timeSpent = Math.floor((Date.now() - state.startTime) / 1000);
+    await updateUserActivity(1, timeSpent);
+    state.startTime = Date.now();
+    navigateCard(1);
 }
+
+async function prevCard() { navigateCard(-1); }
 
 // ============================================================================
-// VERTICAL SWIPE FUNCTIONALITY
+// SWIPE / DRAG HANDLER
 // ============================================================================
 
-let swipeStartX = 0;
-let swipeStartY = 0;
-let swipeDeltaY = 0;
-let isSwipeDragging = false;
-let swipeAxisLocked = null; // 'vertical' | 'horizontal' | null
-let cardScrolledToTop = true;
+function initSwipe() {
+    const stage  = document.getElementById('cardStage');
+    const indTop = stage.querySelector('.swipe-indicator.top');
+    const indBot = stage.querySelector('.swipe-indicator.bottom');
 
-function getCardScrollEl() {
-    const feed = document.getElementById('cardFeed');
-    if (!feed) return null;
-    const slides = feed.querySelectorAll('.card-slide');
-    const slide = slides[state.currentCardIndex];
-    if (!slide) return null;
-    return slide.querySelector('.card');
-}
+    // ── helpers ──────────────────────────────────────────────────────────────
+    function setHints(dy) {
+        const abs = Math.abs(dy);
+        const str = Math.min(abs / 180, 1);
+        if (abs < 40) { hide(); return; }
+        if (dy < 0) { indBot && (indBot.style.opacity = str); indTop && (indTop.style.opacity = 0); }
+        else        { indTop && (indTop.style.opacity = str); indBot && (indBot.style.opacity = 0); }
+    }
+    function hide() { indTop && (indTop.style.opacity = 0); indBot && (indBot.style.opacity = 0); }
 
-function initializeSwipe() {
-    const stage = document.getElementById('cardStage');
-    const swipeTop = document.querySelector('.swipe-indicator.top');
-    const swipeBottom = document.querySelector('.swipe-indicator.bottom');
-    
-    // ── TOUCH ──────────────────────────────────────────────────────────────
-    stage.addEventListener('touchstart', (e) => {
-        swipeStartX = e.touches[0].clientX;
-        swipeStartY = e.touches[0].clientY;
-        swipeDeltaY = 0;
-        isSwipeDragging = true;
-        swipeAxisLocked = null;
-        
-        const feed = document.getElementById('cardFeed');
-        if (feed) feed.style.transition = 'none';
+    // Returns true if the touch/click target is inside a code block
+    // (so horizontal scroll there should be handled by the browser, not us)
+    function isCodeTarget(el) { return !!(el?.closest?.('.card-code')); }
+
+    // Returns true if the CURRENT card's own vertical scroll should consume this delta
+    function cardAbsorbs(dy) {
+        if (!slots[1]) return false;
+        const card = slots[1].querySelector('.card');
+        if (!card || card.scrollHeight <= card.clientHeight + 2) return false;
+        const atTop    = card.scrollTop <= 1;
+        const atBottom = card.scrollTop >= card.scrollHeight - card.clientHeight - 1;
+        if (dy < 0 && !atBottom) return true; // swiping up, card not at bottom
+        if (dy > 0 && !atTop)    return true; // swiping down, card not at top
+        return false;
+    }
+
+    const THRESHOLD = 88; // px needed to trigger navigation
+
+    // ── TOUCH ─────────────────────────────────────────────────────────────────
+    let tSX = 0, tSY = 0, tDY = 0, tActive = false, tAxis = null;
+
+    stage.addEventListener('touchstart', e => {
+        tSX = e.touches[0].clientX;
+        tSY = e.touches[0].clientY;
+        tDY = 0; tActive = true; tAxis = null;
     }, { passive: true });
-    
-    stage.addEventListener('touchmove', (e) => {
-        if (!isSwipeDragging) return;
-        
-        const dx = e.touches[0].clientX - swipeStartX;
-        const dy = e.touches[0].clientY - swipeStartY;
-        
-        // Lock axis on first significant move
-        if (!swipeAxisLocked) {
-            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
-                swipeAxisLocked = 'vertical';
-            } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
-                swipeAxisLocked = 'horizontal';
-            } else {
-                return;
-            }
+
+    stage.addEventListener('touchmove', e => {
+        if (!tActive) return;
+        const dx = e.touches[0].clientX - tSX;
+        const dy = e.touches[0].clientY - tSY;
+
+        // Determine axis on first notable movement
+        if (!tAxis) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) tAxis = 'v';
+            else if (Math.abs(dx) > 8) { tAxis = 'h'; }
+            else return;
         }
-        
-        // If horizontal, bail out (don't interfere)
-        if (swipeAxisLocked === 'horizontal') return;
-        
-        // Check if the inner card is scrollable and not at top/bottom
-        const cardEl = getCardScrollEl();
-        if (cardEl) {
-            const atTop = cardEl.scrollTop <= 0;
-            const atBottom = cardEl.scrollTop >= cardEl.scrollHeight - cardEl.clientHeight - 2;
-            
-            // Allow internal scroll when card content is longer than viewport
-            if (cardEl.scrollHeight > cardEl.clientHeight) {
-                // Only intercept if at the edges
-                if (dy < 0 && !atBottom) return; // scrolling down inside card
-                if (dy > 0 && !atTop) return;     // scrolling up inside card
-            }
-        }
-        
+
+        // Horizontal intent → let browser handle (code block panning etc.)
+        if (tAxis === 'h') return;
+
+        // Vertical: if inside a code block, let the browser handle panning
+        if (isCodeTarget(e.target)) return;
+
+        // If the card itself can still scroll in this direction, let it
+        if (cardAbsorbs(dy)) return;
+
+        // We own this gesture
         e.preventDefault();
-        swipeDeltaY = dy;
-        
-        const stage = document.getElementById('cardStage');
-        const slideHeight = stage.clientHeight;
-        const baseY = -state.currentCardIndex * slideHeight;
-        const resistance = 0.35; // rubber-band effect
-        const dragY = swipeDeltaY * resistance;
-        
-        const feed = document.getElementById('cardFeed');
-        if (feed) feed.style.transform = `translateY(${baseY + dragY}px)`;
-        
-        // Show swipe hints
-        const threshold = 40;
-        if (swipeDeltaY < -threshold) {
-            if (swipeBottom) swipeBottom.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
-            if (swipeTop) swipeTop.style.opacity = 0;
-        } else if (swipeDeltaY > threshold) {
-            if (swipeTop) swipeTop.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
-            if (swipeBottom) swipeBottom.style.opacity = 0;
-        } else {
-            if (swipeTop) swipeTop.style.opacity = 0;
-            if (swipeBottom) swipeBottom.style.opacity = 0;
-        }
+        tDY = dy;
+        dragSlotsBy(tDY * 0.38);
+        setHints(tDY);
     }, { passive: false });
-    
+
     stage.addEventListener('touchend', () => {
-        if (!isSwipeDragging) return;
-        isSwipeDragging = false;
-        swipeAxisLocked = null;
-        if (swipeTop) swipeTop.style.opacity = 0;
-        if (swipeBottom) swipeBottom.style.opacity = 0;
-        
-        const threshold = 80;
-        if (swipeDeltaY < -threshold) {
-            nextCard();
-        } else if (swipeDeltaY > threshold) {
-            prevCard();
-        } else {
-            // Snap back
-            goToCard(state.currentCardIndex, true);
-        }
-        swipeDeltaY = 0;
+        if (!tActive) return;
+        tActive = false; tAxis = null; hide();
+        if      (tDY < -THRESHOLD) nextCard();
+        else if (tDY >  THRESHOLD) prevCard();
+        else snapBack();
+        tDY = 0;
     });
-    
-    // ── MOUSE ──────────────────────────────────────────────────────────────
-    stage.addEventListener('mousedown', (e) => {
-        // Don't start swipe if clicking inside a scrollable card
-        const cardEl = getCardScrollEl();
-        if (cardEl && cardEl.scrollHeight > cardEl.clientHeight) {
-            // Allow scrolling inside card
-        }
-        
-        swipeStartX = e.clientX;
-        swipeStartY = e.clientY;
-        swipeDeltaY = 0;
-        isSwipeDragging = true;
-        swipeAxisLocked = null;
-        
-        const feed = document.getElementById('cardFeed');
-        if (feed) feed.style.transition = 'none';
+
+    // ── MOUSE ─────────────────────────────────────────────────────────────────
+    let mSX = 0, mSY = 0, mDY = 0, mActive = false, mAxis = null;
+
+    stage.addEventListener('mousedown', e => {
+        if (isCodeTarget(e.target)) return;
+        mSX = e.clientX; mSY = e.clientY;
+        mDY = 0; mActive = true; mAxis = null;
         e.preventDefault();
     });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isSwipeDragging) return;
-        
-        const dx = e.clientX - swipeStartX;
-        const dy = e.clientY - swipeStartY;
-        
-        if (!swipeAxisLocked) {
-            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 5) {
-                swipeAxisLocked = 'vertical';
-            } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
-                swipeAxisLocked = 'horizontal';
-                isSwipeDragging = false;
-                return;
-            } else {
-                return;
-            }
+
+    document.addEventListener('mousemove', e => {
+        if (!mActive) return;
+        const dx = e.clientX - mSX, dy = e.clientY - mSY;
+        if (!mAxis) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 5) mAxis = 'v';
+            else if (Math.abs(dx) > 5) { mAxis = 'h'; mActive = false; return; }
+            else return;
         }
-        
-        if (swipeAxisLocked !== 'vertical') return;
-        
-        swipeDeltaY = dy;
-        
-        const stageEl = document.getElementById('cardStage');
-        const slideHeight = stageEl.clientHeight;
-        const baseY = -state.currentCardIndex * slideHeight;
-        const resistance = 0.35;
-        const dragY = swipeDeltaY * resistance;
-        
-        const feed = document.getElementById('cardFeed');
-        if (feed) feed.style.transform = `translateY(${baseY + dragY}px)`;
-        
-        const threshold = 40;
-        if (swipeDeltaY < -threshold) {
-            if (swipeBottom) swipeBottom.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
-            if (swipeTop) swipeTop.style.opacity = 0;
-        } else if (swipeDeltaY > threshold) {
-            if (swipeTop) swipeTop.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
-            if (swipeBottom) swipeBottom.style.opacity = 0;
-        } else {
-            if (swipeTop) swipeTop.style.opacity = 0;
-            if (swipeBottom) swipeBottom.style.opacity = 0;
-        }
+        if (mAxis !== 'v') return;
+        if (cardAbsorbs(dy)) return;
+        mDY = dy;
+        dragSlotsBy(mDY * 0.38);
+        setHints(mDY);
     });
-    
+
     document.addEventListener('mouseup', () => {
-        if (!isSwipeDragging) return;
-        isSwipeDragging = false;
-        swipeAxisLocked = null;
-        if (swipeTop) swipeTop.style.opacity = 0;
-        if (swipeBottom) swipeBottom.style.opacity = 0;
-        
-        const threshold = 80;
-        if (swipeDeltaY < -threshold) {
-            nextCard();
-        } else if (swipeDeltaY > threshold) {
-            prevCard();
-        } else {
-            goToCard(state.currentCardIndex, true);
-        }
-        swipeDeltaY = 0;
+        if (!mActive) return;
+        mActive = false; mAxis = null; hide();
+        if      (mDY < -THRESHOLD) nextCard();
+        else if (mDY >  THRESHOLD) prevCard();
+        else snapBack();
+        mDY = 0;
     });
-    
-    // ── KEYBOARD ────────────────────────────────────────────────────────────
-    document.addEventListener('keydown', (e) => {
-        // Only handle when cards are open
+
+    // ── KEYBOARD ──────────────────────────────────────────────────────────────
+    document.addEventListener('keydown', e => {
         if (!state.currentPack) return;
-        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            nextCard();
-        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-            e.preventDefault();
-            prevCard();
-        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); nextCard(); }
+        if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  { e.preventDefault(); prevCard(); }
     });
-    
-    // ── MOUSE WHEEL ─────────────────────────────────────────────────────────
-    // Debounced wheel handler so one scroll = one card
-    let wheelTimeout = null;
-    let wheelAccum = 0;
-    stage.addEventListener('wheel', (e) => {
-        if (!state.currentPack) return;
-        
-        // Check if internal card content is scrollable and not at edge
-        const cardEl = getCardScrollEl();
-        if (cardEl && cardEl.scrollHeight > cardEl.clientHeight) {
-            const atTop = cardEl.scrollTop <= 0;
-            const atBottom = cardEl.scrollTop >= cardEl.scrollHeight - cardEl.clientHeight - 2;
-            if ((e.deltaY > 0 && !atBottom) || (e.deltaY < 0 && !atTop)) {
-                return; // Let card scroll internally
-            }
-        }
-        
+
+    // ── WHEEL ─────────────────────────────────────────────────────────────────
+    let wheelLocked = false;
+    stage.addEventListener('wheel', e => {
+        if (!state.currentPack || isAnimating || wheelLocked) return;
+        if (cardAbsorbs(e.deltaY)) return;
         e.preventDefault();
-        wheelAccum += e.deltaY;
-        
-        clearTimeout(wheelTimeout);
-        wheelTimeout = setTimeout(() => {
-            if (wheelAccum > 30) {
-                nextCard();
-            } else if (wheelAccum < -30) {
-                prevCard();
-            }
-            wheelAccum = 0;
-        }, 50);
+        wheelLocked = true;
+        if      (e.deltaY >  30) nextCard();
+        else if (e.deltaY < -30) prevCard();
+        setTimeout(() => { wheelLocked = false; }, 520);
     }, { passive: false });
-    
-    // Re-calculate positions on resize
+
+    // ── RESIZE ────────────────────────────────────────────────────────────────
     window.addEventListener('resize', () => {
-        if (state.currentPack) {
-            goToCard(state.currentCardIndex, false);
-        }
+        if (state.currentPack && slots.length) setSlotPositions(false);
     });
 }
 
@@ -772,10 +626,7 @@ function initializeSwipe() {
 // ============================================================================
 
 async function renderPackSelection() {
-    const packsList = document.getElementById('packsList');
-    const settingsPacksList = document.getElementById('settingsPacksList');
     const packs = await getAllPacks();
-    
     const html = packs.map(pack => `
         <div class="pack-card" onclick="selectPackById('${pack.id}')">
             <div class="pack-card-icon">
@@ -788,140 +639,105 @@ async function renderPackSelection() {
             <div class="pack-card-name">${pack.name}</div>
             <div class="pack-card-desc">${pack.description || ''}</div>
             <div class="pack-card-count">${pack.cards.length} cards</div>
-        </div>
-    `).join('');
-    
-    if (packsList) packsList.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary);">No packs available. Create one from desktop.</p>';
-    if (settingsPacksList) settingsPacksList.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary);">No packs available.</p>';
+        </div>`).join('');
+    const fallback = '<p style="text-align:center;color:var(--text-tertiary)">No packs available.</p>';
+    ['packsList', 'desktopPacksList', 'settingsPacksList'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html || fallback;
+    });
 }
 
 async function renderPacksManager() {
     const container = document.getElementById('packsManagerList');
+    if (!container) return;
     const packs = await getAllPacks();
-    
-    const html = packs.map(pack => `
+    container.innerHTML = packs.map(pack => `
         <div class="pack-manager-item">
             <div class="pack-manager-info">
                 <div class="pack-manager-name">${pack.name}</div>
-                <div class="pack-manager-meta">${pack.cards.length} cards • Created ${new Date(pack.createdAt).toLocaleDateString()}</div>
+                <div class="pack-manager-meta">${pack.cards.length} cards · ${new Date(pack.createdAt).toLocaleDateString()}</div>
             </div>
             <div class="pack-manager-actions">
                 <button class="secondary-button" onclick="editPack('${pack.id}')">Edit</button>
                 <button class="secondary-button" onclick="deletePack('${pack.id}')">Delete</button>
             </div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary); padding: 40px;">No packs yet. Create your first pack!</p>';
+        </div>`).join('') || '<p style="text-align:center;color:var(--text-tertiary);padding:40px">No packs yet.</p>';
 }
 
 async function renderRoadmap() {
     const container = document.getElementById('roadmapContent');
+    if (!container) return;
     const roadmap = await getRoadmap();
-    
     if (!roadmap) {
-        container.innerHTML = `
-            <div class="roadmap-empty">
-                <p>No roadmap created yet.</p>
-                <button class="primary-button desktop-only" onclick="showModal('roadmapEditorModal')" style="margin-top: 20px;">Create Roadmap</button>
-            </div>
-        `;
+        container.innerHTML = `<div class="roadmap-empty"><p>No roadmap created yet.</p>
+            <button class="primary-button" onclick="showModal('roadmapEditorModal')" style="margin-top:20px">Create Roadmap</button></div>`;
         return;
     }
-    
-    const completedCount = roadmap.items.filter(i => i.completed).length;
-    const progress = (completedCount / roadmap.items.length) * 100;
-    
-    const itemsHtml = roadmap.items.map((item) => `
-        <div class="roadmap-item">
-            <div class="roadmap-dot ${item.completed ? 'completed' : ''}" onclick="toggleRoadmapItem('${item.id}')"></div>
-            <div class="roadmap-item-content ${item.completed ? 'completed' : ''}" onclick="toggleRoadmapItem('${item.id}')">
-                <div class="roadmap-item-title">${item.text}</div>
-            </div>
-        </div>
-    `).join('');
-    
-    const fillHeight = roadmap.items.length > 0 ? (completedCount / roadmap.items.length) * 100 : 0;
-    
+    const done = roadmap.items.filter(i => i.completed).length;
+    const pct  = roadmap.items.length ? (done / roadmap.items.length) * 100 : 0;
     container.innerHTML = `
         <div class="roadmap-header">
             <h2 class="roadmap-title">${roadmap.title}</h2>
-            <div class="roadmap-progress-bar">
-                <div class="roadmap-progress-fill" style="width: ${progress}%"></div>
-            </div>
+            <div class="roadmap-progress-bar"><div class="roadmap-progress-fill" style="width:${pct}%"></div></div>
         </div>
         <div class="roadmap-items">
-            <div class="roadmap-line">
-                <div class="roadmap-line-fill" style="height: ${fillHeight}%"></div>
-            </div>
-            ${itemsHtml}
-        </div>
-    `;
+            <div class="roadmap-line"><div class="roadmap-line-fill" style="height:${pct}%"></div></div>
+            ${roadmap.items.map(item => `
+                <div class="roadmap-item">
+                    <div class="roadmap-dot ${item.completed ? 'completed' : ''}" onclick="toggleRoadmapItem('${item.id}')"></div>
+                    <div class="roadmap-item-content ${item.completed ? 'completed' : ''}" onclick="toggleRoadmapItem('${item.id}')">
+                        <div class="roadmap-item-title">${item.text}</div>
+                    </div>
+                </div>`).join('')}
+        </div>`;
 }
 
 async function renderStats() {
     if (!state.currentUser) return;
-    
-    const stats = state.currentUser.stats;
+    const s    = state.currentUser.stats;
     const today = new Date().toISOString().split('T')[0];
-    const todayStats = stats.dailyActivity[today] || { cards: 0, time: 0 };
-    
-    document.getElementById('totalCardsReviewed').textContent = stats.totalCards;
-    
-    const hours = Math.floor(stats.totalTime / 3600);
-    const minutes = Math.floor((stats.totalTime % 3600) / 60);
-    document.getElementById('totalTimeSpent').textContent = `${hours}h ${minutes}m`;
-    
-    document.getElementById('currentStreak').textContent = `${stats.streak} days`;
-    document.getElementById('todayProgress').textContent = `${todayStats.cards} cards`;
-    
-    const activityGrid = document.getElementById('activityGrid');
-    const days = [];
-    
-    for (let i = 83; i >= 0; i--) {
-        const date = new Date(Date.now() - i * 86400000).toISOString().split('T')[0];
-        const dayStats = stats.dailyActivity[date];
-        const level = dayStats ? Math.min(Math.floor(dayStats.cards / 5) + 1, 4) : 0;
-        days.push(`<div class="activity-day ${level > 0 ? `active-${level}` : ''}" title="${date}"></div>`);
+    const td   = s.dailyActivity[today] || { cards: 0, time: 0 };
+    document.getElementById('totalCardsReviewed').textContent = s.totalCards;
+    document.getElementById('totalTimeSpent').textContent = `${Math.floor(s.totalTime/3600)}h ${Math.floor((s.totalTime%3600)/60)}m`;
+    document.getElementById('currentStreak').textContent = `${s.streak} days`;
+    document.getElementById('todayProgress').textContent = `${td.cards} cards`;
+    const grid = document.getElementById('activityGrid');
+    if (grid) {
+        grid.innerHTML = Array.from({ length: 84 }, (_, i) => {
+            const date = new Date(Date.now() - (83 - i) * 86400000).toISOString().split('T')[0];
+            const lvl  = s.dailyActivity[date] ? Math.min(Math.floor(s.dailyActivity[date].cards/5)+1, 4) : 0;
+            return `<div class="activity-day ${lvl?`active-${lvl}`:''}" title="${date}"></div>`;
+        }).join('');
     }
-    
-    activityGrid.innerHTML = days.join('');
 }
 
 function updateStatsDisplay() {
     if (!state.currentUser) return;
-    
     const today = new Date().toISOString().split('T')[0];
-    const todayStats = state.currentUser.stats.dailyActivity[today] || { cards: 0, time: 0 };
-    
-    const todayCardsEl = document.getElementById('todayCards');
-    if (todayCardsEl) todayCardsEl.textContent = todayStats.cards.toString();
-    
-    const minutes = Math.floor(todayStats.time / 60);
-    const todayTimeEl = document.getElementById('todayTime');
-    if (todayTimeEl) todayTimeEl.textContent = `${minutes}m`;
+    const td = state.currentUser.stats.dailyActivity[today] || { cards: 0, time: 0 };
+    const tc = document.getElementById('todayCards');
+    const tt = document.getElementById('todayTime');
+    if (tc) tc.textContent = td.cards;
+    if (tt) tt.textContent = `${Math.floor(td.time/60)}m`;
 }
 
 // ============================================================================
 // PACK EDITOR
 // ============================================================================
 
-let editingPackId = null;
-let editorCards = [];
+let editingPackId = null, editorCards = [];
 
 function openPackEditor(packId = null) {
     editingPackId = packId;
     editorCards = [];
-    
     if (packId) {
         getStorageKey(packId, true).then(pack => {
-            if (pack) {
-                document.getElementById('packNameInput').value = pack.name;
-                document.getElementById('packDescInput').value = pack.description || '';
-                editorCards = [...pack.cards];
-                document.getElementById('packEditorTitle').textContent = 'Edit Pack';
-                renderCardsEditor();
-            }
+            if (!pack) return;
+            document.getElementById('packNameInput').value = pack.name;
+            document.getElementById('packDescInput').value = pack.description || '';
+            editorCards = [...pack.cards];
+            document.getElementById('packEditorTitle').textContent = 'Edit Pack';
+            renderCardsEditor();
         });
     } else {
         document.getElementById('packNameInput').value = '';
@@ -929,65 +745,43 @@ function openPackEditor(packId = null) {
         document.getElementById('packEditorTitle').textContent = 'Create Pack';
         renderCardsEditor();
     }
-    
     showModal('packEditorModal');
 }
 
 function renderCardsEditor() {
-    const container = document.getElementById('cardsEditor');
-    
-    const html = editorCards.map((card, index) => `
+    document.getElementById('cardsEditor').innerHTML = editorCards.map((card, i) => `
         <div class="card-editor-item">
             <div class="card-editor-header">
-                <span class="card-editor-index">Card ${index + 1}</span>
-                <button class="delete-card-button" onclick="deleteEditorCard(${index})">✕</button>
+                <span class="card-editor-index">Card ${i + 1}</span>
+                <button class="delete-card-button" onclick="deleteEditorCard(${i})">✕</button>
             </div>
             <div class="card-editor-fields">
-                <input type="text" placeholder="Category" value="${card.category || ''}" onchange="updateEditorCard(${index}, 'category', this.value)">
-                <input type="text" placeholder="Title" value="${card.title || ''}" onchange="updateEditorCard(${index}, 'title', this.value)">
-                <textarea placeholder="Theory" rows="3" onchange="updateEditorCard(${index}, 'theory', this.value)">${card.theory || ''}</textarea>
-                <textarea placeholder="Code (optional)" rows="4" onchange="updateEditorCard(${index}, 'code', this.value)">${card.code || ''}</textarea>
+                <input  type="text" placeholder="Category" value="${card.category||''}" onchange="updateEditorCard(${i},'category',this.value)">
+                <input  type="text" placeholder="Title"    value="${card.title   ||''}" onchange="updateEditorCard(${i},'title',this.value)">
+                <textarea placeholder="Theory"      rows="3" onchange="updateEditorCard(${i},'theory',this.value)">${card.theory||''}</textarea>
+                <textarea placeholder="Code (opt.)" rows="4" onchange="updateEditorCard(${i},'code',this.value)">${card.code  ||''}</textarea>
             </div>
-        </div>
-    `).join('');
-    
-    container.innerHTML = html || '<p style="text-align: center; color: var(--text-tertiary); padding: 20px;">No cards yet. Click "Add Card" to start.</p>';
+        </div>`).join('') || '<p style="text-align:center;color:var(--text-tertiary);padding:20px">No cards yet.</p>';
 }
 
-function addEditorCard() {
-    editorCards.push({ category: '', title: '', theory: '', code: '' });
-    renderCardsEditor();
-}
-
-function deleteEditorCard(index) {
-    editorCards.splice(index, 1);
-    renderCardsEditor();
-}
-
-function updateEditorCard(index, field, value) {
-    editorCards[index][field] = value;
-}
+function addEditorCard()           { editorCards.push({category:'',title:'',theory:'',code:''}); renderCardsEditor(); }
+function deleteEditorCard(i)       { editorCards.splice(i,1); renderCardsEditor(); }
+function updateEditorCard(i,f,v)   { editorCards[i][f]=v; }
 
 async function savePackFromEditor() {
     const name = document.getElementById('packNameInput').value.trim();
-    const description = document.getElementById('packDescInput').value.trim();
-    
-    if (!name) { alert('Please enter a pack name'); return; }
-    if (editorCards.length === 0) { alert('Please add at least one card'); return; }
-    
-    if (editingPackId) {
-        await updatePack(editingPackId, name, description, editorCards);
-    } else {
-        await createPack(name, description, editorCards);
-    }
-    
+    const desc = document.getElementById('packDescInput').value.trim();
+    if (!name)               { alert('Please enter a pack name'); return; }
+    if (!editorCards.length) { alert('Please add at least one card'); return; }
+    if (editingPackId) await updatePack(editingPackId, name, desc, editorCards);
+    else               await createPack(name, desc, editorCards);
     hideModal('packEditorModal');
     await renderPacksManager();
     await renderPackSelection();
 }
 
 async function deletePackPrompt(packId) {
-    if (confirm('Are you sure you want to delete this pack? This cannot be undone.')) {
+    if (confirm('Delete this pack? This cannot be undone.')) {
         await deletePack(packId);
         await renderPacksManager();
         await renderPackSelection();
@@ -1000,156 +794,111 @@ async function deletePackPrompt(packId) {
 
 async function saveRoadmapFromEditor() {
     const title = document.getElementById('roadmapTitleInput').value.trim();
-    const itemsText = document.getElementById('roadmapItemsInput').value.trim();
-    
-    if (!title) { alert('Please enter a roadmap title'); return; }
-    if (!itemsText) { alert('Please enter at least one milestone'); return; }
-    
-    const items = itemsText
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => line.replace(/^\d+\.\s*/, ''));
-    
+    const text  = document.getElementById('roadmapItemsInput').value.trim();
+    if (!title) { alert('Please enter a title'); return; }
+    if (!text)  { alert('Please enter at least one milestone'); return; }
+    const items = text.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.replace(/^\d+\.\s*/,''));
     await saveRoadmap(title, items);
     hideModal('roadmapEditorModal');
     await renderRoadmap();
 }
 
 // ============================================================================
-// GLOBAL FUNCTIONS (for onclick handlers)
+// GLOBAL BINDINGS
 // ============================================================================
 
-window.selectPackById = async function(packId) {
-    const pack = await getStorageKey(packId, true);
-    if (pack) await selectPack(pack);
-};
-
-window.editPack = openPackEditor;
-window.deletePack = deletePackPrompt;
-window.addEditorCard = addEditorCard;
+window.selectPackById   = async id => { const p = await getStorageKey(id,true); if(p) await selectPack(p); };
+window.editPack         = openPackEditor;
+window.deletePack       = deletePackPrompt;
+window.addEditorCard    = addEditorCard;
 window.deleteEditorCard = deleteEditorCard;
 window.updateEditorCard = updateEditorCard;
-window.toggleRoadmapItem = toggleRoadmapItem;
+window.toggleRoadmapItem= toggleRoadmapItem;
+window.showModal        = showModal;
 
 // ============================================================================
-// INITIALIZATION
+// INIT
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM Content Loaded');
-    console.log('🔥 Using Firebase Realtime Database for sync');
-    
+    console.log('🚀 Init');
+
     await loadDefaultPacks();
-    
-    // Check for remembered user
-    const rememberedUser = localStorage.getItem('rememberedUsername');
-    if (rememberedUser) {
-        document.getElementById('usernameInput').value = rememberedUser;
-        const success = await loginUser(rememberedUser);
-        if (success) {
+
+    // Auto-login
+    const saved = localStorage.getItem('rememberedUsername');
+    if (saved) {
+        document.getElementById('usernameInput').value = saved;
+        if (await loginUser(saved)) {
             showScreen('mainApp');
-            const sidebarUsername = document.getElementById('sidebarUsername');
-            const settingsUsername = document.getElementById('settingsUsername');
-            if (sidebarUsername) sidebarUsername.textContent = state.currentUser.username;
-            if (settingsUsername) settingsUsername.textContent = state.currentUser.username;
+            if (document.getElementById('sidebarUsername'))
+                document.getElementById('sidebarUsername').textContent = state.currentUser.username;
+            if (document.getElementById('settingsUsername'))
+                document.getElementById('settingsUsername').textContent = state.currentUser.username;
             updateStatsDisplay();
             await renderPackSelection();
             await renderStats();
         }
     }
-    
-    // Login button
-    const loginButton = document.getElementById('loginButton');
-    if (!loginButton) { console.error('Login button not found!'); return; }
-    
-    loginButton.addEventListener('click', async () => {
-        const username = document.getElementById('usernameInput').value;
-        const success = await loginUser(username);
-        if (success) {
-            localStorage.setItem('rememberedUsername', username);
+
+    // Login
+    const loginBtn = document.getElementById('loginButton');
+    loginBtn?.addEventListener('click', async () => {
+        const u = document.getElementById('usernameInput').value;
+        if (await loginUser(u)) {
+            localStorage.setItem('rememberedUsername', u);
             showScreen('mainApp');
-            const sidebarUsername = document.getElementById('sidebarUsername');
-            const settingsUsername = document.getElementById('settingsUsername');
-            if (sidebarUsername) sidebarUsername.textContent = state.currentUser.username;
-            if (settingsUsername) settingsUsername.textContent = state.currentUser.username;
+            if (document.getElementById('sidebarUsername'))
+                document.getElementById('sidebarUsername').textContent = state.currentUser.username;
+            if (document.getElementById('settingsUsername'))
+                document.getElementById('settingsUsername').textContent = state.currentUser.username;
             updateStatsDisplay();
             await renderPackSelection();
             await renderStats();
-        } else {
-            alert('Please enter a username');
-        }
+        } else { alert('Please enter a username'); }
     });
-    
-    const usernameInput = document.getElementById('usernameInput');
-    if (usernameInput) {
-        usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') loginButton.click();
-        });
-    }
-    
+    document.getElementById('usernameInput')?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') loginBtn?.click();
+    });
+
     // Logout
-    const logoutButton = document.getElementById('logoutButton');
-    const mobileLogoutButton = document.getElementById('mobileLogoutButton');
-    if (logoutButton) logoutButton.addEventListener('click', logoutUser);
-    if (mobileLogoutButton) mobileLogoutButton.addEventListener('click', logoutUser);
-    
+    document.getElementById('logoutButton')?.addEventListener('click', logoutUser);
+    document.getElementById('mobileLogoutButton')?.addEventListener('click', logoutUser);
+
     // Navigation
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', async () => {
             const view = item.dataset.view;
             showView(view + 'View');
-            if (view === 'packs') await renderPacksManager();
+            if (view === 'packs')   await renderPacksManager();
             if (view === 'roadmap') await renderRoadmap();
-            if (view === 'stats') await renderStats();
+            if (view === 'stats')   await renderStats();
         });
     });
-    
+
     // Pack controls
-    const backToPacksBtn = document.getElementById('backToPacks');
-    const restartPackBtn = document.getElementById('restartPack');
-    const selectNewPackBtn = document.getElementById('selectNewPack');
-    
-    if (backToPacksBtn) backToPacksBtn.addEventListener('click', backToPacks);
-    if (restartPackBtn) restartPackBtn.addEventListener('click', restartPack);
-    if (selectNewPackBtn) {
-        selectNewPackBtn.addEventListener('click', () => {
-            hideModal('packCompleteModal');
-            backToPacks();
-        });
-    }
-    
+    document.getElementById('backToPacks')?.addEventListener('click', backToPacks);
+    document.getElementById('restartPack')?.addEventListener('click', restartPack);
+    document.getElementById('selectNewPack')?.addEventListener('click', () => { hideModal('packCompleteModal'); backToPacks(); });
+
     // Pack editor
-    const createPackButton = document.getElementById('createPackButton');
-    const addCardButton = document.getElementById('addCardButton');
-    const savePackButton = document.getElementById('savePackButton');
-    const cancelPackEdit = document.getElementById('cancelPackEdit');
-    const closePackEditor = document.getElementById('closePackEditor');
-    
-    if (createPackButton) createPackButton.addEventListener('click', () => openPackEditor());
-    if (addCardButton) addCardButton.addEventListener('click', addEditorCard);
-    if (savePackButton) savePackButton.addEventListener('click', savePackFromEditor);
-    if (cancelPackEdit) cancelPackEdit.addEventListener('click', () => hideModal('packEditorModal'));
-    if (closePackEditor) closePackEditor.addEventListener('click', () => hideModal('packEditorModal'));
-    
+    document.getElementById('createPackButton')?.addEventListener('click', () => openPackEditor());
+    document.getElementById('addCardButton')?.addEventListener('click', addEditorCard);
+    document.getElementById('savePackButton')?.addEventListener('click', savePackFromEditor);
+    document.getElementById('cancelPackEdit')?.addEventListener('click', () => hideModal('packEditorModal'));
+    document.getElementById('closePackEditor')?.addEventListener('click', () => hideModal('packEditorModal'));
+
     // Roadmap editor
-    const createRoadmapButton = document.getElementById('createRoadmapButton');
-    const saveRoadmapButton = document.getElementById('saveRoadmapButton');
-    const cancelRoadmapEdit = document.getElementById('cancelRoadmapEdit');
-    const closeRoadmapEditor = document.getElementById('closeRoadmapEditor');
-    
-    if (createRoadmapButton) createRoadmapButton.addEventListener('click', () => showModal('roadmapEditorModal'));
-    if (saveRoadmapButton) saveRoadmapButton.addEventListener('click', saveRoadmapFromEditor);
-    if (cancelRoadmapEdit) cancelRoadmapEdit.addEventListener('click', () => hideModal('roadmapEditorModal'));
-    if (closeRoadmapEditor) closeRoadmapEditor.addEventListener('click', () => hideModal('roadmapEditorModal'));
-    
-    // Initialize swipe
-    initializeSwipe();
-    
-    // Save stats periodically
-    setInterval(async () => {
-        if (state.currentUser) await saveUserStats();
-    }, 30000);
-    
-    console.log('All event listeners initialized');
+    document.getElementById('createRoadmapButton')?.addEventListener('click', () => showModal('roadmapEditorModal'));
+    document.getElementById('saveRoadmapButton')?.addEventListener('click', saveRoadmapFromEditor);
+    document.getElementById('cancelRoadmapEdit')?.addEventListener('click', () => hideModal('roadmapEditorModal'));
+    document.getElementById('closeRoadmapEditor')?.addEventListener('click', () => hideModal('roadmapEditorModal'));
+
+    // Swipe
+    initSwipe();
+
+    // Periodic save
+    setInterval(() => { if (state.currentUser) saveUserStats(); }, 30000);
+
+    console.log('✅ Ready');
 });
