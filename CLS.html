@@ -135,7 +135,6 @@
                 <span class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v6m0 6v6m6-12h-6m6 6H6m6-6H6m12 0h-6"/>
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
                 </span>
@@ -153,8 +152,10 @@
                     <div id="packsList" class="packs-grid"></div>
                 </div>
 
-                <!-- Cards Container -->
+                <!-- Cards Container — Full-screen TikTok-style feed -->
                 <div id="cardsContainer" class="cards-container" style="display: none;">
+
+                    <!-- Floating header -->
                     <div class="cards-header">
                         <button id="backToPacks" class="icon-button mobile-only">
                             <span>← Back</span>
@@ -165,25 +166,19 @@
                         </div>
                     </div>
 
-                    <div class="card-stage">
-                        <div class="card-container" id="cardContainer">
-                            <div class="card" id="card">
-                                <div class="card-category" id="category"></div>
-                                <div class="card-title" id="title"></div>
-                                <div class="card-theory" id="theory"></div>
-                                <div class="card-code" id="codeBlock" style="display: none;">
-                                    <pre><code class="language-cpp" id="code"></code></pre>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="swipe-indicator left">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="15 18 9 12 15 6"/>
+                    <!-- Full-screen swipe stage -->
+                    <div class="card-stage" id="cardStage">
+                        <!-- .card-feed and .card-slide elements are built by JS -->
+
+                        <!-- Swipe direction indicators (top = go back, bottom = go next) -->
+                        <div class="swipe-indicator top">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="18 15 12 9 6 15"/>
                             </svg>
                         </div>
-                        <div class="swipe-indicator right">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="9 18 15 12 9 6"/>
+                        <div class="swipe-indicator bottom">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
                             </svg>
                         </div>
                     </div>
