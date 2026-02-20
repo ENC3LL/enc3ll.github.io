@@ -504,52 +504,100 @@ body {
     font-weight: 500;
 }
 
+/* =====================================================
+   CARDS CONTAINER — TikTok-style vertical feed
+   ===================================================== */
+
 .cards-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    background: var(--bg-primary);
+    z-index: 200;
+    overflow: hidden;
 }
 
 .cards-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 16px 32px;
-    border-bottom: 1px solid var(--border-primary);
-    background: var(--bg-secondary);
+    padding: 16px 24px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
 }
 
 .cards-header h2 {
     flex: 1;
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 600;
     letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .pack-progress {
     font-size: 15px;
     color: var(--text-tertiary);
     font-weight: 500;
+    white-space: nowrap;
 }
 
+/* The scrollable feed viewport */
 .card-stage {
     flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
+    height: 100%;
     position: relative;
-    padding: 32px;
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* Wrapper that slides up/down */
+.card-feed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+}
+
+/* Each full-screen card slide */
+.card-slide {
+    flex-shrink: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 32px 48px;
+}
+
+/* Desktop: leave room for sidebar */
+@media (min-width: 769px) {
+    .card-slide {
+        padding: 80px 80px 48px;
+    }
 }
 
 .card-container {
-    position: absolute;
     width: 100%;
-    max-width: 520px;
-    height: 70vh;
-    max-height: 640px;
+    max-width: 640px;
+    height: 100%;
+    position: relative;
     cursor: grab;
     user-select: none;
-    touch-action: none;
 }
 
 .card-container:active {
@@ -561,14 +609,17 @@ body {
     height: 100%;
     background: var(--bg-secondary);
     border: 1px solid var(--border-primary);
-    border-radius: var(--radius-lg);
-    padding: 32px;
+    border-radius: 24px;
+    padding: 36px;
     display: flex;
     flex-direction: column;
     gap: 24px;
     position: relative;
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
+    /* Smooth scroll inside card content */
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
 }
 
 .card-category {
@@ -619,12 +670,13 @@ body {
     font-weight: 400;
 }
 
+/* Swipe direction hints — now top/bottom */
 .swipe-indicator {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 64px;
-    height: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 56px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
@@ -634,23 +686,50 @@ body {
     background: var(--bg-secondary);
     border-radius: 50%;
     border: 1px solid var(--border-primary);
+    z-index: 20;
 }
 
 .swipe-indicator svg {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
 }
 
-.swipe-indicator.left {
-    left: 40px;
+.swipe-indicator.top {
+    top: 90px;
 }
 
-.swipe-indicator.right {
-    right: 40px;
+.swipe-indicator.bottom {
+    bottom: 24px;
 }
 
-.swipe-indicator.visible {
-    opacity: 1;
+/* Progress dots on the right side */
+.card-progress-dots {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.progress-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-dot.active {
+    background: var(--accent-primary);
+    height: 20px;
+}
+
+.progress-dot.passed {
+    background: rgba(255,255,255,0.5);
 }
 
 /* Modal */
@@ -763,6 +842,8 @@ body {
 
 .modal-body {
     margin-bottom: 24px;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 
 .modal-footer {
@@ -1200,6 +1281,11 @@ body {
     .main-content {
         padding-bottom: 0;
     }
+
+    /* On desktop, cards container sits inside the main content column */
+    .cards-container {
+        left: var(--sidebar-width);
+    }
 }
 
 @media (max-width: 768px) {
@@ -1240,14 +1326,21 @@ body {
     .cards-header {
         padding: 16px 20px;
     }
-    
-    .card-stage {
-        padding: 20px;
+
+    /* On mobile, hide bottom nav while cards are open */
+    .cards-container.active ~ .bottom-nav,
+    body.cards-open .bottom-nav {
+        display: none !important;
     }
     
+    .card-slide {
+        padding: 72px 16px 32px;
+    }
+
     .card {
         padding: 24px;
         gap: 20px;
+        border-radius: 20px;
     }
     
     .card-title {
@@ -1257,38 +1350,9 @@ body {
     .card-theory {
         font-size: 15px;
     }
-    
-    .swipe-indicator {
-        width: 56px;
-        height: 56px;
-    }
-    
-    .swipe-indicator svg {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .swipe-indicator.left {
-        left: 20px;
-    }
-    
-    .swipe-indicator.right {
-        right: 20px;
-    }
-    
-    .stats-container,
-    .roadmap-container,
-    .packs-manager {
-        padding: 20px;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-    
-    .roadmap-item {
-        padding-left: 50px;
+
+    .card-progress-dots {
+        right: 8px;
     }
 }
 
