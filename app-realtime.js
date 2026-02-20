@@ -89,7 +89,6 @@ async function loginUser(username) {
     if (!trimmedUsername) return false;
     
     try {
-        // Get or create user
         let user = await getStorageKey(`user-${trimmedUsername}`);
         
         if (!user) {
@@ -106,7 +105,6 @@ async function loginUser(username) {
             };
             await setStorageKey(`user-${trimmedUsername}`, user);
         } else {
-            // Update last active
             user.stats.lastActive = Date.now();
             await setStorageKey(`user-${trimmedUsername}`, user);
         }
@@ -124,10 +122,7 @@ async function logoutUser() {
     if (state.currentUser) {
         await saveUserStats();
     }
-    
-    // Forget remembered user
     localStorage.removeItem('rememberedUsername');
-    
     state.currentUser = null;
     showScreen('loginScreen');
 }
@@ -137,24 +132,18 @@ async function saveUserStats() {
     
     const today = new Date().toISOString().split('T')[0];
     
-    // Update daily activity
     if (!state.currentUser.stats.dailyActivity[today]) {
-        state.currentUser.stats.dailyActivity[today] = {
-            cards: 0,
-            time: 0
-        };
+        state.currentUser.stats.dailyActivity[today] = { cards: 0, time: 0 };
     }
     
-    // Calculate streak
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     const hasYesterdayActivity = state.currentUser.stats.dailyActivity[yesterday];
     const hasTodayActivity = state.currentUser.stats.dailyActivity[today].cards > 0;
     
     if (hasTodayActivity) {
         if (hasYesterdayActivity || state.currentUser.stats.streak === 0) {
-            // Continue or start streak
+            // continue
         } else {
-            // Reset streak if missed a day
             state.currentUser.stats.streak = 0;
         }
         state.currentUser.stats.streak = Math.max(state.currentUser.stats.streak, 1);
@@ -177,12 +166,10 @@ async function updateUserActivity(cardsViewed, timeSpent) {
     state.currentUser.stats.totalCards += cardsViewed;
     state.currentUser.stats.totalTime += timeSpent;
     
-    // Check and update streak
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
     const hasYesterdayActivity = state.currentUser.stats.dailyActivity[yesterday];
     
     if (state.currentUser.stats.dailyActivity[today].cards === cardsViewed) {
-        // First card of the day
         if (hasYesterdayActivity) {
             state.currentUser.stats.streak++;
         } else {
@@ -207,20 +194,12 @@ async function getAllPacks() {
         if (pack) packs.push(pack);
     }
     
-    // Sort by creation date
     return packs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 async function createPack(name, description, cards) {
     const packId = `pack-${Date.now()}`;
-    const pack = {
-        id: packId,
-        name,
-        description,
-        cards,
-        createdAt: Date.now()
-    };
-    
+    const pack = { id: packId, name, description, cards, createdAt: Date.now() };
     await setStorageKey(packId, pack, true);
     return pack;
 }
@@ -228,12 +207,10 @@ async function createPack(name, description, cards) {
 async function updatePack(packId, name, description, cards) {
     const pack = await getStorageKey(packId, true);
     if (!pack) return false;
-    
     pack.name = name;
     pack.description = description;
     pack.cards = cards;
     pack.updatedAt = Date.now();
-    
     await setStorageKey(packId, pack, true);
     return true;
 }
@@ -243,16 +220,12 @@ async function deletePack(packId) {
 }
 
 async function loadDefaultPacks() {
-    // Check if default packs exist
     const packs = await getAllPacks();
     if (packs.length > 0) return;
     
-    // Load from uploaded file
     try {
         const response = await fetch('cards__1_.json');
         const defaultCards = await response.json();
-        
-        // Create default pack
         await createPack(
             'C++ Complete Guide',
             'Comprehensive C++ learning pack covering Move Semantics, Smart Pointers, Templates, and Threading',
@@ -274,7 +247,6 @@ async function getRoadmap() {
 
 async function saveRoadmap(title, items) {
     if (!state.currentUser) return false;
-    
     const roadmap = {
         title,
         items: items.map((text, index) => ({
@@ -284,7 +256,6 @@ async function saveRoadmap(title, items) {
         })),
         createdAt: Date.now()
     };
-    
     await setStorageKey(`roadmap-${state.currentUser.username}`, roadmap);
     return true;
 }
@@ -292,7 +263,6 @@ async function saveRoadmap(title, items) {
 async function toggleRoadmapItem(itemId) {
     const roadmap = await getRoadmap();
     if (!roadmap) return;
-    
     const item = roadmap.items.find(i => i.id === itemId);
     if (item) {
         item.completed = !item.completed;
@@ -306,29 +276,13 @@ async function toggleRoadmapItem(itemId) {
 // ============================================================================
 
 function showScreen(screenId) {
-    console.log('showScreen called with:', screenId);
-    const screens = document.querySelectorAll('.screen');
-    console.log('Found screens:', screens.length);
-    
-    screens.forEach(s => {
-        s.classList.remove('active');
-        console.log('Removed active from:', s.id);
-    });
-    
-    const targetScreen = document.getElementById(screenId);
-    if (targetScreen) {
-        targetScreen.classList.add('active');
-        console.log('Added active to:', screenId);
-    } else {
-        console.error('Screen not found:', screenId);
-    }
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId)?.classList.add('active');
 }
 
 function showView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId)?.classList.add('active');
-    
-    // Update nav
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.view === viewId.replace('View', ''));
     });
@@ -361,73 +315,182 @@ async function selectPack(pack) {
     state.startTime = Date.now();
     
     document.getElementById('packSelection').style.display = 'none';
-    document.getElementById('cardsContainer').style.display = 'flex';
+    
+    const container = document.getElementById('cardsContainer');
+    container.style.display = 'flex';
     document.getElementById('currentPackName').textContent = pack.name;
     
-    showCard();
+    // Lock body scroll while cards are open
+    document.body.classList.add('cards-open');
+    document.body.style.overflow = 'hidden';
+    
+    buildCardFeed();
+    goToCard(0, false);
 }
 
-function showCard() {
-    if (!state.currentPack || state.currentCardIndex >= state.cardOrder.length) {
+/**
+ * Build the vertical feed DOM: one .card-slide per card
+ */
+function buildCardFeed() {
+    const stage = document.getElementById('cardStage');
+    let feed = document.getElementById('cardFeed');
+    
+    // Create feed wrapper if it doesn't exist
+    if (!feed) {
+        feed = document.createElement('div');
+        feed.id = 'cardFeed';
+        feed.className = 'card-feed';
+        stage.appendChild(feed);
+    }
+    feed.innerHTML = '';
+    
+    // Build progress dots
+    renderProgressDots();
+    
+    // Create one slide per card
+    state.cardOrder.forEach((cardIdx, slideIdx) => {
+        const cardData = state.currentPack.cards[cardIdx];
+        
+        const slide = document.createElement('div');
+        slide.className = 'card-slide';
+        slide.dataset.slideIndex = slideIdx;
+        
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card-container';
+        
+        const inner = document.createElement('div');
+        inner.className = 'card';
+        
+        // Category badge
+        if (cardData.category) {
+            const cat = document.createElement('div');
+            cat.className = 'card-category';
+            cat.textContent = cardData.category;
+            inner.appendChild(cat);
+        }
+        
+        // Title
+        const title = document.createElement('div');
+        title.className = 'card-title';
+        title.textContent = cardData.title || '';
+        inner.appendChild(title);
+        
+        // Theory
+        if (cardData.theory) {
+            const theory = document.createElement('div');
+            theory.className = 'card-theory';
+            theory.textContent = cardData.theory;
+            inner.appendChild(theory);
+        }
+        
+        // Code block
+        if (cardData.code) {
+            const codeWrap = document.createElement('div');
+            codeWrap.className = 'card-code';
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            code.className = 'language-cpp';
+            code.textContent = cardData.code;
+            pre.appendChild(code);
+            codeWrap.appendChild(pre);
+            inner.appendChild(codeWrap);
+            // Highlight async to not block render
+            requestAnimationFrame(() => hljs.highlightElement(code));
+        }
+        
+        cardEl.appendChild(inner);
+        slide.appendChild(cardEl);
+        feed.appendChild(slide);
+    });
+}
+
+function renderProgressDots() {
+    const stage = document.getElementById('cardStage');
+    
+    // Remove old dots
+    const oldDots = stage.querySelector('.card-progress-dots');
+    if (oldDots) oldDots.remove();
+    
+    if (!state.currentPack) return;
+    
+    const totalCards = state.currentPack.cards.length;
+    // Only show dots if ≤ 30 cards (otherwise too many)
+    if (totalCards > 30) return;
+    
+    const dotsContainer = document.createElement('div');
+    dotsContainer.className = 'card-progress-dots';
+    
+    for (let i = 0; i < totalCards; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot';
+        dot.dataset.dotIndex = i;
+        dotsContainer.appendChild(dot);
+    }
+    
+    stage.appendChild(dotsContainer);
+    updateProgressDots(0);
+}
+
+function updateProgressDots(activeIndex) {
+    const dots = document.querySelectorAll('.progress-dot');
+    dots.forEach((dot, i) => {
+        dot.classList.remove('active', 'passed');
+        if (i < activeIndex) dot.classList.add('passed');
+        else if (i === activeIndex) dot.classList.add('active');
+    });
+}
+
+/**
+ * Animate the feed to the target card index
+ */
+function goToCard(index, animate = true) {
+    if (!state.currentPack) return;
+    
+    const totalCards = state.currentPack.cards.length;
+    if (index >= totalCards) {
         showPackComplete();
         return;
     }
     
-    const cardData = state.currentPack.cards[state.cardOrder[state.currentCardIndex]];
+    state.currentCardIndex = index;
     
-    document.getElementById('category').textContent = cardData.category || '';
-    document.getElementById('title').textContent = cardData.title || '';
-    document.getElementById('theory').textContent = cardData.theory || '';
+    const feed = document.getElementById('cardFeed');
+    if (!feed) return;
     
-    const codeBlock = document.getElementById('codeBlock');
-    const codeEl = document.getElementById('code');
+    const slideHeight = document.getElementById('cardStage').clientHeight;
+    const targetY = -index * slideHeight;
     
-    if (cardData.code) {
-        codeEl.textContent = cardData.code;
-        codeBlock.style.display = 'block';
-        hljs.highlightElement(codeEl);
-    } else {
-        codeBlock.style.display = 'none';
-    }
+    feed.style.transition = animate ? 'transform 0.42s cubic-bezier(0.32, 0.72, 0, 1)' : 'none';
+    feed.style.transform = `translateY(${targetY}px)`;
     
-    updateCardCounter();
-}
-
-function updateCardCounter() {
+    // Update counter
     const counter = document.getElementById('cardCounter');
-    if (counter && state.currentPack) {
-        counter.textContent = `${state.currentCardIndex + 1}/${state.currentPack.cards.length}`;
-    }
+    if (counter) counter.textContent = `${index + 1}/${totalCards}`;
+    
+    updateProgressDots(index);
 }
 
 async function nextCard() {
     if (!state.currentPack) return;
     
-    // Track card view
     const timeSpent = Math.floor((Date.now() - state.startTime) / 1000);
     await updateUserActivity(1, timeSpent);
     state.startTime = Date.now();
     
-    state.currentCardIndex++;
+    const newIndex = state.currentCardIndex + 1;
     
-    if (state.currentCardIndex >= state.cardOrder.length) {
+    if (newIndex >= state.currentPack.cards.length) {
         showPackComplete();
         return;
     }
     
-    resetCardPosition();
-    showCard();
+    goToCard(newIndex);
 }
 
-function resetCardPosition() {
-    const container = document.getElementById('cardContainer');
-    container.style.transition = 'none';
-    container.style.transform = 'translate(0, 0) rotate(0deg)';
-    document.getElementById('card').scrollTop = 0;
-    
-    setTimeout(() => {
-        container.style.transition = '';
-    }, 0);
+async function prevCard() {
+    if (!state.currentPack) return;
+    if (state.currentCardIndex <= 0) return;
+    goToCard(state.currentCardIndex - 1);
 }
 
 function showPackComplete() {
@@ -439,157 +502,267 @@ function restartPack() {
     state.currentCardIndex = 0;
     shuffleArray(state.cardOrder);
     state.startTime = Date.now();
-    showCard();
+    buildCardFeed();
+    goToCard(0, false);
 }
 
 async function backToPacks() {
     document.getElementById('packSelection').style.display = 'block';
     document.getElementById('cardsContainer').style.display = 'none';
+    
+    // Restore body scroll
+    document.body.classList.remove('cards-open');
+    document.body.style.overflow = '';
+    
     state.currentPack = null;
     await renderPackSelection();
 }
 
 // ============================================================================
-// SWIPE FUNCTIONALITY
+// VERTICAL SWIPE FUNCTIONALITY
 // ============================================================================
 
-let startX = 0, startY = 0, currentX = 0, currentY = 0, isDragging = false;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeDeltaY = 0;
+let isSwipeDragging = false;
+let swipeAxisLocked = null; // 'vertical' | 'horizontal' | null
+let cardScrolledToTop = true;
 
-function handleSwipe(direction) {
-    const container = document.getElementById('cardContainer');
-    const distance = window.innerWidth;
-    const rotation = direction === 'right' ? 20 : -20;
-    
-    container.style.transition = 'transform 0.3s ease-out';
-    container.style.transform = `translateX(${direction === 'right' ? distance : -distance}px) rotate(${rotation}deg)`;
-    
-    setTimeout(() => {
-        nextCard();
-    }, 300);
+function getCardScrollEl() {
+    const feed = document.getElementById('cardFeed');
+    if (!feed) return null;
+    const slides = feed.querySelectorAll('.card-slide');
+    const slide = slides[state.currentCardIndex];
+    if (!slide) return null;
+    return slide.querySelector('.card');
 }
 
 function initializeSwipe() {
-    const container = document.getElementById('cardContainer');
-    const swipeLeft = document.querySelector('.swipe-indicator.left');
-    const swipeRight = document.querySelector('.swipe-indicator.right');
+    const stage = document.getElementById('cardStage');
+    const swipeTop = document.querySelector('.swipe-indicator.top');
+    const swipeBottom = document.querySelector('.swipe-indicator.bottom');
     
-    // Touch events
-    container.addEventListener('touchstart', (e) => {
-        if (e.target.closest('.card').scrollHeight > e.target.closest('.card').clientHeight) {
-            return;
+    // ── TOUCH ──────────────────────────────────────────────────────────────
+    stage.addEventListener('touchstart', (e) => {
+        swipeStartX = e.touches[0].clientX;
+        swipeStartY = e.touches[0].clientY;
+        swipeDeltaY = 0;
+        isSwipeDragging = true;
+        swipeAxisLocked = null;
+        
+        const feed = document.getElementById('cardFeed');
+        if (feed) feed.style.transition = 'none';
+    }, { passive: true });
+    
+    stage.addEventListener('touchmove', (e) => {
+        if (!isSwipeDragging) return;
+        
+        const dx = e.touches[0].clientX - swipeStartX;
+        const dy = e.touches[0].clientY - swipeStartY;
+        
+        // Lock axis on first significant move
+        if (!swipeAxisLocked) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+                swipeAxisLocked = 'vertical';
+            } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+                swipeAxisLocked = 'horizontal';
+            } else {
+                return;
+            }
         }
-        isDragging = true;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        container.style.transition = 'none';
-    });
-    
-    container.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
         
-        currentX = e.touches[0].clientX - startX;
-        currentY = e.touches[0].clientY - startY;
+        // If horizontal, bail out (don't interfere)
+        if (swipeAxisLocked === 'horizontal') return;
         
-        if (Math.abs(currentY) > Math.abs(currentX)) return;
+        // Check if the inner card is scrollable and not at top/bottom
+        const cardEl = getCardScrollEl();
+        if (cardEl) {
+            const atTop = cardEl.scrollTop <= 0;
+            const atBottom = cardEl.scrollTop >= cardEl.scrollHeight - cardEl.clientHeight - 2;
+            
+            // Allow internal scroll when card content is longer than viewport
+            if (cardEl.scrollHeight > cardEl.clientHeight) {
+                // Only intercept if at the edges
+                if (dy < 0 && !atBottom) return; // scrolling down inside card
+                if (dy > 0 && !atTop) return;     // scrolling up inside card
+            }
+        }
         
         e.preventDefault();
+        swipeDeltaY = dy;
         
-        const rotation = currentX / 20;
-        container.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rotation}deg)`;
+        const stage = document.getElementById('cardStage');
+        const slideHeight = stage.clientHeight;
+        const baseY = -state.currentCardIndex * slideHeight;
+        const resistance = 0.35; // rubber-band effect
+        const dragY = swipeDeltaY * resistance;
         
-        if (Math.abs(currentX) > 50) {
-            if (currentX > 0) {
-                swipeRight.style.opacity = Math.min(currentX / 200, 1);
-                swipeLeft.style.opacity = 0;
-            } else {
-                swipeLeft.style.opacity = Math.min(Math.abs(currentX) / 200, 1);
-                swipeRight.style.opacity = 0;
-            }
+        const feed = document.getElementById('cardFeed');
+        if (feed) feed.style.transform = `translateY(${baseY + dragY}px)`;
+        
+        // Show swipe hints
+        const threshold = 40;
+        if (swipeDeltaY < -threshold) {
+            if (swipeBottom) swipeBottom.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
+            if (swipeTop) swipeTop.style.opacity = 0;
+        } else if (swipeDeltaY > threshold) {
+            if (swipeTop) swipeTop.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
+            if (swipeBottom) swipeBottom.style.opacity = 0;
         } else {
-            swipeLeft.style.opacity = 0;
-            swipeRight.style.opacity = 0;
+            if (swipeTop) swipeTop.style.opacity = 0;
+            if (swipeBottom) swipeBottom.style.opacity = 0;
         }
+    }, { passive: false });
+    
+    stage.addEventListener('touchend', () => {
+        if (!isSwipeDragging) return;
+        isSwipeDragging = false;
+        swipeAxisLocked = null;
+        if (swipeTop) swipeTop.style.opacity = 0;
+        if (swipeBottom) swipeBottom.style.opacity = 0;
+        
+        const threshold = 80;
+        if (swipeDeltaY < -threshold) {
+            nextCard();
+        } else if (swipeDeltaY > threshold) {
+            prevCard();
+        } else {
+            // Snap back
+            goToCard(state.currentCardIndex, true);
+        }
+        swipeDeltaY = 0;
     });
     
-    container.addEventListener('touchend', () => {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        swipeLeft.style.opacity = 0;
-        swipeRight.style.opacity = 0;
-        
-        const threshold = 100;
-        
-        if (Math.abs(currentX) > threshold) {
-            handleSwipe(currentX > 0 ? 'right' : 'left');
-        } else {
-            container.style.transition = 'transform 0.3s ease-out';
-            container.style.transform = 'translate(0, 0) rotate(0deg)';
+    // ── MOUSE ──────────────────────────────────────────────────────────────
+    stage.addEventListener('mousedown', (e) => {
+        // Don't start swipe if clicking inside a scrollable card
+        const cardEl = getCardScrollEl();
+        if (cardEl && cardEl.scrollHeight > cardEl.clientHeight) {
+            // Allow scrolling inside card
         }
         
-        currentX = 0;
-        currentY = 0;
-    });
-    
-    // Mouse events
-    container.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.card').scrollHeight > e.target.closest('.card').clientHeight) {
-            return;
-        }
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        container.style.transition = 'none';
+        swipeStartX = e.clientX;
+        swipeStartY = e.clientY;
+        swipeDeltaY = 0;
+        isSwipeDragging = true;
+        swipeAxisLocked = null;
+        
+        const feed = document.getElementById('cardFeed');
+        if (feed) feed.style.transition = 'none';
         e.preventDefault();
     });
     
     document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
+        if (!isSwipeDragging) return;
         
-        currentX = e.clientX - startX;
-        currentY = e.clientY - startY;
+        const dx = e.clientX - swipeStartX;
+        const dy = e.clientY - swipeStartY;
         
-        const rotation = currentX / 20;
-        container.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rotation}deg)`;
-        
-        if (Math.abs(currentX) > 50) {
-            if (currentX > 0) {
-                swipeRight.style.opacity = Math.min(currentX / 200, 1);
-                swipeLeft.style.opacity = 0;
+        if (!swipeAxisLocked) {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 5) {
+                swipeAxisLocked = 'vertical';
+            } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
+                swipeAxisLocked = 'horizontal';
+                isSwipeDragging = false;
+                return;
             } else {
-                swipeLeft.style.opacity = Math.min(Math.abs(currentX) / 200, 1);
-                swipeRight.style.opacity = 0;
+                return;
             }
+        }
+        
+        if (swipeAxisLocked !== 'vertical') return;
+        
+        swipeDeltaY = dy;
+        
+        const stageEl = document.getElementById('cardStage');
+        const slideHeight = stageEl.clientHeight;
+        const baseY = -state.currentCardIndex * slideHeight;
+        const resistance = 0.35;
+        const dragY = swipeDeltaY * resistance;
+        
+        const feed = document.getElementById('cardFeed');
+        if (feed) feed.style.transform = `translateY(${baseY + dragY}px)`;
+        
+        const threshold = 40;
+        if (swipeDeltaY < -threshold) {
+            if (swipeBottom) swipeBottom.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
+            if (swipeTop) swipeTop.style.opacity = 0;
+        } else if (swipeDeltaY > threshold) {
+            if (swipeTop) swipeTop.style.opacity = Math.min(Math.abs(swipeDeltaY) / 200, 1);
+            if (swipeBottom) swipeBottom.style.opacity = 0;
         } else {
-            swipeLeft.style.opacity = 0;
-            swipeRight.style.opacity = 0;
+            if (swipeTop) swipeTop.style.opacity = 0;
+            if (swipeBottom) swipeBottom.style.opacity = 0;
         }
     });
     
     document.addEventListener('mouseup', () => {
-        if (!isDragging) return;
+        if (!isSwipeDragging) return;
+        isSwipeDragging = false;
+        swipeAxisLocked = null;
+        if (swipeTop) swipeTop.style.opacity = 0;
+        if (swipeBottom) swipeBottom.style.opacity = 0;
         
-        isDragging = false;
-        swipeLeft.style.opacity = 0;
-        swipeRight.style.opacity = 0;
-        
-        const threshold = 100;
-        
-        if (Math.abs(currentX) > threshold) {
-            handleSwipe(currentX > 0 ? 'right' : 'left');
+        const threshold = 80;
+        if (swipeDeltaY < -threshold) {
+            nextCard();
+        } else if (swipeDeltaY > threshold) {
+            prevCard();
         } else {
-            container.style.transition = 'transform 0.3s ease-out';
-            container.style.transform = 'translate(0, 0) rotate(0deg)';
+            goToCard(state.currentCardIndex, true);
         }
-        
-        currentX = 0;
-        currentY = 0;
+        swipeDeltaY = 0;
     });
     
-    // Keyboard
+    // ── KEYBOARD ────────────────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-            handleSwipe(e.key === 'ArrowRight' ? 'right' : 'left');
+        // Only handle when cards are open
+        if (!state.currentPack) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextCard();
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            prevCard();
+        }
+    });
+    
+    // ── MOUSE WHEEL ─────────────────────────────────────────────────────────
+    // Debounced wheel handler so one scroll = one card
+    let wheelTimeout = null;
+    let wheelAccum = 0;
+    stage.addEventListener('wheel', (e) => {
+        if (!state.currentPack) return;
+        
+        // Check if internal card content is scrollable and not at edge
+        const cardEl = getCardScrollEl();
+        if (cardEl && cardEl.scrollHeight > cardEl.clientHeight) {
+            const atTop = cardEl.scrollTop <= 0;
+            const atBottom = cardEl.scrollTop >= cardEl.scrollHeight - cardEl.clientHeight - 2;
+            if ((e.deltaY > 0 && !atBottom) || (e.deltaY < 0 && !atTop)) {
+                return; // Let card scroll internally
+            }
+        }
+        
+        e.preventDefault();
+        wheelAccum += e.deltaY;
+        
+        clearTimeout(wheelTimeout);
+        wheelTimeout = setTimeout(() => {
+            if (wheelAccum > 30) {
+                nextCard();
+            } else if (wheelAccum < -30) {
+                prevCard();
+            }
+            wheelAccum = 0;
+        }, 50);
+    }, { passive: false });
+    
+    // Re-calculate positions on resize
+    window.addEventListener('resize', () => {
+        if (state.currentPack) {
+            goToCard(state.currentCardIndex, false);
         }
     });
 }
@@ -659,7 +832,7 @@ async function renderRoadmap() {
     const completedCount = roadmap.items.filter(i => i.completed).length;
     const progress = (completedCount / roadmap.items.length) * 100;
     
-    const itemsHtml = roadmap.items.map((item, index) => `
+    const itemsHtml = roadmap.items.map((item) => `
         <div class="roadmap-item">
             <div class="roadmap-dot ${item.completed ? 'completed' : ''}" onclick="toggleRoadmapItem('${item.id}')"></div>
             <div class="roadmap-item-content ${item.completed ? 'completed' : ''}" onclick="toggleRoadmapItem('${item.id}')">
@@ -693,7 +866,6 @@ async function renderStats() {
     const today = new Date().toISOString().split('T')[0];
     const todayStats = stats.dailyActivity[today] || { cards: 0, time: 0 };
     
-    // Total stats
     document.getElementById('totalCardsReviewed').textContent = stats.totalCards;
     
     const hours = Math.floor(stats.totalTime / 3600);
@@ -703,7 +875,6 @@ async function renderStats() {
     document.getElementById('currentStreak').textContent = `${stats.streak} days`;
     document.getElementById('todayProgress').textContent = `${todayStats.cards} cards`;
     
-    // Activity calendar (last 84 days)
     const activityGrid = document.getElementById('activityGrid');
     const days = [];
     
@@ -784,12 +955,7 @@ function renderCardsEditor() {
 }
 
 function addEditorCard() {
-    editorCards.push({
-        category: '',
-        title: '',
-        theory: '',
-        code: ''
-    });
+    editorCards.push({ category: '', title: '', theory: '', code: '' });
     renderCardsEditor();
 }
 
@@ -806,15 +972,8 @@ async function savePackFromEditor() {
     const name = document.getElementById('packNameInput').value.trim();
     const description = document.getElementById('packDescInput').value.trim();
     
-    if (!name) {
-        alert('Please enter a pack name');
-        return;
-    }
-    
-    if (editorCards.length === 0) {
-        alert('Please add at least one card');
-        return;
-    }
+    if (!name) { alert('Please enter a pack name'); return; }
+    if (editorCards.length === 0) { alert('Please add at least one card'); return; }
     
     if (editingPackId) {
         await updatePack(editingPackId, name, description, editorCards);
@@ -843,17 +1002,9 @@ async function saveRoadmapFromEditor() {
     const title = document.getElementById('roadmapTitleInput').value.trim();
     const itemsText = document.getElementById('roadmapItemsInput').value.trim();
     
-    if (!title) {
-        alert('Please enter a roadmap title');
-        return;
-    }
+    if (!title) { alert('Please enter a roadmap title'); return; }
+    if (!itemsText) { alert('Please enter at least one milestone'); return; }
     
-    if (!itemsText) {
-        alert('Please enter at least one milestone');
-        return;
-    }
-    
-    // Parse items (remove numbers like "1. ", "2. ")
     const items = itemsText
         .split('\n')
         .map(line => line.trim())
@@ -889,88 +1040,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
     console.log('🔥 Using Firebase Realtime Database for sync');
     
-    // Load default packs
-    console.log('Loading default packs...');
     await loadDefaultPacks();
-    console.log('Default packs loaded');
     
     // Check for remembered user
     const rememberedUser = localStorage.getItem('rememberedUsername');
     if (rememberedUser) {
-        console.log('Found remembered user:', rememberedUser);
         document.getElementById('usernameInput').value = rememberedUser;
-        
-        // Auto-login
         const success = await loginUser(rememberedUser);
         if (success) {
-            console.log('Auto-login successful');
             showScreen('mainApp');
-            
             const sidebarUsername = document.getElementById('sidebarUsername');
             const settingsUsername = document.getElementById('settingsUsername');
-            
             if (sidebarUsername) sidebarUsername.textContent = state.currentUser.username;
             if (settingsUsername) settingsUsername.textContent = state.currentUser.username;
-            
             updateStatsDisplay();
             await renderPackSelection();
             await renderStats();
-            console.log('Auto-login complete');
         }
     }
     
     // Login button
     const loginButton = document.getElementById('loginButton');
-    if (!loginButton) {
-        console.error('Login button not found!');
-        return;
-    }
+    if (!loginButton) { console.error('Login button not found!'); return; }
     
     loginButton.addEventListener('click', async () => {
-        console.log('Login button clicked');
         const username = document.getElementById('usernameInput').value;
-        console.log('Username:', username);
-        
         const success = await loginUser(username);
-        console.log('Login success:', success);
-        
         if (success) {
-            // Remember username
             localStorage.setItem('rememberedUsername', username);
-            
-            console.log('Showing main app...');
             showScreen('mainApp');
-            
             const sidebarUsername = document.getElementById('sidebarUsername');
             const settingsUsername = document.getElementById('settingsUsername');
-            
             if (sidebarUsername) sidebarUsername.textContent = state.currentUser.username;
             if (settingsUsername) settingsUsername.textContent = state.currentUser.username;
-            
             updateStatsDisplay();
             await renderPackSelection();
             await renderStats();
-            console.log('Login complete');
         } else {
             alert('Please enter a username');
         }
     });
     
-    // Enter key on login
     const usernameInput = document.getElementById('usernameInput');
     if (usernameInput) {
         usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                console.log('Enter key pressed');
-                loginButton.click();
-            }
+            if (e.key === 'Enter') loginButton.click();
         });
     }
     
     // Logout
     const logoutButton = document.getElementById('logoutButton');
     const mobileLogoutButton = document.getElementById('mobileLogoutButton');
-    
     if (logoutButton) logoutButton.addEventListener('click', logoutUser);
     if (mobileLogoutButton) mobileLogoutButton.addEventListener('click', logoutUser);
     
@@ -978,10 +1098,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', async () => {
             const view = item.dataset.view;
-            console.log('Navigating to view:', view);
             showView(view + 'View');
-            
-            // Load view data
             if (view === 'packs') await renderPacksManager();
             if (view === 'roadmap') await renderRoadmap();
             if (view === 'stats') await renderStats();
@@ -1031,10 +1148,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Save stats periodically
     setInterval(async () => {
-        if (state.currentUser) {
-            await saveUserStats();
-        }
-    }, 30000); // Every 30 seconds
+        if (state.currentUser) await saveUserStats();
+    }, 30000);
     
     console.log('All event listeners initialized');
 });
