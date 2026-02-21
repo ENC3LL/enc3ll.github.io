@@ -212,16 +212,58 @@ function hideModal(id) { document.getElementById(id)?.classList.remove('active')
 //   slots[1] = curr  (in viewport)
 //   slots[2] = next  (below viewport)
 //
-// On navigation we shift the cyclic array and refill the recycled slot.
-// This keeps the DOM tiny regardless of pack size → no lag with 62+ cards.
+// KEY INVARIANT: slotOffsets[i] always stores the LOGICAL resting Y for each
+// slot (-h, 0, +h). This is the ground truth used for drag calculations.
+// We NEVER read back computedStyle.transform — that causes the "fly away" bug
+// because getComputedStyle returns the in-progress animated value.
 
 let slots = [];
+let slotOffsets = [0, 0, 0]; // logical resting positions, kept in sync
 let isAnimating = false;
+let animTimer = null;
+
+// ── Syntax-highlight cache: keyed by card data index → highlighted HTML ──────
+// Prevents re-running hljs on every slot recycle.
+const hlCache = new Map();
 
 function shuffleArray(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+}
+
+// ── Pre-highlight all cards in the pack in idle time ────────────────────────
+function prewarmHighlightCache() {
+    hlCache.clear();
+    if (!state.currentPack) return;
+
+    let i = 0;
+    function doChunk() {
+        // Process up to 3 cards per idle callback to stay non-blocking
+        const end = Math.min(i + 3, state.currentPack.cards.length);
+        for (; i < end; i++) {
+            const data = state.currentPack.cards[i];
+            if (data.code && !hlCache.has(i)) {
+                // hljs.highlight is synchronous but cheap per card
+                const result = hljs.highlight(data.code, { language: 'cpp' });
+                hlCache.set(i, result.value);
+            }
+        }
+        if (i < state.currentPack.cards.length) {
+            // More cards left — schedule next chunk
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(doChunk, { timeout: 2000 });
+            } else {
+                setTimeout(doChunk, 50);
+            }
+        }
+    }
+
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(doChunk, { timeout: 500 });
+    } else {
+        setTimeout(doChunk, 100);
     }
 }
 
@@ -237,7 +279,9 @@ function fillSlot(slotEl, cardIndex) {
     }
 
     slotEl.dataset.cardIndex = cardIndex;
-    const data = state.currentPack.cards[state.cardOrder[cardIndex]];
+    // The actual card data uses cardOrder mapping
+    const realIndex = state.cardOrder[cardIndex];
+    const data = state.currentPack.cards[realIndex];
 
     if (data.category) {
         const el = document.createElement('div');
@@ -261,19 +305,31 @@ function fillSlot(slotEl, cardIndex) {
     if (data.code) {
         const wrap = document.createElement('div');
         wrap.className = 'card-code';
-        // touch-action: pan-x lets the browser handle horizontal scroll natively
-        // so it won't interfere with our vertical swipe gesture
         wrap.style.touchAction = 'pan-x pinch-zoom';
+
         const pre  = document.createElement('pre');
         pre.style.touchAction = 'pan-x pinch-zoom';
+
         const code = document.createElement('code');
-        code.className = 'language-cpp';
-        code.textContent = data.code;
+        code.className = 'language-cpp hljs';
+
+        // Use cached highlighted HTML if ready, otherwise plain text + async highlight
+        if (hlCache.has(realIndex)) {
+            code.innerHTML = hlCache.get(realIndex);
+        } else {
+            code.textContent = data.code;
+            // Highlight async — but store result so next visit is instant
+            const schedFn = 'requestIdleCallback' in window ? requestIdleCallback : setTimeout;
+            schedFn(() => {
+                const result = hljs.highlight(data.code, { language: 'cpp' });
+                hlCache.set(realIndex, result.value);
+                code.innerHTML = result.value;
+            }, 'requestIdleCallback' in window ? { timeout: 1000 } : undefined);
+        }
+
         pre.appendChild(code);
         wrap.appendChild(pre);
         inner.appendChild(wrap);
-        // Defer highlight so it doesn't block the transition frame
-        setTimeout(() => hljs.highlightElement(code), 0);
     }
 }
 
@@ -297,27 +353,29 @@ function buildSlots() {
     }
 }
 
-// ── Set slot positions (no-animate or animate) ──────────────────────────────
-function setSlotPositions(animate) {
-    const h = document.getElementById('cardStage').clientHeight;
-    const offsets = [-h, 0, h];
+// ── Apply resting positions from slotOffsets[] ──────────────────────────────
+// animate=false → instant (no transition), animate=true → spring
+function applySlotPositions(animate) {
     slots.forEach((slot, i) => {
-        if (animate) {
-            slot.style.transition = 'transform 0.44s cubic-bezier(0.32, 0.72, 0, 1)';
-        } else {
-            slot.style.transition = 'none';
-        }
-        slot.style.transform = `translateY(${offsets[i]}px)`;
+        slot.style.transition = animate
+            ? 'transform 0.44s cubic-bezier(0.32, 0.72, 0, 1)'
+            : 'none';
+        slot.style.transform = `translateY(${slotOffsets[i]}px)`;
     });
 }
 
 // ── Called on pack open ──────────────────────────────────────────────────────
 function initCardFeed() {
     buildSlots();
+
+    const h = document.getElementById('cardStage').clientHeight;
+    slotOffsets = [-h, 0, h];
+
     fillSlot(slots[0], state.currentCardIndex - 1);
     fillSlot(slots[1], state.currentCardIndex);
     fillSlot(slots[2], state.currentCardIndex + 1);
-    setSlotPositions(false);
+
+    applySlotPositions(false);
     updateCardCounter();
     updateProgressDots(state.currentCardIndex);
 }
@@ -335,31 +393,56 @@ function navigateCard(direction) {
     isAnimating = true;
     const h = document.getElementById('cardStage').clientHeight;
 
-    // Slide all 3 slots in the swipe direction
-    slots.forEach(slot => {
-        const cur = parseTranslateY(slot);
+    // Update logical offsets first, then apply — no reading computedStyle
+    slotOffsets = slotOffsets.map(o => o - direction * h);
+
+    slots.forEach((slot, i) => {
         slot.style.transition = 'transform 0.44s cubic-bezier(0.32, 0.72, 0, 1)';
-        slot.style.transform  = `translateY(${cur - direction * h}px)`;
+        slot.style.transform  = `translateY(${slotOffsets[i]}px)`;
     });
 
-    setTimeout(() => {
+    // Clear any pending timer from a previous (interrupted) navigation
+    if (animTimer) clearTimeout(animTimer);
+
+    animTimer = setTimeout(() => {
+        animTimer = null;
         state.currentCardIndex = next;
 
         if (direction === 1) {
-            // The slot that slid off the top (prev) → recycle as new next
+            // slots[0] flew off the top → recycle as new "next" at bottom
             const recycled = slots.shift();
+            const newOffset = slotOffsets[2] + h; // one step below current "next"
+            slotOffsets.shift();
+            slotOffsets.push(newOffset);
+
             recycled.style.transition = 'none';
-            recycled.style.transform  = `translateY(${h}px)`;
+            recycled.style.transform  = `translateY(${newOffset}px)`;
             fillSlot(recycled, state.currentCardIndex + 1);
             slots.push(recycled);
         } else {
-            // The slot that slid off the bottom (next) → recycle as new prev
+            // slots[2] flew off the bottom → recycle as new "prev" at top
             const recycled = slots.pop();
+            const newOffset = slotOffsets[0] - h; // one step above current "prev"
+            slotOffsets.pop();
+            slotOffsets.unshift(newOffset);
+
             recycled.style.transition = 'none';
-            recycled.style.transform  = `translateY(${-h}px)`;
+            recycled.style.transform  = `translateY(${newOffset}px)`;
             fillSlot(recycled, state.currentCardIndex - 1);
             slots.unshift(recycled);
         }
+
+        // Clean-reset positions: must use rAF so the browser commits
+        // transition:none before applying the new transform, otherwise it
+        // will animate the snap and the card visually jumps.
+        const cleanH = document.getElementById('cardStage').clientHeight;
+        slotOffsets = [-cleanH, 0, cleanH];
+        slots.forEach(slot => { slot.style.transition = 'none'; });
+        // Force reflow so transition:none takes effect THIS frame
+        void slots[0].offsetHeight;
+        slots.forEach((slot, i) => {
+            slot.style.transform = `translateY(${slotOffsets[i]}px)`;
+        });
 
         // Scroll active card to top
         slots[1].querySelector('.card').scrollTop = 0;
@@ -370,24 +453,27 @@ function navigateCard(direction) {
     }, 450);
 }
 
-function parseTranslateY(el) {
-    const m = new DOMMatrix(getComputedStyle(el).transform);
-    return m.m42;
-}
-
-// ── Drag all slots interactively (rubber-band feel) ─────────────────────────
+// ── Drag all slots interactively ─────────────────────────────────────────────
+// Uses slotOffsets[] as the base — so dragging always starts from the correct
+// resting position, never from a stale computedStyle value.
 function dragSlotsBy(deltaY) {
-    const h = document.getElementById('cardStage').clientHeight;
     slots.forEach((slot, i) => {
-        const base = (i - 1) * h; // prev=-h, curr=0, next=+h
         slot.style.transition = 'none';
-        slot.style.transform  = `translateY(${base + deltaY}px)`;
+        slot.style.transform  = `translateY(${slotOffsets[i] + deltaY}px)`;
     });
 }
 
-// ── Snap back with spring animation ─────────────────────────────────────────
+// ── Snap back to resting positions ──────────────────────────────────────────
 function snapBack() {
-    setSlotPositions(true);
+    applySlotPositions(true);
+}
+
+// ── Keep slotOffsets in sync on window resize ────────────────────────────────
+function recalcSlotPositions() {
+    if (!slots.length) return;
+    const h = document.getElementById('cardStage').clientHeight;
+    slotOffsets = [-h, 0, h];
+    applySlotPositions(false);
 }
 
 // ============================================================================
@@ -446,6 +532,7 @@ async function selectPack(pack) {
 
     renderProgressDots();
     initCardFeed();
+    prewarmHighlightCache();
 }
 
 async function backToPacks() {
@@ -470,11 +557,12 @@ function restartPack() {
     initCardFeed();
 }
 
-async function nextCard() {
-    const timeSpent = Math.floor((Date.now() - state.startTime) / 1000);
-    await updateUserActivity(1, timeSpent);
-    state.startTime = Date.now();
+function nextCard() {
+    // Navigate immediately — do NOT await Firebase write, that would delay the swipe
     navigateCard(1);
+    const timeSpent = Math.floor((Date.now() - state.startTime) / 1000);
+    state.startTime = Date.now();
+    updateUserActivity(1, timeSpent); // fire-and-forget
 }
 
 async function prevCard() { navigateCard(-1); }
