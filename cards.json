@@ -1,0 +1,4695 @@
+{
+  "meta": {
+    "title": "neural.cards",
+    "subtitle": "AI / ML"
+  },
+  "sources": {
+    "cs231n": {
+      "name": "Stanford CS231n",
+      "url": "https://cs231n.stanford.edu/"
+    },
+    "cs224n": {
+      "name": "Stanford CS224n",
+      "url": "https://web.stanford.edu/class/cs224n/"
+    },
+    "d2l": {
+      "name": "Dive into Deep Learning",
+      "url": "https://d2l.ai/"
+    },
+    "karpathy": {
+      "name": "Karpathy: Zero to Hero",
+      "url": "https://karpathy.ai/zero-to-hero.html"
+    },
+    "distill": {
+      "name": "Distill.pub",
+      "url": "https://distill.pub/"
+    },
+    "pytorch": {
+      "name": "PyTorch Docs",
+      "url": "https://pytorch.org/docs/stable/"
+    },
+    "attn": {
+      "name": "Attention is All You Need",
+      "url": "https://arxiv.org/abs/1706.03762"
+    },
+    "resnet": {
+      "name": "ResNet (He et al.)",
+      "url": "https://arxiv.org/abs/1512.03385"
+    },
+    "gan": {
+      "name": "GAN (Goodfellow)",
+      "url": "https://arxiv.org/abs/1406.2661"
+    },
+    "vae": {
+      "name": "VAE (Kingma)",
+      "url": "https://arxiv.org/abs/1312.6114"
+    },
+    "ddpm": {
+      "name": "DDPM (Ho et al.)",
+      "url": "https://arxiv.org/abs/2006.11239"
+    },
+    "ldm": {
+      "name": "Latent Diffusion (Rombach)",
+      "url": "https://arxiv.org/abs/2112.10752"
+    },
+    "bert": {
+      "name": "BERT (Devlin et al.)",
+      "url": "https://arxiv.org/abs/1810.04805"
+    },
+    "gpt3": {
+      "name": "GPT-3 (Brown et al.)",
+      "url": "https://arxiv.org/abs/2005.14165"
+    },
+    "lora": {
+      "name": "LoRA (Hu et al.)",
+      "url": "https://arxiv.org/abs/2106.09685"
+    },
+    "flash": {
+      "name": "FlashAttention (Dao)",
+      "url": "https://arxiv.org/abs/2205.14135"
+    },
+    "instr": {
+      "name": "InstructGPT (Ouyang)",
+      "url": "https://arxiv.org/abs/2203.02155"
+    },
+    "cot": {
+      "name": "Chain-of-Thought (Wei)",
+      "url": "https://arxiv.org/abs/2201.11903"
+    },
+    "rag": {
+      "name": "RAG (Lewis et al.)",
+      "url": "https://arxiv.org/abs/2005.11401"
+    },
+    "vit": {
+      "name": "ViT (Dosovitskiy)",
+      "url": "https://arxiv.org/abs/2010.11929"
+    },
+    "adam": {
+      "name": "Adam (Kingma & Ba)",
+      "url": "https://arxiv.org/abs/1412.6980"
+    },
+    "bn": {
+      "name": "Batch Norm (Ioffe)",
+      "url": "https://arxiv.org/abs/1502.03167"
+    },
+    "dropout": {
+      "name": "Dropout (Srivastava)",
+      "url": "https://jmlr.org/papers/v15/srivastava14a.html"
+    },
+    "ppo": {
+      "name": "PPO (Schulman)",
+      "url": "https://arxiv.org/abs/1707.06347"
+    },
+    "alphago": {
+      "name": "AlphaGo (Silver)",
+      "url": "https://www.nature.com/articles/nature16961"
+    },
+    "olah": {
+      "name": "Olah: Understanding LSTM",
+      "url": "https://colah.github.io/posts/2015-08-Understanding-LSTMs/"
+    },
+    "moe": {
+      "name": "Switch Transformer (Fedus)",
+      "url": "https://arxiv.org/abs/2101.03961"
+    },
+    "rope": {
+      "name": "RoFormer/RoPE (Su)",
+      "url": "https://arxiv.org/abs/2104.09864"
+    },
+    "scaling": {
+      "name": "Scaling Laws (Kaplan)",
+      "url": "https://arxiv.org/abs/2001.08361"
+    },
+    "constai": {
+      "name": "Constitutional AI (Anthropic)",
+      "url": "https://arxiv.org/abs/2212.08073"
+    },
+    "wiki_bv": {
+      "name": "Bias-Variance Tradeoff",
+      "url": "https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff"
+    },
+    "esl": {
+      "name": "Elements of Statistical Learning",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    "controlnet": {
+      "name": "ControlNet (Zhang)",
+      "url": "https://arxiv.org/abs/2302.05543"
+    }
+  },
+  "sections": [
+    {
+      "id": "foundations",
+      "title": "Основы",
+      "icon": "◈",
+      "description": "Нейроны, веса, активации",
+      "color": "#4ade80",
+      "cards": [
+        {
+          "id": "f01",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Нейрон",
+          "definition": "Базовая единица сети: умножает входы на веса, суммирует, применяет функцию активации.",
+          "source": "karpathy",
+          "formula": "y = f(Σ wᵢxᵢ + b)",
+          "example": "Входы [0.5, -0.3, 1.2] · веса [0.4, 0.2, -0.1] = 0.02 → активация.",
+          "analogy": "Судья: слушает аргументы, взвешивает, выносит вердикт.",
+          "flip": {
+            "q": "Что такое Нейрон?",
+            "a": "Базовая единица сети: умножает входы на веса, суммирует, применяет функцию активации."
+          },
+          "quiz": {
+            "q": "Что делает нейрон?",
+            "options": [
+              "Хранит память",
+              "Взвешенная сумма + активация",
+              "Сортирует",
+              "KNN"
+            ],
+            "correct": 1,
+            "explain": "Σ wᵢxᵢ + b → f(·)."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Нейрон делает только линейное преобразование без активации.",
+              "answer": false,
+              "explain": "Линейная часть + функция активации = нелинейность."
+            },
+            "fill": {
+              "q": "y = f(Σ wᵢxᵢ + __)",
+              "options": [
+                "b",
+                "ε",
+                "λ",
+                "α"
+              ],
+              "correct": 0,
+              "explain": "b — bias."
+            }
+          }
+        },
+        {
+          "id": "f02",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Функция активации",
+          "definition": "Нелинейность после линейной суммы. Без неё стек слоёв = одно линейное преобразование.",
+          "source": "cs231n",
+          "example": "ReLU, Sigmoid, Tanh, GELU, Softmax.",
+          "flip": {
+            "q": "Что такое Функция активации?",
+            "a": "Нелинейность после линейной суммы. Без неё стек слоёв = одно линейное преобразование."
+          },
+          "quiz": {
+            "q": "Зачем нелинейность?",
+            "options": [
+              "Скорость",
+              "Стек слоёв был мощнее одного",
+              "Меньше параметров",
+              "Регуляризация"
+            ],
+            "correct": 1,
+            "explain": "Без неё N слоёв = 1 слой."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ функция активации?",
+              "items": [
+                "Tanh",
+                "ReLU",
+                "Dropout",
+                "GELU"
+              ],
+              "odd_idx": 2,
+              "explain": "Dropout — регуляризация, не активация."
+            }
+          }
+        },
+        {
+          "id": "f03",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "ReLU",
+          "definition": "max(0, x). Самая популярная активация. Простая, быстрая.",
+          "source": "cs231n",
+          "formula": "ReLU(x) = max(0, x)",
+          "example": "ReLU(-3)=0, ReLU(2.5)=2.5.",
+          "flip": {
+            "q": "Что такое ReLU?",
+            "a": "max(0, x). Самая популярная активация. Простая, быстрая."
+          },
+          "quiz": {
+            "q": "ReLU(-7) =",
+            "options": [
+              "-7",
+              "0",
+              "7",
+              "1"
+            ],
+            "correct": 1,
+            "explain": "max(0,-7) = 0."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "ReLU полностью решает vanishing gradient.",
+              "answer": false,
+              "explain": "Помогает, но создаёт 'dying ReLU' — нейрон может остаться 0 навсегда."
+            },
+            "fill": {
+              "q": "ReLU(x) = max(0, __)",
+              "options": [
+                "x",
+                "1",
+                "-x",
+                "|x|"
+              ],
+              "correct": 0,
+              "explain": "ReLU обнуляет отрицательные, пропускает положительные."
+            }
+          }
+        },
+        {
+          "id": "f04",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Loss функция",
+          "definition": "Мера ошибки. Цель обучения — минимизировать loss.",
+          "source": "d2l",
+          "example": "MSE для регрессии. CrossEntropy для классификации.",
+          "flip": {
+            "q": "Что такое Loss функция?",
+            "a": "Мера ошибки. Цель обучения — минимизировать loss."
+          },
+          "quiz": {
+            "q": "Loss для бинарной классификации:",
+            "options": [
+              "MSE",
+              "MAE",
+              "Binary CrossEntropy",
+              "Hinge"
+            ],
+            "correct": 2,
+            "explain": "BCE = -[y·log(p)+(1-y)·log(1-p)]."
+          },
+          "minigames": {
+            "match": {
+              "q": "Задача → Loss:",
+              "pairs": [
+                [
+                  "Регрессия",
+                  "MSE"
+                ],
+                [
+                  "Классификация",
+                  "CrossEntropy"
+                ],
+                [
+                  "GAN",
+                  "Adversarial"
+                ],
+                [
+                  "VAE",
+                  "ELBO"
+                ]
+              ]
+            },
+            "truefalse": {
+              "q": "Loss функция должна максимизироваться.",
+              "answer": false,
+              "explain": "Loss = ошибка. Мы её минимизируем."
+            }
+          }
+        },
+        {
+          "id": "f05",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Gradient Descent",
+          "definition": "Итеративная оптимизация: двигаемся против градиента.",
+          "source": "karpathy",
+          "formula": "w_{t+1} = w_t - η·∇L",
+          "example": "η=0.01, ∇L=2.0 → шаг -0.02.",
+          "analogy": "Слепой альпинист спускается, чувствуя наклон под ногой.",
+          "flip": {
+            "q": "Что такое Gradient Descent?",
+            "a": "Итеративная оптимизация: двигаемся против градиента."
+          },
+          "quiz": {
+            "q": "GD двигает веса:",
+            "options": [
+              "По градиенту",
+              "Против градиента loss",
+              "Случайно",
+              "К нулю"
+            ],
+            "correct": 1,
+            "explain": "-η·∇L — шаг к минимуму."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Gradient Descent двигается по направлению градиента.",
+              "answer": false,
+              "explain": "Против градиента — к минимуму, не от него."
+            }
+          }
+        },
+        {
+          "id": "f06",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Learning Rate",
+          "definition": "Размер шага. Большой — расходится, малый — медленно.",
+          "source": "d2l",
+          "example": "Adam: 1e-3. SGD: 1e-2. Fine-tuning: 1e-5.",
+          "flip": {
+            "q": "Что такое Learning Rate?",
+            "a": "Размер шага. Большой — расходится, малый — медленно."
+          },
+          "quiz": {
+            "q": "LR=1.0 для глубокой сети:",
+            "options": [
+              "Хорошо",
+              "Слишком много, разойдётся",
+              "Идеал",
+              "Зависит от GPU"
+            ],
+            "correct": 1,
+            "explain": "LR=1.0 почти всегда катастрофа."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "LR=0 означает что модель не учится.",
+              "answer": true,
+              "explain": "η=0 → w не обновляются."
+            }
+          }
+        },
+        {
+          "id": "f07",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Эпоха",
+          "definition": "Полный проход всех данных через модель. Обычно 10-300 эпох.",
+          "source": "d2l",
+          "example": "60k MNIST + batch 32 → 1875 шагов = 1 эпоха.",
+          "flip": {
+            "q": "Что такое Эпоха?",
+            "a": "Полный проход всех данных через модель. Обычно 10-300 эпох."
+          },
+          "quiz": {
+            "q": "Эпоха это:",
+            "options": [
+              "Один шаг",
+              "Один проход всех данных",
+              "Один батч",
+              "Один слой"
+            ],
+            "correct": 1,
+            "explain": "Весь датасет ровно 1 раз."
+          },
+          "minigames": {
+            "fill": {
+              "q": "60000 примеров, batch=128, шагов за эпоху = __",
+              "options": [
+                "469",
+                "60000",
+                "128",
+                "8"
+              ],
+              "correct": 0,
+              "explain": "60000/128 = 469."
+            }
+          }
+        },
+        {
+          "id": "f08",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Batch и Mini-batch",
+          "definition": "Группа примеров за шаг. 32-256 — стандарт.",
+          "source": "d2l",
+          "example": "Batch=1 → SGD. Batch=весь датасет → GD. Mini-batch — баланс.",
+          "flip": {
+            "q": "Что такое Batch и Mini-batch?",
+            "a": "Группа примеров за шаг. 32-256 — стандарт."
+          },
+          "quiz": {
+            "q": "Mini-batch SGD vs full-batch:",
+            "options": [
+              "Точнее",
+              "Шумнее но быстрее",
+              "Без GPU",
+              "Больше памяти"
+            ],
+            "correct": 1,
+            "explain": "Шум помогает выходить из плохих минимумов."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Какой batch size НЕ типичен?",
+              "items": [
+                "32",
+                "64",
+                "128",
+                "1000000"
+              ],
+              "odd_idx": 3,
+              "explain": "1M в один batch не помещается в обычную GPU."
+            }
+          }
+        },
+        {
+          "id": "f09",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Supervised vs Unsupervised",
+          "definition": "Supervised: с метками. Unsupervised: без меток, ищем структуру.",
+          "source": "esl",
+          "example": "Спам — supervised. K-means — unsupervised.",
+          "flip": {
+            "q": "Что такое Supervised vs Unsupervised?",
+            "a": "Supervised: с метками. Unsupervised: без меток, ищем структуру."
+          },
+          "quiz": {
+            "q": "K-Means это:",
+            "options": [
+              "Supervised",
+              "Unsupervised",
+              "Reinforcement",
+              "Semi"
+            ],
+            "correct": 1,
+            "explain": "Кластеризация без меток."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Self-supervised learning требует ручной разметки.",
+              "answer": false,
+              "explain": "Self-supervised создаёт labels из самих данных автоматически."
+            }
+          }
+        },
+        {
+          "id": "f10",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Параметры vs Гиперпараметры",
+          "definition": "Параметры (w, b) учатся. Гиперпараметры (LR, batch) задают руками.",
+          "source": "d2l",
+          "flip": {
+            "q": "Что такое Параметры vs Гиперпараметры?",
+            "a": "Параметры (w, b) учатся. Гиперпараметры (LR, batch) задают руками."
+          },
+          "quiz": {
+            "q": "Что гиперпараметр?",
+            "options": [
+              "Веса",
+              "Bias",
+              "Learning rate",
+              "Активации"
+            ],
+            "correct": 2,
+            "explain": "LR — до обучения, не обновляется."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ гиперпараметр?",
+              "items": [
+                "Learning rate",
+                "Batch size",
+                "Веса",
+                "Глубина"
+              ],
+              "odd_idx": 2,
+              "explain": "Веса обучаются — это параметры."
+            }
+          }
+        },
+        {
+          "id": "f11",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Softmax",
+          "definition": "Логиты → распределение вероятностей (сумма=1).",
+          "source": "cs231n",
+          "formula": "softmax(xᵢ) = exp(xᵢ) / Σⱼ exp(xⱼ)",
+          "example": "[1,2,4] → [0.04, 0.11, 0.84].",
+          "flip": {
+            "q": "Что такое Softmax?",
+            "a": "Логиты → распределение вероятностей (сумма=1)."
+          },
+          "quiz": {
+            "q": "Сумма выходов softmax:",
+            "options": [
+              "1",
+              "0",
+              "Число классов",
+              "Зависит"
+            ],
+            "correct": 0,
+            "explain": "Это вероятности — Σ=1."
+          },
+          "minigames": {
+            "fill": {
+              "q": "softmax([1,2,3]) сумма выходов = __",
+              "options": [
+                "1.0",
+                "6.0",
+                "3.0",
+                "0.0"
+              ],
+              "correct": 0,
+              "explain": "Softmax → вероятности → сумма всегда 1."
+            }
+          }
+        },
+        {
+          "id": "f12",
+          "section": "foundations",
+          "level": "intermediate",
+          "concept": "Sigmoid",
+          "definition": "σ(x)=1/(1+e⁻ˣ). Сжимает в (0,1). Бинарная классификация.",
+          "source": "d2l",
+          "formula": "σ(x) = 1/(1+e⁻ˣ)",
+          "example": "σ(0)=0.5, σ(5)≈0.993. Max производной=0.25 при x=0.",
+          "flip": {
+            "q": "Что такое Sigmoid?",
+            "a": "σ(x)=1/(1+e⁻ˣ). Сжимает в (0,1). Бинарная классификация."
+          },
+          "quiz": {
+            "q": "Производная sigmoid максимальна при:",
+            "options": [
+              "x=0",
+              "x→∞",
+              "x→-∞",
+              "x=1"
+            ],
+            "correct": 0,
+            "explain": "σ'(0)=0.25. По краям производная исчезает."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Sigmoid выдаёт значения от -1 до 1.",
+              "answer": false,
+              "explain": "Sigmoid: (0, 1). Это tanh: (-1, 1)."
+            }
+          }
+        },
+        {
+          "id": "f13",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "One-hot encoding",
+          "definition": "Класс i из K → вектор длины K, единица в позиции i.",
+          "source": "cs231n",
+          "example": "3 класса, метка 'кот' (1) → [0,1,0].",
+          "flip": {
+            "q": "Что такое One-hot encoding?",
+            "a": "Класс i из K → вектор длины K, единица в позиции i."
+          },
+          "quiz": {
+            "q": "One-hot для класса 0 из 4:",
+            "options": [
+              "[0,0,0,1]",
+              "[1,0,0,0]",
+              "[0,1,0,0]",
+              "[1,1,1,1]"
+            ],
+            "correct": 1,
+            "explain": "Позиция 0 = 1."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ способ кодирования меток?",
+              "items": [
+                "One-hot",
+                "Label encoding",
+                "Embedding",
+                "Dropout"
+              ],
+              "odd_idx": 3,
+              "explain": "Dropout — регуляризация."
+            }
+          }
+        },
+        {
+          "id": "f14",
+          "section": "foundations",
+          "level": "intermediate",
+          "concept": "Тензор",
+          "definition": "Многомерный массив. Скаляр=0D, вектор=1D, матрица=2D, картинка RGB=3D.",
+          "source": "pytorch",
+          "example": "Batch 32 RGB 224×224 → (32, 3, 224, 224) в PyTorch.",
+          "flip": {
+            "q": "Что такое Тензор?",
+            "a": "Многомерный массив. Скаляр=0D, вектор=1D, матрица=2D, картинка RGB=3D."
+          },
+          "quiz": {
+            "q": "Batch 64 grayscale 28×28:",
+            "options": [
+              "(64,28,28)",
+              "(64,1,28,28)",
+              "(28,28,64)",
+              "(64,28)"
+            ],
+            "correct": 1,
+            "explain": "NCHW: (batch, channels, H, W)."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Batch 32 RGB картинок 64×64 в PyTorch: (__, 3, 64, 64)",
+              "options": [
+                "32",
+                "64",
+                "3",
+                "1"
+              ],
+              "correct": 0,
+              "explain": "NCHW: первая размерность — batch."
+            }
+          }
+        },
+        {
+          "id": "f15",
+          "section": "foundations",
+          "level": "intermediate",
+          "concept": "Нормализация данных",
+          "definition": "Z-score: (x-μ)/σ. Min-max: (x-min)/(max-min).",
+          "source": "cs231n",
+          "formula": "z = (x-μ)/σ",
+          "example": "Возраст [18-80] и зарплата [10k-200k] без нормализации = зарплата доминирует.",
+          "flip": {
+            "q": "Что такое Нормализация данных?",
+            "a": "Z-score: (x-μ)/σ. Min-max: (x-min)/(max-min)."
+          },
+          "quiz": {
+            "q": "После z-score:",
+            "options": [
+              "min=0, max=1",
+              "mean=0, std=1",
+              "все>0",
+              "сумма=0"
+            ],
+            "correct": 1,
+            "explain": "Вычесть среднее, поделить на std."
+          }
+        },
+        {
+          "id": "f16",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Bias",
+          "definition": "Параметр b в y=Wx+b. Сдвигает гиперплоскость от нуля.",
+          "source": "karpathy",
+          "example": "Без bias: x=0 → y=0. С bias: y(0)=b.",
+          "flip": {
+            "q": "Что такое Bias?",
+            "a": "Параметр b в y=Wx+b. Сдвигает гиперплоскость от нуля."
+          },
+          "quiz": {
+            "q": "Зачем bias?",
+            "options": [
+              "Регуляризация",
+              "Сдвиг decision boundary",
+              "Нормализация",
+              "Активация"
+            ],
+            "correct": 1,
+            "explain": "Добавляет степень свободы."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "y = Wx без bias всегда проходит через начало координат.",
+              "answer": true,
+              "explain": "x=0 → y=0 без bias."
+            }
+          }
+        },
+        {
+          "id": "f17",
+          "section": "foundations",
+          "level": "beginner",
+          "concept": "Linear Layer",
+          "definition": "y=Wx+b. n_in × n_out весов + n_out биасов.",
+          "source": "pytorch",
+          "example": "nn.Linear(784, 256): 784·256 + 256 ≈ 200k параметров.",
+          "flip": {
+            "q": "Что такое Linear Layer?",
+            "a": "y=Wx+b. n_in × n_out весов + n_out биасов."
+          },
+          "quiz": {
+            "q": "Linear(512, 128) — параметров:",
+            "options": [
+              "640",
+              "65536",
+              "65664",
+              "640000"
+            ],
+            "correct": 2,
+            "explain": "512·128 + 128 = 65664."
+          }
+        }
+      ]
+    },
+    {
+      "id": "training",
+      "title": "Обучение",
+      "icon": "⟳",
+      "description": "Backprop, оптимизаторы",
+      "color": "#60a5fa",
+      "cards": [
+        {
+          "id": "t01",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Backpropagation",
+          "definition": "Вычисление градиентов через цепное правило, от выхода к входу.",
+          "source": "karpathy",
+          "formula": "∂L/∂w = ∂L/∂y · ∂y/∂w",
+          "example": "3 слоя: ошибка на выходе → распределяется назад → каждый вес получает свою долю.",
+          "analogy": "Расследование наоборот: от результата к причине.",
+          "flip": {
+            "q": "Что такое Backpropagation?",
+            "a": "Вычисление градиентов через цепное правило, от выхода к входу."
+          },
+          "quiz": {
+            "q": "Backprop использует:",
+            "options": [
+              "Монте-Карло",
+              "Цепное правило",
+              "Симплекс",
+              "Кросс-валидацию"
+            ],
+            "correct": 1,
+            "explain": "Chain rule по слоям."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ часть backprop?",
+              "items": [
+                "Chain rule",
+                "Gradients",
+                "Forward pass",
+                "K-means"
+              ],
+              "odd_idx": 3,
+              "explain": "K-means не имеет отношения к backprop."
+            }
+          }
+        },
+        {
+          "id": "t02",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Overfitting",
+          "definition": "Отлично на train, плохо на val. Запомнила шум.",
+          "source": "wiki_bv",
+          "example": "Train 99%, val 65%. Лечится: dropout, регуляризация, больше данных.",
+          "analogy": "Зазубрил билеты, не понял предмет.",
+          "flip": {
+            "q": "Что такое Overfitting?",
+            "a": "Отлично на train, плохо на val. Запомнила шум."
+          },
+          "quiz": {
+            "q": "Признак overfitting:",
+            "options": [
+              "High train + high val loss",
+              "Low train + low val",
+              "Low train + high val",
+              "High train + low val"
+            ],
+            "correct": 2,
+            "explain": "Идеально на train, плохо на val."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Больше данных снижает overfitting.",
+              "answer": true,
+              "explain": "Сложнее запомнить шум при разнообразии."
+            },
+            "fill": {
+              "q": "Train acc 99%, val acc 65% — это __",
+              "options": [
+                "overfitting",
+                "underfitting",
+                "optimal",
+                "data leakage"
+              ],
+              "correct": 0,
+              "explain": "Большой gap train/val — классика overfitting."
+            }
+          }
+        },
+        {
+          "id": "t03",
+          "section": "training",
+          "level": "beginner",
+          "concept": "Underfitting",
+          "definition": "Модель слишком простая, не справляется даже с train.",
+          "source": "wiki_bv",
+          "example": "Линейная регрессия на нелинейных данных.",
+          "flip": {
+            "q": "Что такое Underfitting?",
+            "a": "Модель слишком простая, не справляется даже с train."
+          },
+          "quiz": {
+            "q": "Underfitting лечится:",
+            "options": [
+              "Уменьшить модель",
+              "Увеличить сложность",
+              "Сильнее dropout",
+              "Меньше эпох"
+            ],
+            "correct": 1,
+            "explain": "Нужна более выразительная модель."
+          }
+        },
+        {
+          "id": "t04",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Dropout",
+          "definition": "Случайно обнуляет p% нейронов на каждом forward.",
+          "source": "dropout",
+          "formula": "x_i = 0 с p, иначе x_i/(1-p)",
+          "example": "p=0.5: половина нейронов отключается каждый раз. Test — все активны.",
+          "analogy": "Команда тренируется когда случайные игроки пропускают.",
+          "flip": {
+            "q": "Что такое Dropout?",
+            "a": "Случайно обнуляет p% нейронов на каждом forward."
+          },
+          "quiz": {
+            "q": "Dropout p=0.3:",
+            "options": [
+              "30% × 0.3",
+              "30% случайно обнуляются",
+              "70% обнуляются",
+              "Веса × 0.3"
+            ],
+            "correct": 1,
+            "explain": "p = вероятность обнуления."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Dropout активен и при inference.",
+              "answer": false,
+              "explain": "Только при обучении. На inference все нейроны работают."
+            }
+          }
+        },
+        {
+          "id": "t05",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "L1 vs L2",
+          "definition": "L1 (|w|) даёт sparsity. L2 (w²) — равномерное уменьшение.",
+          "source": "esl",
+          "formula": "L_total = L + λ·||w||₁ или λ·||w||₂²",
+          "example": "L1: многие w=0. L2: все малы.",
+          "flip": {
+            "q": "Что такое L1 vs L2?",
+            "a": "L1 (|w|) даёт sparsity. L2 (w²) — равномерное уменьшение."
+          },
+          "quiz": {
+            "q": "L1 регуляризация:",
+            "options": [
+              "Sparse веса",
+              "Никогда не обнуляет",
+              "Заменяет dropout",
+              "Только CNN"
+            ],
+            "correct": 0,
+            "explain": "L1 → sparse solution."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "L2 в нейросетях = weight decay.",
+              "answer": true,
+              "explain": "Встроена в оптимизаторы как параметр."
+            },
+            "odd": {
+              "q": "Что НЕ способ регуляризации?",
+              "items": [
+                "L1",
+                "L2",
+                "Dropout",
+                "Adam"
+              ],
+              "odd_idx": 3,
+              "explain": "Adam — оптимизатор, не регуляризация."
+            }
+          }
+        },
+        {
+          "id": "t06",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Batch Normalization",
+          "definition": "Нормирует активации по батчу. Ускоряет, позволяет больший LR.",
+          "source": "bn",
+          "formula": "BN(x) = γ·(x-μ)/√(σ²+ε) + β",
+          "example": "Без BN градиенты взрываются/затухают. С BN — стабильно.",
+          "flip": {
+            "q": "Что такое Batch Normalization?",
+            "a": "Нормирует активации по батчу. Ускоряет, позволяет больший LR."
+          },
+          "quiz": {
+            "q": "BN применяется:",
+            "options": [
+              "Только к входу",
+              "Между слоями",
+              "Только к выходу",
+              "К меткам"
+            ],
+            "correct": 1,
+            "explain": "Нормирует активации каждого слоя."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Batch Norm работает лучше при очень малом batch size.",
+              "answer": false,
+              "explain": "BN зависит от статистики батча — мал batch = плохая статистика."
+            }
+          }
+        },
+        {
+          "id": "t07",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Adam",
+          "definition": "Адаптивный. Хранит momentum (m) и квадрат градиента (v).",
+          "source": "adam",
+          "formula": "m=β₁m+(1-β₁)g; v=β₂v+(1-β₂)g²; w-=η·m̂/(√v̂+ε)",
+          "example": "β₁=0.9, β₂=0.999, η=1e-3.",
+          "flip": {
+            "q": "Что такое Adam?",
+            "a": "Адаптивный. Хранит momentum (m) и квадрат градиента (v)."
+          },
+          "quiz": {
+            "q": "Adam хранит:",
+            "options": [
+              "Только g",
+              "Momentum и квадрат g",
+              "Все веса",
+              "Гессиан"
+            ],
+            "correct": 1,
+            "explain": "Два момента: m и v."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Adam использует __ моментов градиента.",
+              "options": [
+                "2",
+                "1",
+                "3",
+                "0"
+              ],
+              "correct": 0,
+              "explain": "m (1-й) и v (2-й)."
+            }
+          }
+        },
+        {
+          "id": "t08",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Vanishing Gradient",
+          "definition": "Градиент крошечный после многих слоёв. Sigmoid/tanh особенно.",
+          "source": "cs231n",
+          "example": "10 sigmoid: 0.25¹⁰ ≈ 1e-6 → первые слои не учатся.",
+          "flip": {
+            "q": "Что такое Vanishing Gradient?",
+            "a": "Градиент крошечный после многих слоёв. Sigmoid/tanh особенно."
+          },
+          "quiz": {
+            "q": "Что НЕ помогает с vanishing?",
+            "options": [
+              "ReLU",
+              "Residual",
+              "BatchNorm",
+              "L2 регуляризация"
+            ],
+            "correct": 3,
+            "explain": "L2 уменьшает веса. ReLU/BN/residual помогают."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "ResNet решает vanishing gradient.",
+              "answer": true,
+              "explain": "Skip connections дают прямой путь градиенту."
+            },
+            "odd": {
+              "q": "Что НЕ помогает с vanishing gradient?",
+              "items": [
+                "ReLU",
+                "BatchNorm",
+                "ResNet",
+                "Большой LR"
+              ],
+              "odd_idx": 3,
+              "explain": "Большой LR — отдельная проблема, не решает vanishing."
+            }
+          }
+        },
+        {
+          "id": "t09",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Early Stopping",
+          "definition": "Стоп когда val loss не улучшается N эпох.",
+          "source": "d2l",
+          "example": "Patience=5: 5 эпох без улучшения → стоп, берём лучшие веса.",
+          "flip": {
+            "q": "Что такое Early Stopping?",
+            "a": "Стоп когда val loss не улучшается N эпох."
+          },
+          "quiz": {
+            "q": "Early stopping мониторит:",
+            "options": [
+              "Train loss",
+              "Val loss",
+              "Train accuracy",
+              "GPU"
+            ],
+            "correct": 1,
+            "explain": "Только val показывает обобщение."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Early stopping останавливает обучение на лучшем train loss.",
+              "answer": false,
+              "explain": "На лучшем VAL loss. Train может улучшаться бесконечно за счёт overfitting."
+            }
+          }
+        },
+        {
+          "id": "t10",
+          "section": "training",
+          "level": "advanced",
+          "concept": "Gradient Clipping",
+          "definition": "Если ||g|| > τ, масштабируем g·τ/||g||. Против exploding.",
+          "source": "d2l",
+          "formula": "g ← g·min(1, τ/||g||)",
+          "example": "τ=1.0 — типично. Без clipping RNN расходится.",
+          "flip": {
+            "q": "Что такое Gradient Clipping?",
+            "a": "Если ||g|| > τ, масштабируем g·τ/||g||. Против exploding."
+          },
+          "quiz": {
+            "q": "Clipping против:",
+            "options": [
+              "Vanishing",
+              "Exploding",
+              "Overfitting",
+              "Underfitting"
+            ],
+            "correct": 1,
+            "explain": "Ограничивает большие градиенты."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Gradient clipping ограничивает __ градиента.",
+              "options": [
+                "норму",
+                "знак",
+                "направление",
+                "количество"
+              ],
+              "correct": 0,
+              "explain": "Масштабирует если ||g|| > τ."
+            }
+          }
+        },
+        {
+          "id": "t11",
+          "section": "training",
+          "level": "advanced",
+          "concept": "LR Scheduler",
+          "definition": "Меняет LR во время обучения. Cosine, step, warmup.",
+          "source": "d2l",
+          "example": "Warmup: 0→1e-3 за 1000 шагов. Затем cosine до 1e-5.",
+          "flip": {
+            "q": "Что такое LR Scheduler?",
+            "a": "Меняет LR во время обучения. Cosine, step, warmup."
+          },
+          "quiz": {
+            "q": "Warmup нужен чтобы:",
+            "options": [
+              "Прогреть GPU",
+              "Стабилизировать модель перед большим LR",
+              "Меньше overfitting",
+              "Заменить early stop"
+            ],
+            "correct": 1,
+            "explain": "Начальные веса хаотичны → большой LR разносит."
+          }
+        },
+        {
+          "id": "t12",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Momentum",
+          "definition": "Накапливает инерцию: v=β·v+g. Проходит плоскости.",
+          "source": "d2l",
+          "formula": "v=β·v+g; w-=η·v",
+          "example": "β=0.9: новый g имеет вес 0.1, накопленный — 0.9.",
+          "analogy": "Шар скатывается с горки.",
+          "flip": {
+            "q": "Что такое Momentum?",
+            "a": "Накапливает инерцию: v=β·v+g. Проходит плоскости."
+          },
+          "quiz": {
+            "q": "Momentum помогает:",
+            "options": [
+              "Точнее g",
+              "Проходить плоскости и шум",
+              "Меньше памяти",
+              "Регуляризация"
+            ],
+            "correct": 1,
+            "explain": "Сглаживает шум, ускоряет."
+          }
+        },
+        {
+          "id": "t13",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Label Smoothing",
+          "definition": "Soft labels вместо hard. Снижает overconfidence.",
+          "source": "cs231n",
+          "formula": "y_smooth = (1-ε)·y + ε/K",
+          "example": "ε=0.1, K=10: правильный 0.91, остальные по 0.01.",
+          "flip": {
+            "q": "Что такое Label Smoothing?",
+            "a": "Soft labels вместо hard. Снижает overconfidence."
+          },
+          "quiz": {
+            "q": "Label smoothing уменьшает:",
+            "options": [
+              "Размер модели",
+              "Overconfidence",
+              "Время",
+              "Память"
+            ],
+            "correct": 1,
+            "explain": "Лучше калибровка."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Label smoothing превращает hard labels в soft.",
+              "answer": true,
+              "explain": "[0,0,1,0] → [0.025,0.025,0.925,0.025]."
+            }
+          }
+        },
+        {
+          "id": "t14",
+          "section": "training",
+          "level": "advanced",
+          "concept": "Mixed Precision",
+          "definition": "FP16/BF16 для forward/backward, FP32 для master weights. 2× быстрее.",
+          "source": "pytorch",
+          "example": "torch.cuda.amp.autocast() — авто FP16.",
+          "flip": {
+            "q": "Что такое Mixed Precision?",
+            "a": "FP16/BF16 для forward/backward, FP32 для master weights. 2× быстрее."
+          },
+          "quiz": {
+            "q": "Mixed precision:",
+            "options": [
+              "FP64 везде",
+              "FP16 для FW/BW + FP32 master",
+              "INT8",
+              "Только FP32"
+            ],
+            "correct": 1,
+            "explain": "Master weights FP32 для точности."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Какой формат НЕ используется в mixed precision?",
+              "items": [
+                "FP16",
+                "BF16",
+                "FP32",
+                "FP128"
+              ],
+              "odd_idx": 3,
+              "explain": "FP128 не используется на GPU."
+            }
+          }
+        },
+        {
+          "id": "t15",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Train/Val/Test",
+          "definition": "Train (60-80%), val (10-20%), test (10-20%). Test — один раз.",
+          "source": "esl",
+          "example": "70/15/15. Time series → split по времени.",
+          "flip": {
+            "q": "Что такое Train/Val/Test?",
+            "a": "Train (60-80%), val (10-20%), test (10-20%). Test — один раз."
+          },
+          "quiz": {
+            "q": "На test set:",
+            "options": [
+              "Тюнить гиперпараметры",
+              "Финальная оценка, один раз",
+              "Обучать",
+              "Augmentation"
+            ],
+            "correct": 1,
+            "explain": "Любое использование test = leakage."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Test set можно использовать для тюнинга гиперпараметров.",
+              "answer": false,
+              "explain": "Только для финальной оценки. Иначе data leakage."
+            }
+          }
+        },
+        {
+          "id": "t16",
+          "section": "training",
+          "level": "beginner",
+          "concept": "Forward Pass",
+          "definition": "Прогон входа через сеть до предсказания.",
+          "source": "karpathy",
+          "example": "Inference = только forward. Training = forward + backward.",
+          "flip": {
+            "q": "Что такое Forward Pass?",
+            "a": "Прогон входа через сеть до предсказания."
+          },
+          "quiz": {
+            "q": "Forward pass:",
+            "options": [
+              "Обновляет веса",
+              "Вычисляет y_pred",
+              "Обнуляет градиенты",
+              "Backprop"
+            ],
+            "correct": 1,
+            "explain": "x → y_pred."
+          }
+        },
+        {
+          "id": "t17",
+          "section": "training",
+          "level": "beginner",
+          "concept": "Backward Pass",
+          "definition": "Вычисление градиентов через backprop. Использует activations forward'а.",
+          "source": "karpathy",
+          "flip": {
+            "q": "Что такое Backward Pass?",
+            "a": "Вычисление градиентов через backprop. Использует activations forward'а."
+          },
+          "quiz": {
+            "q": "Backward требует:",
+            "options": [
+              "Только loss",
+              "Activations forward",
+              "Только метки",
+              "Random веса"
+            ],
+            "correct": 1,
+            "explain": "Chain rule нужны промежуточные значения."
+          }
+        },
+        {
+          "id": "t18",
+          "section": "training",
+          "level": "intermediate",
+          "concept": "Weight Decay",
+          "definition": "w ← w - η·∇L - λ·w. AdamW отделяет WD от градиента.",
+          "source": "adam",
+          "example": "AdamW — лучше Adam с L2 в loss.",
+          "flip": {
+            "q": "Что такое Weight Decay?",
+            "a": "w ← w - η·∇L - λ·w. AdamW отделяет WD от градиента."
+          },
+          "quiz": {
+            "q": "Weight decay 1e-4:",
+            "options": [
+              "В loss",
+              "w *= (1-η·1e-4) каждый шаг",
+              "Уменьшает LR",
+              "Заменяет dropout"
+            ],
+            "correct": 1,
+            "explain": "Декремент w на каждом шаге."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Weight decay — это эквивалент __ регуляризации.",
+              "options": [
+                "L2",
+                "L1",
+                "Dropout",
+                "L0"
+              ],
+              "correct": 0,
+              "explain": "WD = производная от L2 штрафа λ·w² → -2λw."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "architectures",
+      "title": "Архитектуры",
+      "icon": "⬡",
+      "description": "CNN, RNN, Transformer",
+      "color": "#c084fc",
+      "cards": [
+        {
+          "id": "a01",
+          "section": "architectures",
+          "level": "intermediate",
+          "concept": "Convolution",
+          "definition": "Фильтр скользит по входу. Веса разделяемые — резко меньше параметров чем MLP.",
+          "source": "cs231n",
+          "formula": "(I*K)[i,j] = ΣΣ I[i+m,j+n]·K[m,n]",
+          "example": "Фильтр 3×3 = 9 параметров для всего изображения.",
+          "analogy": "Штамп: одна форма прикладывается ко всей бумаге.",
+          "flip": {
+            "q": "Что такое Convolution?",
+            "a": "Фильтр скользит по входу. Веса разделяемые — резко меньше параметров чем MLP."
+          },
+          "quiz": {
+            "q": "Главное свойство свёртки:",
+            "options": [
+              "Параметры зависят от позиции",
+              "Weight sharing",
+              "Полносвязно",
+              "Только grayscale"
+            ],
+            "correct": 1,
+            "explain": "Один фильтр везде."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Свёртка использует одни и те же веса для всех позиций.",
+              "answer": true,
+              "explain": "Weight sharing — ключевое свойство свёртки."
+            }
+          }
+        },
+        {
+          "id": "a02",
+          "section": "architectures",
+          "level": "intermediate",
+          "concept": "Pooling",
+          "definition": "Уменьшает размер. Max — максимум, Average — среднее.",
+          "source": "cs231n",
+          "example": "Max 2×2: 224×224 → 112×112.",
+          "flip": {
+            "q": "Что такое Pooling?",
+            "a": "Уменьшает размер. Max — максимум, Average — среднее."
+          },
+          "quiz": {
+            "q": "Max pool 4×4 stride=2 от 32×32:",
+            "options": [
+              "8×8",
+              "15×15",
+              "16×16",
+              "32×32"
+            ],
+            "correct": 1,
+            "explain": "Out=(32-4)/2+1=15."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ pooling?",
+              "items": [
+                "Max pool",
+                "Average pool",
+                "Global avg pool",
+                "ReLU pool"
+              ],
+              "odd_idx": 3,
+              "explain": "ReLU — активация, не pooling."
+            }
+          }
+        },
+        {
+          "id": "a03",
+          "section": "architectures",
+          "level": "intermediate",
+          "concept": "RNN",
+          "definition": "Память: h_t=f(W·h_{t-1}+U·x_t). Для последовательностей.",
+          "source": "cs224n",
+          "formula": "h_t = tanh(W_hh·h_{t-1} + W_xh·x_t + b)",
+          "example": "Тональность: пробегаем по словам, h накапливает смысл.",
+          "flip": {
+            "q": "Что такое RNN?",
+            "a": "Память: h_t=f(W·h_{t-1}+U·x_t). Для последовательностей."
+          },
+          "quiz": {
+            "q": "RNN передаёт через:",
+            "options": [
+              "Attention",
+              "Hidden state",
+              "Pooling",
+              "Skip"
+            ],
+            "correct": 1,
+            "explain": "h_t — память о прошлом."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "RNN можно эффективно параллелить по времени.",
+              "answer": false,
+              "explain": "h_t зависит от h_{t-1} → последовательно."
+            }
+          }
+        },
+        {
+          "id": "a04",
+          "section": "architectures",
+          "level": "intermediate",
+          "concept": "LSTM",
+          "definition": "Три гейта: forget, input, output. Cell state — долгая память.",
+          "source": "olah",
+          "formula": "f=σ(W_f·[h,x]); c=f⊙c+i⊙c̃; h=o⊙tanh(c)",
+          "example": "Cell state передаётся через десятки шагов без затухания.",
+          "analogy": "Конвейер с клапанами: что забыть, что записать, что выдать.",
+          "flip": {
+            "q": "Что такое LSTM?",
+            "a": "Три гейта: forget, input, output. Cell state — долгая память."
+          },
+          "quiz": {
+            "q": "LSTM имеет гейтов:",
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4"
+            ],
+            "correct": 2,
+            "explain": "Forget, input, output."
+          },
+          "minigames": {
+            "match": {
+              "q": "Гейты LSTM:",
+              "pairs": [
+                [
+                  "forget",
+                  "что забыть"
+                ],
+                [
+                  "input",
+                  "что записать"
+                ],
+                [
+                  "output",
+                  "что вывести"
+                ],
+                [
+                  "cell state",
+                  "долгая память"
+                ]
+              ]
+            },
+            "fill": {
+              "q": "LSTM имеет __ гейта.",
+              "options": [
+                "3",
+                "2",
+                "4",
+                "1"
+              ],
+              "correct": 0,
+              "explain": "Forget, input, output."
+            }
+          }
+        },
+        {
+          "id": "a05",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Self-Attention",
+          "definition": "Q, K, V проекции токена. Score=softmax(QKᵀ/√d_k)·V.",
+          "source": "attn",
+          "formula": "Attention(Q,K,V) = softmax(QKᵀ/√d_k)·V",
+          "example": "'банк' в '...на берегу банка' — attention к 'берегу' → значение 'река'.",
+          "analogy": "Поисковый запрос Q к библиотеке K — возвращает документы V.",
+          "flip": {
+            "q": "Что такое Self-Attention?",
+            "a": "Q, K, V проекции токена. Score=softmax(QKᵀ/√d_k)·V."
+          },
+          "quiz": {
+            "q": "Зачем √d_k?",
+            "options": [
+              "Нормализация",
+              "Чтобы softmax не насыщался",
+              "Размерность",
+              "Случайность"
+            ],
+            "correct": 1,
+            "explain": "Большие d_k → QKᵀ растёт → softmax → one-hot."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ часть attention?",
+              "items": [
+                "Query",
+                "Key",
+                "Value",
+                "Dropout"
+              ],
+              "odd_idx": 3,
+              "explain": "Dropout — отдельная регуляризация."
+            }
+          }
+        },
+        {
+          "id": "a06",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Positional Encoding",
+          "definition": "Self-attention инвариантен к порядку. PE добавляет позицию.",
+          "source": "attn",
+          "formula": "PE(pos,2i)=sin(pos/10000^(2i/d))",
+          "example": "Без PE 'кот ест рыбу' = 'рыбу ест кот'.",
+          "flip": {
+            "q": "Что такое Positional Encoding?",
+            "a": "Self-attention инвариантен к порядку. PE добавляет позицию."
+          },
+          "quiz": {
+            "q": "Без PE трансформер:",
+            "options": [
+              "Не сходится",
+              "Не различает порядок",
+              "Только первый токен",
+              "Быстрее"
+            ],
+            "correct": 1,
+            "explain": "Attention инвариантен к перестановкам."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Без positional encoding трансформер не различает порядок токенов.",
+              "answer": true,
+              "explain": "Self-attention инвариантен к перестановкам."
+            }
+          }
+        },
+        {
+          "id": "a07",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Multi-Head Attention",
+          "definition": "h параллельных attention в разных подпространствах.",
+          "source": "attn",
+          "example": "GPT-3: 96 голов. Каждая ловит свой паттерн.",
+          "analogy": "Команда аналитиков: разные ракурсы → сводный отчёт.",
+          "flip": {
+            "q": "Что такое Multi-Head Attention?",
+            "a": "h параллельных attention в разных подпространствах."
+          },
+          "quiz": {
+            "q": "d_model=512, h=8 → d_head:",
+            "options": [
+              "4096",
+              "64",
+              "8",
+              "512"
+            ],
+            "correct": 1,
+            "explain": "d_head=d_model/h=64."
+          },
+          "minigames": {
+            "fill": {
+              "q": "d_model=768, h=12 голов → d_head = __",
+              "options": [
+                "64",
+                "32",
+                "12",
+                "768"
+              ],
+              "correct": 0,
+              "explain": "768/12 = 64."
+            }
+          }
+        },
+        {
+          "id": "a08",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Residual Connection",
+          "definition": "y=F(x)+x. Решает vanishing gradient в глубоких сетях.",
+          "source": "resnet",
+          "formula": "y = F(x, {W}) + x",
+          "example": "ResNet-152: до ResNet лимит был ~20 слоёв.",
+          "flip": {
+            "q": "Что такое Residual Connection?",
+            "a": "y=F(x)+x. Решает vanishing gradient в глубоких сетях."
+          },
+          "quiz": {
+            "q": "Residual помогает с:",
+            "options": [
+              "Размером",
+              "Vanishing gradient",
+              "Скоростью",
+              "Augmentation"
+            ],
+            "correct": 1,
+            "explain": "Градиент течёт напрямую через skip."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Residual connection: y = F(x) + x.",
+              "answer": true,
+              "explain": "Skip даёт прямой путь градиенту."
+            }
+          }
+        },
+        {
+          "id": "a09",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Layer Norm",
+          "definition": "Нормирует по фичам внутри одного примера. Стандарт в трансформерах.",
+          "source": "attn",
+          "formula": "LN(x) = γ·(x-μ_feature)/√(σ²+ε) + β",
+          "example": "BN — по батчу (нужен большой batch). LN — независимо от batch.",
+          "flip": {
+            "q": "Что такое Layer Norm?",
+            "a": "Нормирует по фичам внутри одного примера. Стандарт в трансформерах."
+          },
+          "quiz": {
+            "q": "LN vs BN:",
+            "options": [
+              "BN по фичам",
+              "LN по фичам внутри примера",
+              "LN не имеет параметров",
+              "LN только CNN"
+            ],
+            "correct": 1,
+            "explain": "LN независим от batch."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ способ нормализации?",
+              "items": [
+                "Batch Norm",
+                "Layer Norm",
+                "Group Norm",
+                "Soft Norm"
+              ],
+              "odd_idx": 3,
+              "explain": "Soft Norm — придуманный термин."
+            }
+          }
+        },
+        {
+          "id": "a10",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Encoder-Decoder",
+          "definition": "Encoder: вход → представление. Decoder: представление → выход.",
+          "source": "attn",
+          "example": "Перевод EN→RU: encoder читает, decoder генерирует.",
+          "flip": {
+            "q": "Что такое Encoder-Decoder?",
+            "a": "Encoder: вход → представление. Decoder: представление → выход."
+          },
+          "quiz": {
+            "q": "Decoder в seq2seq имеет:",
+            "options": [
+              "Только self-attn",
+              "Self-attn + cross-attn к encoder",
+              "Только cross",
+              "Только FFN"
+            ],
+            "correct": 1,
+            "explain": "Self для истории + cross к encoder."
+          }
+        },
+        {
+          "id": "a11",
+          "section": "architectures",
+          "level": "intermediate",
+          "concept": "CNN vs MLP",
+          "definition": "MLP теряет пространственность. CNN: weight sharing + локальность.",
+          "source": "cs231n",
+          "example": "MLP 224×224 RGB: первый слой 100k → 15 млрд параметров. CNN — пара миллионов.",
+          "flip": {
+            "q": "Что такое CNN vs MLP?",
+            "a": "MLP теряет пространственность. CNN: weight sharing + локальность."
+          },
+          "quiz": {
+            "q": "Почему CNN лучше MLP для картинок?",
+            "options": [
+              "GPU",
+              "Weight sharing + локальность",
+              "Меньше слоёв",
+              "Нет меток"
+            ],
+            "correct": 1,
+            "explain": "Один фильтр работает везде."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "MLP сохраняет пространственную структуру изображения.",
+              "answer": false,
+              "explain": "MLP делает flatten → теряет 2D-структуру."
+            }
+          }
+        },
+        {
+          "id": "a12",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Vision Transformer",
+          "definition": "Картинка → патчи 16×16 → линейная проекция → Transformer.",
+          "source": "vit",
+          "example": "224×224 → 14×14=196 патчей-токенов.",
+          "flip": {
+            "q": "Что такое Vision Transformer?",
+            "a": "Картинка → патчи 16×16 → линейная проекция → Transformer."
+          },
+          "quiz": {
+            "q": "ViT 16×16 на 224×224 → токенов:",
+            "options": [
+              "196",
+              "256",
+              "14",
+              "16"
+            ],
+            "correct": 0,
+            "explain": "(224/16)² = 196."
+          },
+          "minigames": {
+            "fill": {
+              "q": "ViT 16×16 на 224×224 → __ патчей.",
+              "options": [
+                "196",
+                "14",
+                "256",
+                "49"
+              ],
+              "correct": 0,
+              "explain": "(224/16)² = 14² = 196."
+            }
+          }
+        },
+        {
+          "id": "a13",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "GRU",
+          "definition": "Упрощённый LSTM: 2 гейта (reset+update).",
+          "source": "cs224n",
+          "flip": {
+            "q": "Что такое GRU?",
+            "a": "Упрощённый LSTM: 2 гейта (reset+update)."
+          },
+          "quiz": {
+            "q": "GRU vs LSTM:",
+            "options": [
+              "Больше параметров",
+              "2 гейта vs 3",
+              "Не recurrent",
+              "Только CV"
+            ],
+            "correct": 1,
+            "explain": "Объединяет forget+input в update."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ recurrent архитектура?",
+              "items": [
+                "RNN",
+                "LSTM",
+                "GRU",
+                "CNN"
+              ],
+              "odd_idx": 3,
+              "explain": "CNN — свёрточная, не recurrent."
+            }
+          }
+        },
+        {
+          "id": "a14",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "U-Net",
+          "definition": "Encoder-decoder со skip connections. Основа Stable Diffusion.",
+          "source": "ldm",
+          "example": "Skip connections передают детали из encoder в decoder.",
+          "flip": {
+            "q": "Что такое U-Net?",
+            "a": "Encoder-decoder со skip connections. Основа Stable Diffusion."
+          },
+          "quiz": {
+            "q": "U-Net в SD предсказывает:",
+            "options": [
+              "Финал изображения",
+              "Шум на шаге t",
+              "Сегментацию",
+              "Промпт"
+            ],
+            "correct": 1,
+            "explain": "DDPM: предсказывает ε (шум)."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Stable Diffusion использует U-Net.",
+              "answer": true,
+              "explain": "U-Net предсказывает шум в latent space."
+            }
+          }
+        },
+        {
+          "id": "a15",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Mixture of Experts",
+          "definition": "N экспертов, router выбирает top-K. Больше параметров без роста compute.",
+          "source": "moe",
+          "example": "Mixtral 8×7B: 47B общих, ~13B активных.",
+          "analogy": "Консилиум: к пациенту вызывают 2 из 8 специалистов.",
+          "flip": {
+            "q": "Что такое Mixture of Experts?",
+            "a": "N экспертов, router выбирает top-K. Больше параметров без роста compute."
+          },
+          "quiz": {
+            "q": "MoE с 8 экспертами top-2:",
+            "options": [
+              "Все 8",
+              "2 эксперта на токен",
+              "Случайно",
+              "Без router"
+            ],
+            "correct": 1,
+            "explain": "Router выбирает top-2."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Mixtral 8×7B с top-2: активных параметров ≈ __",
+              "options": [
+                "13B",
+                "56B",
+                "8B",
+                "2B"
+              ],
+              "correct": 0,
+              "explain": "2 эксперта из 8 + shared = ~13B активных."
+            }
+          }
+        },
+        {
+          "id": "a16",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "RoPE",
+          "definition": "Вращает Q,K в комплексной плоскости. Кодирует относительные позиции.",
+          "source": "rope",
+          "example": "Используется в LLaMA, GPT-NeoX. Лучше экстраполяция.",
+          "flip": {
+            "q": "Что такое RoPE?",
+            "a": "Вращает Q,K в комплексной плоскости. Кодирует относительные позиции."
+          },
+          "quiz": {
+            "q": "RoPE кодирует:",
+            "options": [
+              "Абсолютные",
+              "Относительные через вращение",
+              "Soft",
+              "Все одинаково"
+            ],
+            "correct": 1,
+            "explain": "dot(Q_m,K_n) зависит от (m-n)."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ способ encoding позиций?",
+              "items": [
+                "Sinusoidal",
+                "Learned",
+                "RoPE",
+                "ELU"
+              ],
+              "odd_idx": 3,
+              "explain": "ELU — функция активации."
+            }
+          }
+        },
+        {
+          "id": "a17",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Causal Attention",
+          "definition": "Decoder LM: токен видит только прошлое. Маска -∞ для будущих позиций.",
+          "source": "attn",
+          "example": "GPT: токен 5 видит 1-5, не 6-N.",
+          "flip": {
+            "q": "Что такое Causal Attention?",
+            "a": "Decoder LM: токен видит только прошлое. Маска -∞ для будущих позиций."
+          },
+          "quiz": {
+            "q": "Causal mask нужен для:",
+            "options": [
+              "Памяти",
+              "Autoregressive — не видеть будущее",
+              "Скорости",
+              "Регуляризации"
+            ],
+            "correct": 1,
+            "explain": "LM учится предсказывать next token."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Causal mask использует -∞ для будущих позиций перед softmax.",
+              "answer": true,
+              "explain": "exp(-∞) = 0 → вероятность будущих токенов = 0."
+            }
+          }
+        },
+        {
+          "id": "a18",
+          "section": "architectures",
+          "level": "advanced",
+          "concept": "Tokenizer BPE",
+          "definition": "Byte-Pair Encoding. Старт с символов → объединяем частые пары.",
+          "source": "cs224n",
+          "example": "GPT-2: 50k токенов. GPT-4: ~100k.",
+          "flip": {
+            "q": "Что такое Tokenizer BPE?",
+            "a": "Byte-Pair Encoding. Старт с символов → объединяем частые пары."
+          },
+          "quiz": {
+            "q": "BPE начинает с:",
+            "options": [
+              "Слов",
+              "Символов",
+              "N-грамм",
+              "Случайно"
+            ],
+            "correct": 1,
+            "explain": "Базовая единица — символ."
+          },
+          "minigames": {
+            "fill": {
+              "q": "BPE объединяет __ часто встречающиеся пары.",
+              "options": [
+                "самые",
+                "редко",
+                "любые",
+                "соседние"
+              ],
+              "correct": 0,
+              "explain": "Жадно: топ-1 частая пара → объединяем."
+            }
+          }
+        },
+        {
+          "id": "a19",
+          "section": "architectures",
+          "level": "intermediate",
+          "concept": "Stride и Padding",
+          "definition": "Stride — шаг. Padding — нули по краям. out=(in-K+2P)/S+1",
+          "source": "cs231n",
+          "example": "3×3, stride=1, pad=1 на 32×32 → 32×32 (same).",
+          "flip": {
+            "q": "Что такое Stride и Padding?",
+            "a": "Stride — шаг. Padding — нули по краям. out=(in-K+2P)/S+1"
+          },
+          "quiz": {
+            "q": "Conv 5×5, stride=2, pad=0 на 28×28:",
+            "options": [
+              "12×12",
+              "14×14",
+              "24×24",
+              "26×26"
+            ],
+            "correct": 0,
+            "explain": "(28-5)/2+1=12."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что влияет на размер выхода Conv?",
+              "items": [
+                "Kernel size",
+                "Stride",
+                "Padding",
+                "Activation"
+              ],
+              "odd_idx": 3,
+              "explain": "Активация не меняет размерность."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "metrics",
+      "title": "Метрики",
+      "icon": "↗",
+      "description": "Accuracy, F1, ROC-AUC",
+      "color": "#fb923c",
+      "cards": [
+        {
+          "id": "m01",
+          "section": "metrics",
+          "level": "beginner",
+          "concept": "Accuracy",
+          "definition": "(TP+TN)/всё. Опасна при дисбалансе.",
+          "source": "esl",
+          "formula": "(TP+TN)/(TP+TN+FP+FN)",
+          "example": "99% не-спам, 1% спам. Тривиальная модель → 99% acc.",
+          "flip": {
+            "q": "Что такое Accuracy?",
+            "a": "(TP+TN)/всё. Опасна при дисбалансе."
+          },
+          "quiz": {
+            "q": "При дисбалансе 99:1:",
+            "options": [
+              "Лучшая метрика",
+              "Опасна",
+              "Не вычислима",
+              "Идеал"
+            ],
+            "correct": 1,
+            "explain": "Тривиально мажоритарный класс даст 99%."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Accuracy всегда хорошая метрика.",
+              "answer": false,
+              "explain": "При дисбалансе обманчива."
+            }
+          }
+        },
+        {
+          "id": "m02",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "Precision vs Recall",
+          "definition": "Precision=TP/(TP+FP). Recall=TP/(TP+FN).",
+          "source": "esl",
+          "example": "Рак: high recall. Спам: high precision.",
+          "flip": {
+            "q": "Что такое Precision vs Recall?",
+            "a": "Precision=TP/(TP+FP). Recall=TP/(TP+FN)."
+          },
+          "quiz": {
+            "q": "Recall = TP / ?",
+            "options": [
+              "TP+FP",
+              "TP+FN",
+              "TP+TN",
+              "FP+FN"
+            ],
+            "correct": 1,
+            "explain": "TP / (всё реально положительное)."
+          },
+          "minigames": {
+            "match": {
+              "q": "Метрика → формула:",
+              "pairs": [
+                [
+                  "Precision",
+                  "TP/(TP+FP)"
+                ],
+                [
+                  "Recall",
+                  "TP/(TP+FN)"
+                ],
+                [
+                  "Accuracy",
+                  "(TP+TN)/всё"
+                ],
+                [
+                  "F1",
+                  "гарм. среднее P,R"
+                ]
+              ]
+            },
+            "fill": {
+              "q": "Precision = TP / (TP + __)",
+              "options": [
+                "FP",
+                "FN",
+                "TN",
+                "TP"
+              ],
+              "correct": 0,
+              "explain": "FP — false positive, попало в знаменатель precision."
+            }
+          }
+        },
+        {
+          "id": "m03",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "F1-score",
+          "definition": "2·P·R/(P+R). Высок только если оба высоки.",
+          "source": "esl",
+          "formula": "F1 = 2PR/(P+R)",
+          "example": "P=1, R=0 → F1=0.",
+          "flip": {
+            "q": "Что такое F1-score?",
+            "a": "2·P·R/(P+R). Высок только если оба высоки."
+          },
+          "quiz": {
+            "q": "F1=0.8 означает:",
+            "options": [
+              "P=R=0.8",
+              "Гарм. среднее P,R = 0.8",
+              "Accuracy=0.8",
+              "Loss=0.2"
+            ],
+            "correct": 1,
+            "explain": "F1 высок только когда оба компонента высоки."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "F1=0 если хотя бы одна из P или R равна 0.",
+              "answer": true,
+              "explain": "F1 = 2PR/(P+R). P или R = 0 → F1 = 0."
+            }
+          }
+        },
+        {
+          "id": "m04",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "ROC-AUC",
+          "definition": "Площадь под ROC (TPR vs FPR). 0.5=случайный, 1=идеал.",
+          "source": "esl",
+          "example": "0.8: вероятность что случайный + получит больший score чем -.",
+          "flip": {
+            "q": "Что такое ROC-AUC?",
+            "a": "Площадь под ROC (TPR vs FPR). 0.5=случайный, 1=идеал."
+          },
+          "quiz": {
+            "q": "AUC=0.5:",
+            "options": [
+              "Случайный",
+              "Идеал",
+              "Перевёрнут",
+              "50% accuracy"
+            ],
+            "correct": 0,
+            "explain": "Нет дискриминирующей способности."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ значение ROC-AUC?",
+              "items": [
+                "0.5",
+                "0.8",
+                "1.0",
+                "2.5"
+              ],
+              "odd_idx": 3,
+              "explain": "AUC ∈ [0, 1]. 2.5 невозможно."
+            }
+          }
+        },
+        {
+          "id": "m05",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "Confusion Matrix",
+          "definition": "TP, FP, FN, TN. Основа всех метрик.",
+          "source": "esl",
+          "example": "FN=пропустили положительный.",
+          "flip": {
+            "q": "Что такое Confusion Matrix?",
+            "a": "TP, FP, FN, TN. Основа всех метрик."
+          },
+          "quiz": {
+            "q": "Пропустили положительный — это:",
+            "options": [
+              "TP",
+              "FP",
+              "FN",
+              "TN"
+            ],
+            "correct": 2,
+            "explain": "Реально+ но предсказано-."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "True Negative — модель сказала отрицательный, и он реально отрицательный.",
+              "answer": true,
+              "explain": "TN = верный негативный ответ."
+            }
+          }
+        },
+        {
+          "id": "m06",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "MSE vs MAE",
+          "definition": "MSE штрафует выбросы (квадрат). MAE устойчив.",
+          "source": "esl",
+          "formula": "MSE=(1/n)Σ(y-ŷ)²; MAE=(1/n)Σ|y-ŷ|",
+          "flip": {
+            "q": "Что такое MSE vs MAE?",
+            "a": "MSE штрафует выбросы (квадрат). MAE устойчив."
+          },
+          "quiz": {
+            "q": "Сильные выбросы → лучше:",
+            "options": [
+              "MSE",
+              "MAE",
+              "Эквивалентны",
+              "Ни то ни то"
+            ],
+            "correct": 1,
+            "explain": "MAE не возводит в квадрат."
+          },
+          "minigames": {
+            "fill": {
+              "q": "При выбросах в данных лучше использовать __ вместо MSE.",
+              "options": [
+                "MAE",
+                "Accuracy",
+                "F1",
+                "BLEU"
+              ],
+              "correct": 0,
+              "explain": "MAE не возводит в квадрат — устойчивее."
+            }
+          }
+        },
+        {
+          "id": "m07",
+          "section": "metrics",
+          "level": "advanced",
+          "concept": "Perplexity",
+          "definition": "PPL=exp(средний NLL). Ниже — лучше.",
+          "source": "cs224n",
+          "formula": "PPL = exp(-1/N · Σ log P(w))",
+          "example": "PPL=10: модель 'удивлена' как при выборе из 10 равных.",
+          "flip": {
+            "q": "Что такое Perplexity?",
+            "a": "PPL=exp(средний NLL). Ниже — лучше."
+          },
+          "quiz": {
+            "q": "Лучшая PPL:",
+            "options": [
+              "Высокая",
+              "Низкая",
+              "Точно 1",
+              "= число классов"
+            ],
+            "correct": 1,
+            "explain": "Меньше = лучше предсказание."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Меньшая perplexity = лучше языковая модель.",
+              "answer": true,
+              "explain": "PPL — мера 'удивления'. Меньше = точнее."
+            }
+          }
+        },
+        {
+          "id": "m08",
+          "section": "metrics",
+          "level": "advanced",
+          "concept": "BLEU",
+          "definition": "Перекрытие n-грамм с эталоном. Перевод.",
+          "source": "cs224n",
+          "example": "BLEU-4: 1,2,3,4-граммы. SOTA ~40-50.",
+          "flip": {
+            "q": "Что такое BLEU?",
+            "a": "Перекрытие n-грамм с эталоном. Перевод."
+          },
+          "quiz": {
+            "q": "BLEU сравнивает:",
+            "options": [
+              "Embeddings",
+              "N-граммы с reference",
+              "Длину",
+              "Время"
+            ],
+            "correct": 1,
+            "explain": "Перекрытие n-грамм."
+          }
+        },
+        {
+          "id": "m09",
+          "section": "metrics",
+          "level": "advanced",
+          "concept": "FID",
+          "definition": "Сравнивает Inception-активации реальных и сгенерированных. Ниже — лучше.",
+          "source": "ddpm",
+          "example": "SOTA на FFHQ ~3-5.",
+          "flip": {
+            "q": "Что такое FID?",
+            "a": "Сравнивает Inception-активации реальных и сгенерированных. Ниже — лучше."
+          },
+          "quiz": {
+            "q": "FID для:",
+            "options": [
+              "NLP",
+              "Качества генерации изображений",
+              "Классификации",
+              "RNN"
+            ],
+            "correct": 1,
+            "explain": "Стандарт для GAN/Diffusion."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Для чего НЕ используется FID?",
+              "items": [
+                "GAN",
+                "Diffusion",
+                "NLP",
+                "VAE"
+              ],
+              "odd_idx": 2,
+              "explain": "FID — для изображений, не для текста."
+            }
+          }
+        },
+        {
+          "id": "m10",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "R²",
+          "definition": "Доля объяснённой дисперсии. 1=идеал, 0=не лучше среднего.",
+          "source": "esl",
+          "formula": "R² = 1 - SS_res/SS_tot",
+          "flip": {
+            "q": "Что такое R²?",
+            "a": "Доля объяснённой дисперсии. 1=идеал, 0=не лучше среднего."
+          },
+          "quiz": {
+            "q": "R²=0.7:",
+            "options": [
+              "70% ошибок",
+              "Объясняет 70% дисперсии",
+              "70% acc",
+              "Loss=0.7"
+            ],
+            "correct": 1,
+            "explain": "Доля объяснённой дисперсии."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "R² может быть отрицательным.",
+              "answer": true,
+              "explain": "Если модель хуже чем предсказание среднего — R² < 0."
+            }
+          }
+        },
+        {
+          "id": "m11",
+          "section": "metrics",
+          "level": "advanced",
+          "concept": "PR-AUC",
+          "definition": "Чувствительнее к дисбалансу чем ROC-AUC.",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое PR-AUC?",
+            "a": "Чувствительнее к дисбалансу чем ROC-AUC."
+          },
+          "quiz": {
+            "q": "1% положительных → лучше:",
+            "options": [
+              "ROC-AUC",
+              "PR-AUC",
+              "Accuracy",
+              "Recall"
+            ],
+            "correct": 1,
+            "explain": "Реальная картина для редких классов."
+          },
+          "minigames": {
+            "fill": {
+              "q": "При сильном дисбалансе классов используй __",
+              "options": [
+                "PR-AUC",
+                "Accuracy",
+                "R²",
+                "BLEU"
+              ],
+              "correct": 0,
+              "explain": "PR-AUC лучше показывает картину для редких классов."
+            }
+          }
+        },
+        {
+          "id": "m12",
+          "section": "metrics",
+          "level": "beginner",
+          "concept": "TPR / Sensitivity",
+          "definition": "TPR=Recall=Sensitivity=TP/(TP+FN). Доля найденных положительных.",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое TPR / Sensitivity?",
+            "a": "TPR=Recall=Sensitivity=TP/(TP+FN). Доля найденных положительных."
+          },
+          "quiz": {
+            "q": "TPR называется:",
+            "options": [
+              "Precision",
+              "Recall/Sensitivity",
+              "Accuracy",
+              "F1"
+            ],
+            "correct": 1,
+            "explain": "Все три — синонимы."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ синоним Recall?",
+              "items": [
+                "Sensitivity",
+                "TPR",
+                "Hit Rate",
+                "Specificity"
+              ],
+              "odd_idx": 3,
+              "explain": "Specificity = TNR = 1 - FPR."
+            }
+          }
+        },
+        {
+          "id": "m13",
+          "section": "metrics",
+          "level": "intermediate",
+          "concept": "FPR",
+          "definition": "FP/(FP+TN). Доля ложных тревог. Используется в ROC.",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое FPR?",
+            "a": "FP/(FP+TN). Доля ложных тревог. Используется в ROC."
+          },
+          "quiz": {
+            "q": "FPR это:",
+            "options": [
+              "TP/(TP+FP)",
+              "FP/(FP+TN)",
+              "TN/(TN+FP)",
+              "1-Recall"
+            ],
+            "correct": 1,
+            "explain": "'Обвинили невиновного' / 'всех невиновных'."
+          }
+        }
+      ]
+    },
+    {
+      "id": "classical_ml",
+      "title": "Классика ML",
+      "icon": "∑",
+      "description": "Trees, SVM, KNN",
+      "color": "#f472b6",
+      "cards": [
+        {
+          "id": "cl01",
+          "section": "classical_ml",
+          "level": "beginner",
+          "concept": "Decision Tree",
+          "definition": "Дерево решений. Жадно по Information Gain / Gini.",
+          "source": "esl",
+          "example": "Возраст>30 → доход>50k → купит=yes.",
+          "flip": {
+            "q": "Что такое Decision Tree?",
+            "a": "Дерево решений. Жадно по Information Gain / Gini."
+          },
+          "quiz": {
+            "q": "Tree выбирает split по:",
+            "options": [
+              "Случайно",
+              "IG/Gini",
+              "KNN",
+              "SVM"
+            ],
+            "correct": 1,
+            "explain": "Максимизируем разделимость."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Decision Tree всегда сходится к глобальному оптимуму.",
+              "answer": false,
+              "explain": "Жадный алгоритм — может застрять в локальном."
+            }
+          }
+        },
+        {
+          "id": "cl02",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "Random Forest",
+          "definition": "Ансамбль деревьев на bootstrap + random features.",
+          "source": "esl",
+          "example": "500 деревьев, каждое видит ~63% данных.",
+          "flip": {
+            "q": "Что такое Random Forest?",
+            "a": "Ансамбль деревьев на bootstrap + random features."
+          },
+          "quiz": {
+            "q": "RF снижает overfitting через:",
+            "options": [
+              "Регуляризацию",
+              "Bagging",
+              "Сильную prune",
+              "Малую глубину"
+            ],
+            "correct": 1,
+            "explain": "Независимые ошибки усредняются."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ компонент Random Forest?",
+              "items": [
+                "Bootstrap",
+                "Random features",
+                "Голосование",
+                "Градиентный спуск"
+              ],
+              "odd_idx": 3,
+              "explain": "RF не использует gradient descent."
+            }
+          }
+        },
+        {
+          "id": "cl03",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "Gradient Boosting",
+          "definition": "Последовательный ансамбль. Каждое дерево учится на ошибках предыдущего.",
+          "source": "esl",
+          "formula": "F_m = F_{m-1} + γ·h_m, h_m обучается на ∇L",
+          "example": "XGBoost, LightGBM, CatBoost.",
+          "flip": {
+            "q": "Что такое Gradient Boosting?",
+            "a": "Последовательный ансамбль. Каждое дерево учится на ошибках предыдущего."
+          },
+          "quiz": {
+            "q": "Boosting обучает деревья:",
+            "options": [
+              "Параллельно",
+              "Последовательно на ошибках",
+              "Случайно",
+              "Только одно"
+            ],
+            "correct": 1,
+            "explain": "Каждое исправляет накопленные ошибки."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Gradient Boosting обучает деревья параллельно.",
+              "answer": false,
+              "explain": "Последовательно — каждое исправляет ошибки предыдущего."
+            }
+          }
+        },
+        {
+          "id": "cl04",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "SVM",
+          "definition": "Гиперплоскость с max margin. Kernel trick для нелинейности.",
+          "source": "esl",
+          "formula": "min ||w||² + C·Σξ s.t. y(w·x+b)≥1-ξ",
+          "example": "RBF: K(x,x')=exp(-γ||x-x'||²).",
+          "flip": {
+            "q": "Что такое SVM?",
+            "a": "Гиперплоскость с max margin. Kernel trick для нелинейности."
+          },
+          "quiz": {
+            "q": "Support vectors:",
+            "options": [
+              "Все точки",
+              "Точки на/внутри margin",
+              "Outliers",
+              "Среднее"
+            ],
+            "correct": 1,
+            "explain": "Только они определяют гиперплоскость."
+          },
+          "minigames": {
+            "fill": {
+              "q": "SVM с RBF kernel: K(x,x') = exp(__ · ||x-x'||²)",
+              "options": [
+                "-γ",
+                "γ",
+                "1",
+                "-1"
+              ],
+              "correct": 0,
+              "explain": "Гауссово ядро: exp(-γ·d²)."
+            }
+          }
+        },
+        {
+          "id": "cl05",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "K-Means",
+          "definition": "K центроидов. Точки → ближайший → обновить центроиды → повторить.",
+          "source": "esl",
+          "example": "K=3 → 3 кластера.",
+          "flip": {
+            "q": "Что такое K-Means?",
+            "a": "K центроидов. Точки → ближайший → обновить центроиды → повторить."
+          },
+          "quiz": {
+            "q": "K-Means чувствителен к:",
+            "options": [
+              "Размеру",
+              "Инициализации и K",
+              "Только labels",
+              "Ни к чему"
+            ],
+            "correct": 1,
+            "explain": "Разная инициализация → разные кластеры."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "K-Means гарантированно находит глобальный минимум.",
+              "answer": false,
+              "explain": "Зависит от инициализации. Запускают несколько раз."
+            }
+          }
+        },
+        {
+          "id": "cl06",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "PCA",
+          "definition": "Проекция на оси максимальной дисперсии.",
+          "source": "esl",
+          "example": "784D MNIST → 50D с 95% дисперсии.",
+          "flip": {
+            "q": "Что такое PCA?",
+            "a": "Проекция на оси максимальной дисперсии."
+          },
+          "quiz": {
+            "q": "PC1 это:",
+            "options": [
+              "Среднее",
+              "Направление макс. дисперсии",
+              "Случайный",
+              "Минимум loss"
+            ],
+            "correct": 1,
+            "explain": "Собственный вектор cov-матрицы с max собственным значением."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ метод снижения размерности?",
+              "items": [
+                "PCA",
+                "t-SNE",
+                "UMAP",
+                "Random Forest"
+              ],
+              "odd_idx": 3,
+              "explain": "RF — это классификация/регрессия."
+            }
+          }
+        },
+        {
+          "id": "cl07",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "Cross-Validation",
+          "definition": "K-fold: K частей, K моделей, усреднение.",
+          "source": "esl",
+          "example": "5-fold: 5 моделей × 80%/20%.",
+          "flip": {
+            "q": "Что такое Cross-Validation?",
+            "a": "K-fold: K частей, K моделей, усреднение."
+          },
+          "quiz": {
+            "q": "5-fold CV:",
+            "options": [
+              "5 моделей × 80% train",
+              "Один проход",
+              "Только классификация",
+              "K=n"
+            ],
+            "correct": 0,
+            "explain": "5 моделей × (80% train + 20% val)."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "5-fold CV обучает 5 моделей.",
+              "answer": true,
+              "explain": "K моделей × (K-1)/K данных каждая."
+            }
+          }
+        },
+        {
+          "id": "cl08",
+          "section": "classical_ml",
+          "level": "beginner",
+          "concept": "Naive Bayes",
+          "definition": "P(class|x) ∝ P(class)·∏P(x_i|class). 'Наивно' = независимость.",
+          "source": "esl",
+          "example": "Spam: P(spam|'win','viagra') ∝ P(spam)·P('win'|spam)·P('viagra'|spam).",
+          "flip": {
+            "q": "Что такое Naive Bayes?",
+            "a": "P(class|x) ∝ P(class)·∏P(x_i|class). 'Наивно' = независимость."
+          },
+          "quiz": {
+            "q": "NB 'наивен' потому что:",
+            "options": [
+              "Простая модель",
+              "Предполагает независимость фичей",
+              "Нет градиента",
+              "Только текст"
+            ],
+            "correct": 1,
+            "explain": "P(x1,x2|y) ≈ P(x1|y)·P(x2|y)."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Naive Bayes 'наивно' предполагает __ фичей.",
+              "options": [
+                "независимость",
+                "корреляцию",
+                "нормальность",
+                "разреженность"
+              ],
+              "correct": 0,
+              "explain": "P(x₁,x₂|y) ≈ P(x₁|y)·P(x₂|y)."
+            }
+          }
+        },
+        {
+          "id": "cl09",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "KNN",
+          "definition": "Голос k ближайших. Lazy — нет обучения.",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое KNN?",
+            "a": "Голос k ближайших. Lazy — нет обучения."
+          },
+          "quiz": {
+            "q": "KNN с k=1:",
+            "options": [
+              "Стабильнее",
+              "Шум, overfitting",
+              "Без расстояний",
+              "Параметрический"
+            ],
+            "correct": 1,
+            "explain": "Один сосед → шум доминирует."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "KNN — параметрическая модель.",
+              "answer": false,
+              "explain": "KNN непараметрический — хранит все данные."
+            }
+          }
+        },
+        {
+          "id": "cl10",
+          "section": "classical_ml",
+          "level": "advanced",
+          "concept": "XGBoost vs LightGBM",
+          "definition": "Оба GBDT. XGBoost — level-wise. LightGBM — leaf-wise (быстрее).",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое XGBoost vs LightGBM?",
+            "a": "Оба GBDT. XGBoost — level-wise. LightGBM — leaf-wise (быстрее)."
+          },
+          "quiz": {
+            "q": "LightGBM растит:",
+            "options": [
+              "Level-wise",
+              "Leaf-wise",
+              "Случайно",
+              "Не растит"
+            ],
+            "correct": 1,
+            "explain": "Расщепляет лист с max gain."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ Gradient Boosting?",
+              "items": [
+                "XGBoost",
+                "LightGBM",
+                "CatBoost",
+                "scikit-learn LinearReg"
+              ],
+              "odd_idx": 3,
+              "explain": "LinearReg — линейная модель."
+            }
+          }
+        },
+        {
+          "id": "cl11",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "Bias-Variance",
+          "definition": "Error = Bias² + Variance + Noise.",
+          "source": "wiki_bv",
+          "example": "Линейная — high bias. Глубокая без рег. — high variance.",
+          "flip": {
+            "q": "Что такое Bias-Variance?",
+            "a": "Error = Bias² + Variance + Noise."
+          },
+          "quiz": {
+            "q": "Гибкая модель + мало данных:",
+            "options": [
+              "Low/low",
+              "Low bias, high variance",
+              "High bias, low variance",
+              "High both"
+            ],
+            "correct": 1,
+            "explain": "Гибкость → low bias. Мало данных → high variance."
+          },
+          "minigames": {
+            "match": {
+              "q": "Сопоставь:",
+              "pairs": [
+                [
+                  "Underfit",
+                  "High bias"
+                ],
+                [
+                  "Overfit",
+                  "High variance"
+                ],
+                [
+                  "Sweet spot",
+                  "Balance"
+                ],
+                [
+                  "Noise",
+                  "Irreducible"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "cl12",
+          "section": "classical_ml",
+          "level": "intermediate",
+          "concept": "Bagging vs Boosting",
+          "definition": "Bagging: параллельно, усреднение (RF). Boosting: последовательно на ошибках.",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое Bagging vs Boosting?",
+            "a": "Bagging: параллельно, усреднение (RF). Boosting: последовательно на ошибках."
+          },
+          "quiz": {
+            "q": "RF это:",
+            "options": [
+              "Boosting",
+              "Bagging",
+              "Stacking",
+              "Pruning"
+            ],
+            "correct": 1,
+            "explain": "RF = bagging + random features."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Bagging уменьшает variance, boosting уменьшает bias.",
+              "answer": true,
+              "explain": "Bagging — усреднение независимых (↓var). Boosting — последовательное улучшение (↓bias)."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "generative",
+      "title": "Генеративные",
+      "icon": "✦",
+      "description": "GAN, VAE, Diffusion",
+      "color": "#34d399",
+      "cards": [
+        {
+          "id": "g01",
+          "section": "generative",
+          "level": "intermediate",
+          "concept": "GAN",
+          "definition": "Generator vs Discriminator в minimax-игре.",
+          "source": "gan",
+          "formula": "min_G max_D  E[log D(x)] + E[log(1-D(G(z)))]",
+          "example": "StyleGAN на лицах. Mode collapse — частая проблема.",
+          "analogy": "Фальшивомонетчик vs детектив.",
+          "flip": {
+            "q": "Что такое GAN?",
+            "a": "Generator vs Discriminator в minimax-игре."
+          },
+          "quiz": {
+            "q": "GAN обучается через:",
+            "options": [
+              "Supervised",
+              "Minimax G vs D",
+              "RL",
+              "Self-consistency"
+            ],
+            "correct": 1,
+            "explain": "Adversarial training."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "GAN — это supervised learning.",
+              "answer": false,
+              "explain": "Adversarial — не supervised. Нет правильных labels для G."
+            }
+          }
+        },
+        {
+          "id": "g02",
+          "section": "generative",
+          "level": "intermediate",
+          "concept": "VAE",
+          "definition": "Encoder → q(z|x), decoder → p(x|z). Loss = reconstruction + KL.",
+          "source": "vae",
+          "formula": "L = E_q[log p(x|z)] - KL(q(z|x)||p(z))",
+          "example": "Семплируем z~N(0,I), decoder → новое изображение.",
+          "flip": {
+            "q": "Что такое VAE?",
+            "a": "Encoder → q(z|x), decoder → p(x|z). Loss = reconstruction + KL."
+          },
+          "quiz": {
+            "q": "Encoder VAE выдаёт:",
+            "options": [
+              "Точку z",
+              "Параметры распределения (μ,σ)",
+              "Логиты",
+              "Изображение"
+            ],
+            "correct": 1,
+            "explain": "q(z|x) — гауссиан с μ,log σ²."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "VAE использует reparametrization trick.",
+              "answer": true,
+              "explain": "z=μ+σ·ε, ε~N(0,I) — градиент через семплирование."
+            },
+            "fill": {
+              "q": "VAE encoder выдаёт __ распределения.",
+              "options": [
+                "параметры",
+                "точку",
+                "логиты",
+                "шум"
+              ],
+              "correct": 0,
+              "explain": "μ и log σ² для q(z|x)."
+            }
+          }
+        },
+        {
+          "id": "g03",
+          "section": "generative",
+          "level": "advanced",
+          "concept": "Diffusion",
+          "definition": "Forward: добавляем шум за T шагов. Reverse: U-Net учится убирать.",
+          "source": "ddpm",
+          "formula": "x_t=√ᾱ·x_0+√(1-ᾱ)·ε; ε_θ предсказывает ε",
+          "example": "T=1000 в DDPM. Stable Diffusion использует 20-50.",
+          "flip": {
+            "q": "Что такое Diffusion?",
+            "a": "Forward: добавляем шум за T шагов. Reverse: U-Net учится убирать."
+          },
+          "quiz": {
+            "q": "Forward process diffusion:",
+            "options": [
+              "Убирает шум",
+              "Добавляет шум",
+              "Attention",
+              "Свёртка"
+            ],
+            "correct": 1,
+            "explain": "Forward = noising. Reverse = обучаемый denoising."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ часть diffusion модели?",
+              "items": [
+                "Forward process",
+                "Reverse process",
+                "U-Net",
+                "Discriminator"
+              ],
+              "odd_idx": 3,
+              "explain": "Discriminator — это в GAN."
+            }
+          }
+        },
+        {
+          "id": "g04",
+          "section": "generative",
+          "level": "advanced",
+          "concept": "DDIM",
+          "definition": "Детерминированный sampler. Сокращает 1000 → 20-50 шагов.",
+          "source": "ddpm",
+          "example": "Stable Diffusion: 20-50 DDIM шагов.",
+          "flip": {
+            "q": "Что такое DDIM?",
+            "a": "Детерминированный sampler. Сокращает 1000 → 20-50 шагов."
+          },
+          "quiz": {
+            "q": "DDIM позволяет:",
+            "options": [
+              "Обучать быстрее",
+              "Inference в 20-50× быстрее",
+              "Лучше FID",
+              "Без U-Net"
+            ],
+            "correct": 1,
+            "explain": "Меньше шагов sampling."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "DDIM детерминированный sampler.",
+              "answer": true,
+              "explain": "В отличие от стохастического DDPM."
+            }
+          }
+        },
+        {
+          "id": "g05",
+          "section": "generative",
+          "level": "intermediate",
+          "concept": "Autoregressive",
+          "definition": "Токен за токеном: P(x)=∏P(x_i|x_<i). GPT, PixelCNN.",
+          "source": "gpt3",
+          "example": "GPT: 'Hello, my name' → P('is')>P('was')...",
+          "flip": {
+            "q": "Что такое Autoregressive?",
+            "a": "Токен за токеном: P(x)=∏P(x_i|x_<i). GPT, PixelCNN."
+          },
+          "quiz": {
+            "q": "AR-генерация:",
+            "options": [
+              "Параллельно",
+              "Последовательно",
+              "Только decoder",
+              "Только embeddings"
+            ],
+            "correct": 1,
+            "explain": "Каждый токен зависит от предыдущих."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Autoregressive модели генерируют все токены параллельно.",
+              "answer": false,
+              "explain": "Последовательно — каждый зависит от предыдущих."
+            }
+          }
+        },
+        {
+          "id": "g06",
+          "section": "generative",
+          "level": "advanced",
+          "concept": "CFG",
+          "definition": "Classifier-Free Guidance. ε=ε_uncond+w·(ε_cond-ε_uncond).",
+          "source": "ldm",
+          "example": "SD: w=7.5 стандарт. Выше — сильнее следует промпту.",
+          "flip": {
+            "q": "Что такое CFG?",
+            "a": "Classifier-Free Guidance. ε=ε_uncond+w·(ε_cond-ε_uncond)."
+          },
+          "quiz": {
+            "q": "CFG w=1:",
+            "options": [
+              "Чистый uncond",
+              "Только cond",
+              "Стандартный cond",
+              "Макс разнообразие"
+            ],
+            "correct": 2,
+            "explain": "w=1: ε=ε_cond без амплификации."
+          },
+          "minigames": {
+            "fill": {
+              "q": "CFG: ε = ε_uncond + __ · (ε_cond - ε_uncond)",
+              "options": [
+                "w",
+                "1",
+                "β",
+                "α"
+              ],
+              "correct": 0,
+              "explain": "w — guidance scale."
+            }
+          }
+        },
+        {
+          "id": "g07",
+          "section": "generative",
+          "level": "advanced",
+          "concept": "Latent Diffusion",
+          "definition": "Diffusion в latent space VAE. Основа Stable Diffusion.",
+          "source": "ldm",
+          "example": "VAE: 512×512 → 64×64. Diffusion в малом пространстве.",
+          "flip": {
+            "q": "Что такое Latent Diffusion?",
+            "a": "Diffusion в latent space VAE. Основа Stable Diffusion."
+          },
+          "quiz": {
+            "q": "Stable Diffusion в:",
+            "options": [
+              "Pixel space",
+              "Latent VAE",
+              "Frequency",
+              "Wavelet"
+            ],
+            "correct": 1,
+            "explain": "64×64×4 vs 512×512×3 — на порядок дешевле."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ использует latent space?",
+              "items": [
+                "VAE",
+                "Stable Diffusion",
+                "StyleGAN",
+                "KNN"
+              ],
+              "odd_idx": 3,
+              "explain": "KNN работает в исходном пространстве данных."
+            }
+          }
+        },
+        {
+          "id": "g08",
+          "section": "generative",
+          "level": "advanced",
+          "concept": "ControlNet",
+          "definition": "Контроль SD по condition (edges, depth, pose).",
+          "source": "controlnet",
+          "example": "ControlNet-canny: контуры → изображение с теми же контурами.",
+          "flip": {
+            "q": "Что такое ControlNet?",
+            "a": "Контроль SD по condition (edges, depth, pose)."
+          },
+          "quiz": {
+            "q": "ControlNet для:",
+            "options": [
+              "Ускорения",
+              "Структурного контроля",
+              "Замены промпта",
+              "Меньшего размера"
+            ],
+            "correct": 1,
+            "explain": "Структура помимо текста."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "ControlNet требует переобучения всей Stable Diffusion.",
+              "answer": false,
+              "explain": "SD заморожена. Тренируется только копия энкодера с zero conv."
+            }
+          }
+        },
+        {
+          "id": "g09",
+          "section": "generative",
+          "level": "intermediate",
+          "concept": "Mode Collapse",
+          "definition": "G выдаёт только узкое подмножество распределения.",
+          "source": "gan",
+          "example": "GAN на MNIST: только цифра '3' тысячи раз.",
+          "flip": {
+            "q": "Что такое Mode Collapse?",
+            "a": "G выдаёт только узкое подмножество распределения."
+          },
+          "quiz": {
+            "q": "Mode collapse:",
+            "options": [
+              "G не сходится",
+              "G мало разнообразия",
+              "D слишком сильный",
+              "Loss взрывается"
+            ],
+            "correct": 1,
+            "explain": "G находит локальный минимум."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Mode collapse — это когда GAN не обучается совсем.",
+              "answer": false,
+              "explain": "Mode collapse — G выдаёт мало разнообразия (узкое подмножество)."
+            }
+          }
+        },
+        {
+          "id": "g10",
+          "section": "generative",
+          "level": "advanced",
+          "concept": "Score Matching",
+          "definition": "Обучаем s_θ ≈ ∇log p(x). Эквивалентно noise prediction.",
+          "source": "ddpm",
+          "example": "Reverse SDE через score.",
+          "flip": {
+            "q": "Что такое Score Matching?",
+            "a": "Обучаем s_θ ≈ ∇log p(x). Эквивалентно noise prediction."
+          },
+          "quiz": {
+            "q": "Score = ∇log p(x):",
+            "options": [
+              "Среднее",
+              "Направление наибольшей плотности",
+              "Энтропия",
+              "Variance"
+            ],
+            "correct": 1,
+            "explain": "Куда двигаться к высоковероятным точкам."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Score = ∇ log __",
+              "options": [
+                "p(x)",
+                "p(y|x)",
+                "loss",
+                "entropy"
+              ],
+              "correct": 0,
+              "explain": "Score — градиент log плотности."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "llm",
+      "title": "LLM",
+      "icon": "⟨⟩",
+      "description": "Языковые модели, RLHF",
+      "color": "#fbbf24",
+      "cards": [
+        {
+          "id": "l01",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Tokenization BPE",
+          "definition": "Текст → subword токены. BPE объединяет частые пары.",
+          "source": "cs224n",
+          "example": "'unbelievable' → ['un','believ','able']. GPT-4 ~100k токенов.",
+          "flip": {
+            "q": "Что такое Tokenization BPE?",
+            "a": "Текст → subword токены. BPE объединяет частые пары."
+          },
+          "quiz": {
+            "q": "BPE объединяет:",
+            "options": [
+              "Случайные",
+              "Самые частые пары",
+              "Только слова",
+              "По грамматике"
+            ],
+            "correct": 1,
+            "explain": "Жадно: считаем частоты → сливаем максимум."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "BPE токенизатор имеет фиксированный размер словаря.",
+              "answer": true,
+              "explain": "Задаётся перед обучением (например 50k или 100k)."
+            }
+          }
+        },
+        {
+          "id": "l02",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Temperature",
+          "definition": "P_i = exp(logit_i/T)/Σ. T→0: greedy. T>1: случайнее.",
+          "source": "gpt3",
+          "formula": "softmax(logits/T)",
+          "example": "T=0.1 — почти argmax. T=2 — хаос.",
+          "flip": {
+            "q": "Что такое Temperature?",
+            "a": "P_i = exp(logit_i/T)/Σ. T→0: greedy. T>1: случайнее."
+          },
+          "quiz": {
+            "q": "T=0 в семплинге:",
+            "options": [
+              "Случайно",
+              "Greedy — argmax",
+              "Не определено",
+              "Без сэмплинга"
+            ],
+            "correct": 1,
+            "explain": "T→0: распределение → one-hot."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ способ декодирования?",
+              "items": [
+                "Greedy",
+                "Beam search",
+                "Top-p",
+                "Adam"
+              ],
+              "odd_idx": 3,
+              "explain": "Adam — оптимизатор, не декодинг."
+            }
+          }
+        },
+        {
+          "id": "l03",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Context Window",
+          "definition": "Макс токенов за раз. GPT-4: 128k, Claude: 200k.",
+          "source": "scaling",
+          "example": "128k ≈ 300 страниц. Attention O(n²) — длинный дорогой.",
+          "flip": {
+            "q": "Что такое Context Window?",
+            "a": "Макс токенов за раз. GPT-4: 128k, Claude: 200k."
+          },
+          "quiz": {
+            "q": "Стоимость attention по контексту:",
+            "options": [
+              "O(n)",
+              "O(n log n)",
+              "O(n²)",
+              "O(n³)"
+            ],
+            "correct": 2,
+            "explain": "Каждый токен смотрит на все → n² пар."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Context window 128k токенов ≈ __ страниц текста.",
+              "options": [
+                "~300",
+                "~10",
+                "~3000",
+                "~30"
+              ],
+              "correct": 0,
+              "explain": "~300-400 страниц книжного текста."
+            }
+          }
+        },
+        {
+          "id": "l04",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "KV Cache",
+          "definition": "Кэшируем K,V прошлых токенов при автогенерации.",
+          "source": "attn",
+          "example": "100k context FP16 LLaMA 70B → ~80 ГБ KV cache.",
+          "flip": {
+            "q": "Что такое KV Cache?",
+            "a": "Кэшируем K,V прошлых токенов при автогенерации."
+          },
+          "quiz": {
+            "q": "KV cache хранит:",
+            "options": [
+              "Веса",
+              "K,V проекции прошлых токенов",
+              "Только токены",
+              "Градиенты"
+            ],
+            "correct": 1,
+            "explain": "K,V не зависят от будущих токенов."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "KV cache хранит градиенты прошлых токенов.",
+              "answer": false,
+              "explain": "KV cache хранит K и V проекции для attention, не градиенты."
+            }
+          }
+        },
+        {
+          "id": "l05",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "RLHF",
+          "definition": "SFT → Reward Model → PPO. ChatGPT, Claude.",
+          "source": "instr",
+          "example": "RM учится из (A,B,human_chose_A).",
+          "analogy": "Учитель сравнивает ответы — студент учится из пар.",
+          "flip": {
+            "q": "Что такое RLHF?",
+            "a": "SFT → Reward Model → PPO. ChatGPT, Claude."
+          },
+          "quiz": {
+            "q": "Reward Model обучает:",
+            "options": [
+              "Генерацию",
+              "Предсказывать предпочтения людей",
+              "Reward по правилам",
+              "Классификацию"
+            ],
+            "correct": 1,
+            "explain": "RM из пар → скаляр-reward."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ этап RLHF?",
+              "items": [
+                "SFT",
+                "Reward model",
+                "PPO",
+                "Quantization"
+              ],
+              "odd_idx": 3,
+              "explain": "Квантизация — отдельная техника оптимизации."
+            }
+          }
+        },
+        {
+          "id": "l06",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Few-shot vs Zero-shot",
+          "definition": "Few-shot: примеры в промпте. Zero-shot: только инструкция.",
+          "source": "gpt3",
+          "example": "Zero: 'Переведи: cat'. Few: 'dog→собака, cat→?'",
+          "flip": {
+            "q": "Что такое Few-shot vs Zero-shot?",
+            "a": "Few-shot: примеры в промпте. Zero-shot: только инструкция."
+          },
+          "quiz": {
+            "q": "Few-shot prompting:",
+            "options": [
+              "Дообучает",
+              "Примеры в промпте без обучения",
+              "Удаляет промпт",
+              "Только GPT-4"
+            ],
+            "correct": 1,
+            "explain": "In-context learning."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Few-shot learning обновляет веса модели.",
+              "answer": false,
+              "explain": "In-context learning — только промпт, веса фиксированы."
+            }
+          }
+        },
+        {
+          "id": "l07",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "Chain-of-Thought",
+          "definition": "Промпт 'думай пошагово'. Улучшает математику, логику.",
+          "source": "cot",
+          "example": "'Реши задачу шаг за шагом' → промежуточные рассуждения.",
+          "flip": {
+            "q": "Что такое Chain-of-Thought?",
+            "a": "Промпт 'думай пошагово'. Улучшает математику, логику."
+          },
+          "quiz": {
+            "q": "CoT улучшает:",
+            "options": [
+              "Только скорость",
+              "Многошаговое рассуждение",
+              "Длину",
+              "Tokenization"
+            ],
+            "correct": 1,
+            "explain": "Промежуточные шаги — меньше ошибок."
+          },
+          "minigames": {
+            "fill": {
+              "q": "CoT prompting: 'думай __'",
+              "options": [
+                "пошагово",
+                "быстро",
+                "громко",
+                "меньше"
+              ],
+              "correct": 0,
+              "explain": "'Step by step' — каноничная фраза CoT."
+            }
+          }
+        },
+        {
+          "id": "l08",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "RAG",
+          "definition": "Vector search → топ документы → в промпт → LLM отвечает.",
+          "source": "rag",
+          "example": "Бот компании: запрос → база знаний → топ-5 чанков.",
+          "analogy": "Автоматическая шпаргалка под вопрос.",
+          "flip": {
+            "q": "Что такое RAG?",
+            "a": "Vector search → топ документы → в промпт → LLM отвечает."
+          },
+          "quiz": {
+            "q": "RAG помогает с:",
+            "options": [
+              "Скоростью",
+              "Актуальными/специфическими знаниями",
+              "Размером",
+              "Tokenization"
+            ],
+            "correct": 1,
+            "explain": "LLM не знает того, чего не было в тренировке."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ часть RAG?",
+              "items": [
+                "Retrieval",
+                "Embedding search",
+                "Generation",
+                "Backprop"
+              ],
+              "odd_idx": 3,
+              "explain": "Backprop — это обучение, не inference RAG."
+            }
+          }
+        },
+        {
+          "id": "l09",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "LoRA",
+          "definition": "W + B·A, где B,A низкорангуовые. Обновляем малую часть.",
+          "source": "lora",
+          "formula": "W' = W + B·A, rank r << d",
+          "example": "LLaMA 70B + LoRA r=16: 0.1% параметров обновляем.",
+          "flip": {
+            "q": "Что такое LoRA?",
+            "a": "W + B·A, где B,A низкорангуовые. Обновляем малую часть."
+          },
+          "quiz": {
+            "q": "LoRA уменьшает:",
+            "options": [
+              "Размер модели",
+              "Обучаемые параметры через low-rank",
+              "Inference",
+              "Vocab"
+            ],
+            "correct": 1,
+            "explain": "ΔW=BA — низкоранговое приближение."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "LoRA обновляет все веса модели.",
+              "answer": false,
+              "explain": "LoRA обновляет только B, A низкоранговые матрицы — 0.1-1% параметров."
+            }
+          }
+        },
+        {
+          "id": "l10",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "FlashAttention",
+          "definition": "IO-aware attention. Избегает n×n матрицы в HBM.",
+          "source": "flash",
+          "example": "Стандарт O(n²) памяти. FA — O(n) через tiled SRAM.",
+          "flip": {
+            "q": "Что такое FlashAttention?",
+            "a": "IO-aware attention. Избегает n×n матрицы в HBM."
+          },
+          "quiz": {
+            "q": "FlashAttention улучшает:",
+            "options": [
+              "Точность",
+              "Memory bandwidth GPU",
+              "Размер модели",
+              "Градиенты"
+            ],
+            "correct": 1,
+            "explain": "Минимизирует обращения к HBM."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ оптимизация attention?",
+              "items": [
+                "FlashAttention",
+                "PagedAttention",
+                "Sparse attention",
+                "Adam"
+              ],
+              "odd_idx": 3,
+              "explain": "Adam — оптимизатор обучения."
+            }
+          }
+        },
+        {
+          "id": "l11",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "Quantization",
+          "definition": "INT8/INT4 вместо FP16. Память ↓ в 2-4×.",
+          "source": "scaling",
+          "example": "LLaMA 70B FP16=140 ГБ, INT4=35 ГБ — одна H100. GPTQ, AWQ.",
+          "flip": {
+            "q": "Что такое Quantization?",
+            "a": "INT8/INT4 вместо FP16. Память ↓ в 2-4×."
+          },
+          "quiz": {
+            "q": "INT4 vs FP16:",
+            "options": [
+              "В 2× меньше",
+              "В 4× меньше",
+              "В 8× меньше",
+              "Та же"
+            ],
+            "correct": 1,
+            "explain": "16/4=4× компрессия."
+          },
+          "minigames": {
+            "fill": {
+              "q": "INT4 квантизация уменьшает память в __ раз vs FP16.",
+              "options": [
+                "4",
+                "2",
+                "8",
+                "16"
+              ],
+              "correct": 0,
+              "explain": "16/4 = 4× компрессия."
+            }
+          }
+        },
+        {
+          "id": "l12",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "Scaling Laws",
+          "definition": "Loss ∝ N^-α от параметров, данных, компьюта. Chinchilla: N токенов ≈ 20× параметров.",
+          "source": "scaling",
+          "example": "GPT-3 175B на 300B токенов — недотренирована по Chinchilla.",
+          "flip": {
+            "q": "Что такое Scaling Laws?",
+            "a": "Loss ∝ N^-α от параметров, данных, компьюта. Chinchilla: N токенов ≈ 20× параметров."
+          },
+          "quiz": {
+            "q": "Scaling laws предсказывают:",
+            "options": [
+              "Дату GPT-5",
+              "Loss от N/D/C",
+              "Best practices",
+              "Безопасность"
+            ],
+            "correct": 1,
+            "explain": "Power-law от параметров/данных/компьюта."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Chinchilla scaling laws: данных нужно ~20× от параметров.",
+              "answer": true,
+              "explain": "D ≈ 20·N — оптимально по Chinchilla."
+            }
+          }
+        },
+        {
+          "id": "l13",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "System Prompt",
+          "definition": "Инструкция в начале контекста с особой ролью.",
+          "source": "instr",
+          "example": "'You are a helpful assistant.' → задаёт стиль.",
+          "flip": {
+            "q": "Что такое System Prompt?",
+            "a": "Инструкция в начале контекста с особой ролью."
+          },
+          "quiz": {
+            "q": "System prompt:",
+            "options": [
+              "Виден",
+              "Невидимый, задаёт поведение",
+              "После ответа",
+              "В весах"
+            ],
+            "correct": 1,
+            "explain": "Часть контекста, роль 'system'."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "System prompt виден конечному пользователю.",
+              "answer": false,
+              "explain": "Невидимый — задаёт поведение в начале контекста."
+            }
+          }
+        },
+        {
+          "id": "l14",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Top-k / Top-p",
+          "definition": "Top-k: из k максимальных. Top-p: минимум токенов с суммой ≥ p.",
+          "source": "cs224n",
+          "example": "Top-p=0.9: иногда 2 токена, иногда 20 — адаптивно.",
+          "flip": {
+            "q": "Что такое Top-k / Top-p?",
+            "a": "Top-k: из k максимальных. Top-p: минимум токенов с суммой ≥ p."
+          },
+          "quiz": {
+            "q": "Top-p=0.95:",
+            "options": [
+              "Топ-95 токенов",
+              "Минимум с суммой ≥0.95",
+              "95 случайных",
+              "Argmax"
+            ],
+            "correct": 1,
+            "explain": "Nucleus sampling — динамическое окно."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ способ семплинга?",
+              "items": [
+                "Top-k",
+                "Top-p",
+                "Temperature",
+                "Backprop"
+              ],
+              "odd_idx": 3,
+              "explain": "Backprop — обучение."
+            }
+          }
+        },
+        {
+          "id": "l15",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "DPO",
+          "definition": "Прямая оптимизация на парах предпочтений. Без RM и PPO.",
+          "source": "instr",
+          "example": "Один loss на preference data — проще RLHF.",
+          "flip": {
+            "q": "Что такое DPO?",
+            "a": "Прямая оптимизация на парах предпочтений. Без RM и PPO."
+          },
+          "quiz": {
+            "q": "DPO отличается от RLHF:",
+            "options": [
+              "Без preference",
+              "Без отдельной RM и PPO",
+              "Хуже",
+              "Только мелкие модели"
+            ],
+            "correct": 1,
+            "explain": "Один loss поверх preferences."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "DPO требует отдельной reward model.",
+              "answer": false,
+              "explain": "DPO напрямую оптимизирует на парах без RM. Это его преимущество."
+            }
+          }
+        },
+        {
+          "id": "l16",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "Constitutional AI",
+          "definition": "Anthropic. Модель критикует свои ответы по 'конституции'.",
+          "source": "constai",
+          "example": "Claude обучен в т.ч. CAI.",
+          "flip": {
+            "q": "Что такое Constitutional AI?",
+            "a": "Anthropic. Модель критикует свои ответы по 'конституции'."
+          },
+          "quiz": {
+            "q": "CAI заменяет:",
+            "options": [
+              "Pretraining",
+              "Часть human feedback",
+              "Tokenizer",
+              "Архитектуру"
+            ],
+            "correct": 1,
+            "explain": "AI self-critique вместо части разметки."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Constitutional AI разработана __",
+              "options": [
+                "Anthropic",
+                "OpenAI",
+                "Google",
+                "Meta"
+              ],
+              "correct": 0,
+              "explain": "Anthropic — авторы CAI."
+            }
+          }
+        },
+        {
+          "id": "l17",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Hallucinations",
+          "definition": "LLM уверенно выдают неверные факты. Loss оптимизирует правдоподобие, не истину.",
+          "source": "instr",
+          "example": "Может выдумать книгу Канта.",
+          "flip": {
+            "q": "Что такое Hallucinations?",
+            "a": "LLM уверенно выдают неверные факты. Loss оптимизирует правдоподобие, не истину."
+          },
+          "quiz": {
+            "q": "Причина галлюцинаций:",
+            "options": [
+              "Малый контекст",
+              "Loss=правдоподобие, не фактичность",
+              "Плохой токенизатор",
+              "Низкая T"
+            ],
+            "correct": 1,
+            "explain": "Нет сигнала 'это правда'."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Hallucinations можно полностью устранить через RAG.",
+              "answer": false,
+              "explain": "RAG снижает, но не устраняет полностью. Модель всё ещё может галлюцинировать."
+            }
+          }
+        },
+        {
+          "id": "l18",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "MoE в LLM",
+          "definition": "Mixtral, Gemini 1.5. N экспертов, top-K на токен.",
+          "source": "moe",
+          "example": "Mixtral 8×7B: 47B общих, 13B активных.",
+          "flip": {
+            "q": "Что такое MoE в LLM?",
+            "a": "Mixtral, Gemini 1.5. N экспертов, top-K на токен."
+          },
+          "quiz": {
+            "q": "Главное MoE для LLM:",
+            "options": [
+              "Меньше параметров",
+              "Больше параметров без роста inference",
+              "Лучше английский",
+              "Без RLHF"
+            ],
+            "correct": 1,
+            "explain": "N экспертов = больше знаний, K активны = быстро."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ MoE модель?",
+              "items": [
+                "Mixtral",
+                "Switch Transformer",
+                "Gemini 1.5",
+                "LLaMA 7B"
+              ],
+              "odd_idx": 3,
+              "explain": "LLaMA 7B — dense, не MoE."
+            }
+          }
+        },
+        {
+          "id": "l19",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "Speculative Decoding",
+          "definition": "Маленькая 'draft' предлагает, большая верифицирует параллельно.",
+          "source": "scaling",
+          "example": "LLaMA 70B + 1B draft → 2-3× ускорение.",
+          "flip": {
+            "q": "Что такое Speculative Decoding?",
+            "a": "Маленькая 'draft' предлагает, большая верифицирует параллельно."
+          },
+          "quiz": {
+            "q": "Spec decoding:",
+            "options": [
+              "Только большая",
+              "Draft + verifier",
+              "Только мелкая",
+              "Случайность"
+            ],
+            "correct": 1,
+            "explain": "Draft генерит, большая проверяет."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Speculative decoding улучшает качество модели.",
+              "answer": false,
+              "explain": "Только скорость. Качество идентичное большой модели."
+            }
+          }
+        },
+        {
+          "id": "l20",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Embedding",
+          "definition": "Токен → вектор ℝ^d. d=768 (BERT), 12288 (GPT-3).",
+          "source": "cs224n",
+          "example": "'король'-'мужчина'+'женщина' ≈ 'королева'.",
+          "flip": {
+            "q": "Что такое Embedding?",
+            "a": "Токен → вектор ℝ^d. d=768 (BERT), 12288 (GPT-3)."
+          },
+          "quiz": {
+            "q": "Embedding слой:",
+            "options": [
+              "Сложный MLP",
+              "Lookup table id→вектор",
+              "CNN",
+              "RNN"
+            ],
+            "correct": 1,
+            "explain": "Матрица |V|×d, индексируется token id."
+          },
+          "minigames": {
+            "fill": {
+              "q": "BERT embedding размер: d = __",
+              "options": [
+                "768",
+                "256",
+                "1024",
+                "100"
+              ],
+              "correct": 0,
+              "explain": "BERT-base: 768. BERT-large: 1024."
+            }
+          }
+        },
+        {
+          "id": "l21",
+          "section": "llm",
+          "level": "advanced",
+          "concept": "FFN в Transformer",
+          "definition": "Two-layer MLP с GELU. Hidden = 4× от d_model.",
+          "source": "attn",
+          "formula": "FFN(x) = W₂·GELU(W₁x+b₁)+b₂",
+          "example": "GPT-3: d_model=12288, FFN hidden=49152. FFN ≈ 2/3 параметров модели.",
+          "flip": {
+            "q": "Что такое FFN в Transformer?",
+            "a": "Two-layer MLP с GELU. Hidden = 4× от d_model."
+          },
+          "quiz": {
+            "q": "FFN hidden / d_model:",
+            "options": [
+              "×1",
+              "×2",
+              "×4",
+              "×16"
+            ],
+            "correct": 2,
+            "explain": "Стандарт ×4 в трансформерах."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ часть Transformer блока?",
+              "items": [
+                "Attention",
+                "FFN",
+                "Layer Norm",
+                "K-means"
+              ],
+              "odd_idx": 3,
+              "explain": "K-means — кластеризация."
+            }
+          }
+        },
+        {
+          "id": "l22",
+          "section": "llm",
+          "level": "intermediate",
+          "concept": "Inference vs Training",
+          "definition": "Training память ~3-4× от inference (gradients + optimizer state).",
+          "source": "pytorch",
+          "example": "7B training ~70 ГБ, inference ~14 ГБ (FP16).",
+          "flip": {
+            "q": "Что такое Inference vs Training?",
+            "a": "Training память ~3-4× от inference (gradients + optimizer state)."
+          },
+          "quiz": {
+            "q": "Training память vs inference:",
+            "options": [
+              "Одинаково",
+              "Training в 3-4× больше",
+              "Inference больше",
+              "От batch"
+            ],
+            "correct": 1,
+            "explain": "Optimizer (Adam: ×2) + gradients + activations."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Inference требует optimizer state.",
+              "answer": false,
+              "explain": "Только training. Inference — только forward."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mlops",
+      "title": "MLOps",
+      "icon": "⚙",
+      "description": "Деплой, квантование",
+      "color": "#94a3b8",
+      "cards": [
+        {
+          "id": "o01",
+          "section": "mlops",
+          "level": "intermediate",
+          "concept": "Quantization",
+          "definition": "FP32 → INT8/INT4. Память ↓, быстрее inference.",
+          "source": "scaling",
+          "example": "GPTQ, AWQ, bitsandbytes для LLM.",
+          "flip": {
+            "q": "Что такое Quantization?",
+            "a": "FP32 → INT8/INT4. Память ↓, быстрее inference."
+          },
+          "quiz": {
+            "q": "Квантование делает inference:",
+            "options": [
+              "Медленнее",
+              "Быстрее + меньше памяти",
+              "Точнее",
+              "Невозможным"
+            ],
+            "correct": 1,
+            "explain": "2-4× меньше памяти, до 2× быстрее."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Какой формат точности НЕ существует?",
+              "items": [
+                "INT8",
+                "INT4",
+                "FP16",
+                "FP3"
+              ],
+              "odd_idx": 3,
+              "explain": "FP3 — придуманный формат."
+            }
+          }
+        },
+        {
+          "id": "o02",
+          "section": "mlops",
+          "level": "intermediate",
+          "concept": "Knowledge Distillation",
+          "definition": "Teacher → student. Student матчит soft predictions.",
+          "source": "scaling",
+          "formula": "L = α·CE(student,labels) + (1-α)·KL(soft_s||soft_t)",
+          "example": "DistilBERT — 40% меньше, 97% качества.",
+          "flip": {
+            "q": "Что такое Knowledge Distillation?",
+            "a": "Teacher → student. Student матчит soft predictions."
+          },
+          "quiz": {
+            "q": "Distillation передаёт студенту:",
+            "options": [
+              "Веса",
+              "Soft predictions",
+              "Архитектуру",
+              "Гиперпараметры"
+            ],
+            "correct": 1,
+            "explain": "Soft logits — больше информации чем hard labels."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "В distillation student обучается на hard labels учителя.",
+              "answer": false,
+              "explain": "На soft probabilities (logits) — они несут больше информации."
+            }
+          }
+        },
+        {
+          "id": "o03",
+          "section": "mlops",
+          "level": "intermediate",
+          "concept": "Pruning",
+          "definition": "Удаляем веса с малым |w|. Иногда + retrain.",
+          "source": "scaling",
+          "example": "Lottery Ticket Hypothesis.",
+          "flip": {
+            "q": "Что такое Pruning?",
+            "a": "Удаляем веса с малым |w|. Иногда + retrain."
+          },
+          "quiz": {
+            "q": "Magnitude pruning удаляет:",
+            "options": [
+              "Случайные",
+              "С наименьшей |w|",
+              "Все отрицательные",
+              "Каждый второй"
+            ],
+            "correct": 1,
+            "explain": "Малые веса меньше влияют."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Magnitude pruning удаляет веса с наименьшим __",
+              "options": [
+                "|w|",
+                "gradient",
+                "activation",
+                "loss"
+              ],
+              "correct": 0,
+              "explain": "|w| — абсолютная величина веса."
+            }
+          }
+        },
+        {
+          "id": "o04",
+          "section": "mlops",
+          "level": "intermediate",
+          "concept": "Transfer Learning",
+          "definition": "Pretrained модель → меняем последний слой → fine-tune.",
+          "source": "cs231n",
+          "example": "ResNet50 ImageNet → ваша задача с 1k фото → 90%+ accuracy.",
+          "flip": {
+            "q": "Что такое Transfer Learning?",
+            "a": "Pretrained модель → меняем последний слой → fine-tune."
+          },
+          "quiz": {
+            "q": "Transfer сильнее помогает:",
+            "options": [
+              "Много данных",
+              "Мало данных + похожая задача",
+              "Совсем другая",
+              "Никогда"
+            ],
+            "correct": 1,
+            "explain": "Pretrained фичи переносятся."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Transfer learning требует одинаковых задач source и target.",
+              "answer": false,
+              "explain": "Задачи могут отличаться (детекция → сегментация), главное — похожий домен."
+            }
+          }
+        },
+        {
+          "id": "o05",
+          "section": "mlops",
+          "level": "intermediate",
+          "concept": "Fine-tuning vs Feature Extraction",
+          "definition": "FT: размораживаем слои. FE: только последний обучаемый.",
+          "source": "cs231n",
+          "flip": {
+            "q": "Что такое Fine-tuning vs Feature Extraction?",
+            "a": "FT: размораживаем слои. FE: только последний обучаемый."
+          },
+          "quiz": {
+            "q": "Маленький похожий датасет:",
+            "options": [
+              "Full FT",
+              "Feature extraction",
+              "From scratch",
+              "Random forest"
+            ],
+            "correct": 1,
+            "explain": "Малая выборка → frozen предотвращает overfitting."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ режим обучения?",
+              "items": [
+                "Fine-tuning",
+                "Feature extraction",
+                "From scratch",
+                "Backprop"
+              ],
+              "odd_idx": 3,
+              "explain": "Backprop — это механика, не режим."
+            }
+          }
+        },
+        {
+          "id": "o06",
+          "section": "mlops",
+          "level": "intermediate",
+          "concept": "Data Augmentation",
+          "definition": "Расширение через трансформации: flip, crop, mixup.",
+          "source": "cs231n",
+          "example": "ImageNet без aug = overfitting за пару эпох.",
+          "flip": {
+            "q": "Что такое Data Augmentation?",
+            "a": "Расширение через трансформации: flip, crop, mixup."
+          },
+          "quiz": {
+            "q": "Augmentation увеличивает:",
+            "options": [
+              "Размер модели",
+              "Разнообразие train",
+              "Скорость",
+              "GPU memory"
+            ],
+            "correct": 1,
+            "explain": "Модель видит 'больше' данных."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Augmentation применяется только к тренировочному датасету.",
+              "answer": true,
+              "explain": "Val/test трогать нельзя — должны отражать реальное распределение."
+            }
+          }
+        },
+        {
+          "id": "o07",
+          "section": "mlops",
+          "level": "advanced",
+          "concept": "ONNX",
+          "definition": "Открытый формат: PyTorch → ONNX → TensorRT/CoreML/Mobile.",
+          "source": "pytorch",
+          "example": "Обучили в PyTorch → ONNX → запустили на edge.",
+          "flip": {
+            "q": "Что такое ONNX?",
+            "a": "Открытый формат: PyTorch → ONNX → TensorRT/CoreML/Mobile."
+          },
+          "quiz": {
+            "q": "ONNX для:",
+            "options": [
+              "Обучения",
+              "Деплоя между фреймворками",
+              "Tokenization",
+              "Только GPU"
+            ],
+            "correct": 1,
+            "explain": "Универсальный формат deploy."
+          },
+          "minigames": {
+            "fill": {
+              "q": "ONNX — это формат __ моделей.",
+              "options": [
+                "обмена",
+                "обучения",
+                "сжатия",
+                "разметки"
+              ],
+              "correct": 0,
+              "explain": "Open Neural Network Exchange — interoperability."
+            }
+          }
+        },
+        {
+          "id": "o08",
+          "section": "mlops",
+          "level": "advanced",
+          "concept": "Model Serving",
+          "definition": "TorchServe, Triton, vLLM. Batching + scheduling.",
+          "source": "pytorch",
+          "example": "vLLM с PagedAttention — стандарт LLM serving.",
+          "flip": {
+            "q": "Что такое Model Serving?",
+            "a": "TorchServe, Triton, vLLM. Batching + scheduling."
+          },
+          "quiz": {
+            "q": "Главное батчинга:",
+            "options": [
+              "Точность",
+              "Throughput",
+              "Latency",
+              "Безопасность"
+            ],
+            "correct": 1,
+            "explain": "GPU полностью используется при batching."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ инструмент serving?",
+              "items": [
+                "TorchServe",
+                "Triton",
+                "vLLM",
+                "Jupyter"
+              ],
+              "odd_idx": 3,
+              "explain": "Jupyter — notebook, не serving."
+            }
+          }
+        },
+        {
+          "id": "o09",
+          "section": "mlops",
+          "level": "advanced",
+          "concept": "A/B Testing",
+          "definition": "Часть трафика на A, часть на B. Сравниваем real-world метрики.",
+          "source": "esl",
+          "example": "5% трафика → +0.3% CTR, p<0.01 → раскатываем.",
+          "flip": {
+            "q": "Что такое A/B Testing?",
+            "a": "Часть трафика на A, часть на B. Сравниваем real-world метрики."
+          },
+          "quiz": {
+            "q": "A/B test измеряет:",
+            "options": [
+              "Offline accuracy",
+              "Реальное влияние на users",
+              "Latency",
+              "Память"
+            ],
+            "correct": 1,
+            "explain": "Финальная истина — реальные пользователи."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "A/B test измеряет offline метрики.",
+              "answer": false,
+              "explain": "Online — реальное поведение пользователей в production."
+            }
+          }
+        },
+        {
+          "id": "o10",
+          "section": "mlops",
+          "level": "advanced",
+          "concept": "Data / Concept Drift",
+          "definition": "Data drift: P(x) меняется. Concept drift: P(y|x) меняется.",
+          "source": "esl",
+          "example": "Covid модель 2020 → 2023: симптомы изменились.",
+          "flip": {
+            "q": "Что такое Data / Concept Drift?",
+            "a": "Data drift: P(x) меняется. Concept drift: P(y|x) меняется."
+          },
+          "quiz": {
+            "q": "Concept drift:",
+            "options": [
+              "P(x) меняется",
+              "P(y|x) меняется",
+              "Модель забывает",
+              "Обновление framework"
+            ],
+            "correct": 1,
+            "explain": "Связь вход-выход больше не верна."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Если P(y|x) меняется со временем — это __ drift",
+              "options": [
+                "concept",
+                "data",
+                "covariate",
+                "feature"
+              ],
+              "correct": 0,
+              "explain": "Concept drift — связь вход-выход меняется."
+            }
+          }
+        },
+        {
+          "id": "o11",
+          "section": "mlops",
+          "level": "advanced",
+          "concept": "Model Card",
+          "definition": "Документация: задача, данные, метрики на подгруппах, риски.",
+          "source": "esl",
+          "flip": {
+            "q": "Что такое Model Card?",
+            "a": "Документация: задача, данные, метрики на подгруппах, риски."
+          },
+          "quiz": {
+            "q": "Model Card описывает:",
+            "options": [
+              "Только код",
+              "Назначение, данные, метрики, риски",
+              "Архитектуру",
+              "API"
+            ],
+            "correct": 1,
+            "explain": "Этическая документация для деплоя."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "Model Card документирует только метрики качества.",
+              "answer": false,
+              "explain": "Также: ограничения, риски, целевые группы, ethical considerations."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rl",
+      "title": "RL",
+      "icon": "⇌",
+      "description": "Q-learning, PPO",
+      "color": "#f87171",
+      "cards": [
+        {
+          "id": "r01",
+          "section": "rl",
+          "level": "beginner",
+          "concept": "RL Basics",
+          "definition": "Агент в среде. Action → reward + next state. Цель: max return.",
+          "source": "alphago",
+          "formula": "G_t = r_t + γ·r_{t+1} + γ²·r_{t+2} + ...",
+          "example": "AlphaGo: state=доска, action=ход, reward=исход.",
+          "flip": {
+            "q": "Что такое RL Basics?",
+            "a": "Агент в среде. Action → reward + next state. Цель: max return."
+          },
+          "quiz": {
+            "q": "Цель RL:",
+            "options": [
+              "Имитировать датасет",
+              "Max ожидаемый return",
+              "Min loss",
+              "Кластеризовать"
+            ],
+            "correct": 1,
+            "explain": "Reward — главный сигнал."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "RL агент учится на размеченных данных.",
+              "answer": false,
+              "explain": "Учится через reward от среды, не на labels."
+            }
+          }
+        },
+        {
+          "id": "r02",
+          "section": "rl",
+          "level": "intermediate",
+          "concept": "Q-function",
+          "definition": "Q(s,a) = ожидаемый return из s через a с оптимальной игрой.",
+          "source": "alphago",
+          "formula": "Q*(s,a) = r + γ·max_{a'} Q*(s',a')",
+          "example": "DQN — нейросеть Q. Atari games обыграны 2013.",
+          "flip": {
+            "q": "Что такое Q-function?",
+            "a": "Q(s,a) = ожидаемый return из s через a с оптимальной игрой."
+          },
+          "quiz": {
+            "q": "Q-learning обновляет через:",
+            "options": [
+              "Случайно",
+              "Bellman",
+              "∇policy",
+              "Случайный поиск"
+            ],
+            "correct": 1,
+            "explain": "Bootstrap из next-state Q."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Q*(s,a) = r + γ·max_a' Q*(__, a')",
+              "options": [
+                "s'",
+                "s",
+                "a",
+                "r"
+              ],
+              "correct": 0,
+              "explain": "Bellman: Q зависит от next state s'."
+            }
+          }
+        },
+        {
+          "id": "r03",
+          "section": "rl",
+          "level": "intermediate",
+          "concept": "Exploration vs Exploitation",
+          "definition": "Exploration: пробовать новое. Exploitation: использовать лучшее.",
+          "source": "alphago",
+          "example": "ε-greedy: ε=0.1 случайное, иначе argmax Q.",
+          "flip": {
+            "q": "Что такое Exploration vs Exploitation?",
+            "a": "Exploration: пробовать новое. Exploitation: использовать лучшее."
+          },
+          "quiz": {
+            "q": "ε-greedy с ε=0:",
+            "options": [
+              "Exploration",
+              "Только exploitation",
+              "Случайно",
+              "Не работает"
+            ],
+            "correct": 1,
+            "explain": "Всегда жадно — застревает."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ стратегия exploration?",
+              "items": [
+                "ε-greedy",
+                "UCB",
+                "Thompson sampling",
+                "Greedy max-Q"
+              ],
+              "odd_idx": 3,
+              "explain": "Чисто greedy = exploitation без exploration."
+            }
+          }
+        },
+        {
+          "id": "r04",
+          "section": "rl",
+          "level": "intermediate",
+          "concept": "Discount Factor γ",
+          "definition": "γ=0: близорукий. γ=0.99: ~100 шагов вперёд.",
+          "source": "alphago",
+          "formula": "G = Σ γ^t · r_t",
+          "flip": {
+            "q": "Что такое Discount Factor γ?",
+            "a": "γ=0: близорукий. γ=0.99: ~100 шагов вперёд."
+          },
+          "quiz": {
+            "q": "γ=0.9, награды [10,10,10]:",
+            "options": [
+              "30",
+              "27.1",
+              "10",
+              "9"
+            ],
+            "correct": 1,
+            "explain": "10+9+8.1=27.1."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "γ=1 безопасно использовать в любых задачах.",
+              "answer": false,
+              "explain": "При бесконечном горизонте сумма может расходиться."
+            }
+          }
+        },
+        {
+          "id": "r05",
+          "section": "rl",
+          "level": "advanced",
+          "concept": "Policy Gradient",
+          "definition": "Прямая оптимизация π_θ. ∇θ J = E[∇log π·A].",
+          "source": "ppo",
+          "example": "A = Q(s,a) - V(s) — advantage.",
+          "flip": {
+            "q": "Что такое Policy Gradient?",
+            "a": "Прямая оптимизация π_θ. ∇θ J = E[∇log π·A]."
+          },
+          "quiz": {
+            "q": "PG оптимизирует:",
+            "options": [
+              "Q",
+              "Параметры policy",
+              "Reward",
+              "Environment"
+            ],
+            "correct": 1,
+            "explain": "∇θ J(πθ) — градиент по policy."
+          },
+          "minigames": {
+            "fill": {
+              "q": "Policy Gradient: ∇θ J = E[∇log π(a|s)·__]",
+              "options": [
+                "A(s,a)",
+                "r",
+                "s",
+                "V(s)"
+              ],
+              "correct": 0,
+              "explain": "Advantage A — насколько action лучше среднего."
+            }
+          }
+        },
+        {
+          "id": "r06",
+          "section": "rl",
+          "level": "advanced",
+          "concept": "PPO",
+          "definition": "Clip ratio π_new/π_old. Стандарт RLHF и MuJoCo.",
+          "source": "ppo",
+          "formula": "L = E[min(r·A, clip(r,1-ε,1+ε)·A)]",
+          "example": "ε=0.2: policy не меняется больше ±20%.",
+          "flip": {
+            "q": "Что такое PPO?",
+            "a": "Clip ratio π_new/π_old. Стандарт RLHF и MuJoCo."
+          },
+          "quiz": {
+            "q": "PPO ограничивает:",
+            "options": [
+              "Reward",
+              "Шаг обновления policy",
+              "Размер сети",
+              "γ"
+            ],
+            "correct": 1,
+            "explain": "Clip предотвращает катастрофические updates."
+          },
+          "minigames": {
+            "truefalse": {
+              "q": "PPO — стандарт RLHF в современных LLM.",
+              "answer": true,
+              "explain": "InstructGPT, Claude и др. используют PPO для RLHF."
+            }
+          }
+        },
+        {
+          "id": "r07",
+          "section": "rl",
+          "level": "intermediate",
+          "concept": "MDP",
+          "definition": "⟨S,A,P,R,γ⟩. Markov: будущее зависит только от текущего state.",
+          "source": "alphago",
+          "flip": {
+            "q": "Что такое MDP?",
+            "a": "⟨S,A,P,R,γ⟩. Markov: будущее зависит только от текущего state."
+          },
+          "quiz": {
+            "q": "MDP предполагает:",
+            "options": [
+              "Полностью наблюдаемое + Markov",
+              "Случайные награды",
+              "Дискретные actions",
+              "Конечный горизонт"
+            ],
+            "correct": 0,
+            "explain": "Markov property: P(s'|s,a) не зависит от истории."
+          },
+          "minigames": {
+            "odd": {
+              "q": "Что НЕ часть MDP?",
+              "items": [
+                "States",
+                "Actions",
+                "Rewards",
+                "Labels"
+              ],
+              "odd_idx": 3,
+              "explain": "MDP не использует labels — только reward."
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
