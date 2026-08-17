@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embeddings — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+.toc-mobile{display:none;}
+
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:660px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+.scatter-box{margin-top:32px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:18px 20px 14px;}
+.scatter-box .st-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;}
+.scatter-box .st-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>embeddings / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>Что такое эмбеддинг</a>
+      <a href="#sparse"><span class="n">01</span>Sparse-эра: BoW / TF-IDF</a>
+      <a href="#static"><span class="n">02</span>Word2Vec / GloVe / fastText</a>
+      <a href="#contextual"><span class="n">03</span>ELMo / BERT-эмбеддинги</a>
+      <div class="grp-label">Sentence-level и контраст</div>
+      <a href="#sentence"><span class="n">04</span>SBERT / SimCSE / лоссы</a>
+      <a href="#bicross"><span class="n">05</span>Bi- vs Cross-Encoder</a>
+      <a href="#colbert"><span class="n">06</span>ColBERT (multi-vector)</a>
+      <a href="#universal"><span class="n">07</span>E5 / BGE / GTE / OpenAI</a>
+      <a href="#multimodal"><span class="n">08</span>CLIP / SigLIP</a>
+      <a href="#matryoshka"><span class="n">09</span>Matryoshka (MRL)</a>
+      <div class="grp-label">Хранение и поиск</div>
+      <a href="#quant"><span class="n">10</span>Квантование эмбеддингов</a>
+      <a href="#ann"><span class="n">11</span>ANN: HNSW / IVF / DiskANN</a>
+      <a href="#vectordb"><span class="n">12</span>Векторные БД</a>
+      <a href="#hybrid"><span class="n">13</span>Гибридный поиск + RRF</a>
+      <a href="#rerank"><span class="n">14</span>Reranking</a>
+      <div class="grp-label">RAG и прод</div>
+      <a href="#rag"><span class="n">15</span>Чанкинг, HyDE, фильтры, MMR</a>
+      <a href="#optimization"><span class="n">16</span>Оптимизация в проде</a>
+      <a href="#finetuning"><span class="n">17</span>Дообучение эмбеддингов</a>
+      <a href="#evaluation"><span class="n">18</span>Оценка: MTEB, recall@k</a>
+      <div class="grp-label">Итог</div>
+      <a href="#comparison"><span class="n">19</span>Сравнительная таблица</a>
+      <a href="#timeline"><span class="n">20</span>Таймлайн и отказы</a>
+      <a href="#recommendation"><span class="n">21</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">22</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning</div>
+      <h1>Всё про эмбеддинги: от Word2Vec до Matryoshka и продовых векторных БД</h1>
+      <p class="lede">Как текст (и не только текст) превращается в точку в пространстве, зачем это нужно, какие техники обучения, сжатия, поиска и дообучения используются сегодня — и что уже вышло из моды.</p>
+
+      <div class="scatter-box">
+        <div class="st-title">Embedding space — упрощённая иллюстрация</div>
+        <div class="st-sub">Похожие по смыслу слова оказываются рядом в векторном пространстве; расстояние между точками ≈ семантическая близость</div>
+        <svg viewBox="0 0 720 260" width="100%" style="overflow:visible;">
+          <!-- neighbor lines from kiwi -->
+          <g stroke="#ff3d68" stroke-width="1.4" stroke-dasharray="3 3" opacity="0.75">
+            <line x1="92" y1="120" x2="96" y2="150"/>
+            <line x1="92" y1="120" x2="70" y2="178"/>
+            <line x1="92" y1="120" x2="132" y2="148"/>
+          </g>
+          <!-- fruit cluster -->
+          <g font-family="IBM Plex Mono" font-size="11" fill="#a3a3a3">
+            <circle cx="96" cy="150" r="4" fill="#3ecf8e"/><text x="103" y="153">apple</text>
+            <circle cx="118" cy="170" r="4" fill="#3ecf8e"/><text x="125" y="173">mango</text>
+            <circle cx="70" cy="178" r="4" fill="#3ecf8e"/><text x="40" y="192">grape</text>
+            <circle cx="132" cy="148" r="4" fill="#3ecf8e"/><text x="139" y="145">banana</text>
+          </g>
+          <circle cx="92" cy="120" r="5.5" fill="#ff3d68" stroke="#fff" stroke-width="1.5"/>
+          <text x="99" y="112" font-family="IBM Plex Mono" font-size="11.5" fill="#fff">kiwi (query)</text>
+          <ellipse cx="102" cy="155" rx="70" ry="55" fill="#3ecf8e" opacity="0.06"/>
+          <text x="35" y="230" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" letter-spacing="0.08em">FRUITS</text>
+
+          <!-- animal cluster -->
+          <g font-family="IBM Plex Mono" font-size="11" fill="#a3a3a3">
+            <circle cx="470" cy="58" r="4" fill="#2cc4d9"/><text x="477" y="61">cat</text>
+            <circle cx="510" cy="44" r="4" fill="#2cc4d9"/><text x="517" y="47">dog</text>
+            <circle cx="548" cy="66" r="4" fill="#2cc4d9"/><text x="555" y="69">wolf</text>
+            <circle cx="492" cy="88" r="4" fill="#2cc4d9"/><text x="499" y="91">tiger</text>
+            <circle cx="530" cy="96" r="4" fill="#2cc4d9"/><text x="537" y="99">lion</text>
+          </g>
+          <ellipse cx="510" cy="70" rx="70" ry="48" fill="#2cc4d9" opacity="0.06"/>
+          <text x="470" y="30" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" letter-spacing="0.08em">ANIMALS</text>
+
+          <!-- vehicle cluster -->
+          <g font-family="IBM Plex Mono" font-size="11" fill="#a3a3a3">
+            <circle cx="560" cy="190" r="4" fill="#7c4dff"/><text x="567" y="193">car</text>
+            <circle cx="610" cy="172" r="4" fill="#7c4dff"/><text x="617" y="175">bus</text>
+            <circle cx="600" cy="206" r="4" fill="#7c4dff"/><text x="607" y="209">truck</text>
+            <circle cx="520" cy="214" r="4" fill="#7c4dff"/><text x="490" y="228">bike</text>
+            <circle cx="650" cy="196" r="4" fill="#7c4dff"/><text x="657" y="199">train</text>
+          </g>
+          <ellipse cx="585" cy="196" rx="75" ry="42" fill="#7c4dff" opacity="0.06"/>
+          <text x="555" y="245" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" letter-spacing="0.08em">VEHICLES</text>
+        </svg>
+        <p style="font-size:12.8px; color:var(--text-faint); margin:10px 0 0;">Пунктирные линии от <span class="ex-token">kiwi</span> — три ближайших соседа по косинусному расстоянию (см. §00). Модель никогда не видела явного правила «kiwi — это фрукт»: кластеры возникают сами по себе из статистики совместной встречаемости при обучении.</p>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>Что такое эмбеддинг и как мерить «похожесть»</h2></div>
+      <p class="dek">Эмбеддинг — это вектор фиксированной размерности (обычно 256–4096 чисел), в который модель сжимает смысл объекта — слова, предложения, изображения, товара, узла графа — так, что похожие по смыслу объекты оказываются близко друг к другу в этом пространстве.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Метрика</th><th>Формула</th><th>Когда использовать</th></tr>
+        <tr><td class="hl">Cosine similarity</td><td class="mono">cos(u,v) = u·v / (‖u‖‖v‖)</td><td>стандарт для текстовых эмбеддингов — не зависит от длины/нормы вектора, только от направления</td></tr>
+        <tr><td class="hl">Dot product</td><td class="mono">u·v</td><td>быстрее (нет нормализации), эквивалентен cosine, если векторы уже L2-нормированы — так и делает большинство ANN-индексов</td></tr>
+        <tr><td class="hl">Euclidean (L2)</td><td class="mono">‖u−v‖</td><td>используется, когда важна и величина вектора, не только направление (напр. эмбеддинги изображений с CLIP иногда сравнивают так)</td></tr>
+      </table></div>
+      <div class="note">На практике 95% современных текстовых пайплайнов используют cosine similarity (или эквивалентный ему dot product на нормированных векторах) — остальное ниже в заметке по умолчанию про него.</div>
+    </section>
+
+    <!-- 01 SPARSE -->
+    <section class="topic" id="sparse">
+      <div class="topic-head">
+        <h2><span class="idx">01</span>Sparse-эра: Bag-of-Words и TF-IDF</h2>
+        <div class="badges"><span class="badge b-legacy">legacy как основа</span><span class="badge b-mainstream">жив внутри гибридов</span></div>
+      </div>
+      <p class="dek">До нейросетевых эмбеддингов документ представляли как разреженный вектор длиной в размер словаря (десятки/сотни тысяч измерений), где почти все координаты — нули.</p>
+      <div class="formula">
+        <div class="formula-label">TF-IDF</div>
+        tfidf(t,d) = tf(t,d) · log( N / df(t) ) &nbsp;<span class="cm">// tf — частота термина в документе, df — в скольких документах он встречается</span>
+      </div>
+      <p><b>BM25</b> (1994, до сих пор в проде) — улучшенная версия TF-IDF с насыщением частоты термина и нормализацией по длине документа. Это не эмбеддинг в современном смысле (нет обучения, нет плотного вектора), но концептуально та же задача — «похожесть текстов через вектор».</p>
+      <div class="note">Почему это не совсем legacy: BM25/TF-IDF отлично ловит точные совпадения ключевых слов (имена, номера моделей, коды), там где dense-эмбеддинги «размывают» точный смысл. Отсюда — гибридный поиск (§13), где sparse и dense используются вместе, а не одно вместо другого.</div>
+    </section>
+
+    <!-- 02 STATIC -->
+    <section class="topic" id="static">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>Статические word-эмбеддинги: Word2Vec, GloVe, fastText</h2>
+        <div class="badges"><span class="badge b-legacy">legacy</span></div>
+      </div>
+      <p class="dek">Первое поколение обучаемых плотных эмбеддингов (2013–2016). Ключевое ограничение всех трёх: у каждого слова — <b>ровно один</b> вектор, независимо от контекста («bank» реки и «bank» банк получают одно и то же представление).</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Word2Vec (2013)</h4><ul>
+          <li><b>CBOW</b> — предсказать слово по контексту вокруг</li>
+          <li><b>Skip-gram</b> — предсказать контекст по слову</li>
+          <li>Negative sampling вместо полного softmax по словарю — ключевой трюк для скорости обучения</li>
+        </ul></div>
+        <div class="pill-box"><h4>GloVe (2014)</h4><ul>
+          <li>Не предсказание, а прямая факторизация матрицы совместной встречаемости слов</li>
+          <li>Глобальная статистика корпуса, а не только локальное окно</li>
+        </ul></div>
+      </div>
+      <p><b>fastText</b> (2016, Facebook) решил ключевую проблему обеих: слова разбиваются на n-граммы символов, вектор слова = сумма векторов его n-грамм. Отсюда — умеет обрабатывать опечатки и слова, которых не было в обучающей выборке (OOV), и особенно хорош для морфологически богатых языков (в т.ч. русского).</p>
+      <div class="usedin"><span>Word2Vec</span><span>GloVe</span><span>fastText</span></div>
+      <div class="note warn">Почему вышли из моды: один вектор на слово принципиально не может передать многозначность и контекст. Контекстные эмбеддинги (§03) решили это полностью — с 2018-го статические эмбеддинги в проде почти не используют, разве что как быстрый baseline или в задачах с крайне ограниченными ресурсами.</div>
+    </section>
+
+    <!-- 03 CONTEXTUAL -->
+    <section class="topic" id="contextual">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>Контекстные эмбеддинги: ELMo, BERT и как из них доставать вектор</h2>
+        <div class="badges"><span class="badge b-mainstream">основа всего современного</span></div>
+      </div>
+      <p class="dek"><b>ELMo</b> (2018, biLSTM) первым показал: если пропустить всё предложение через модель, вектор слова будет разным в разных контекстах. <b>BERT</b> (2018) закрепил это на Transformer-архитектуре (см. отдельную заметку про attention) и стал стандартом.</p>
+      <p>Проблема: BERT изначально обучен как <i>language model</i>, а не как «генератор эмбеддингов» — из него нужно как-то извлечь один вектор на предложение. Три основных способа:</p>
+      <div class="table-wrap"><table>
+        <tr><th>Способ</th><th>Как</th><th>Качество для similarity</th></tr>
+        <tr><td class="hl">[CLS]-токен</td><td>взять скрытое состояние специального служебного токена</td><td class="bad">плохое без дообучения — BERT не обучен делать его «хорошим summary» для similarity</td></tr>
+        <tr><td class="hl">Mean pooling</td><td>усреднить скрытые состояния всех токенов</td><td class="mid">лучше, чем CLS, но всё ещё не оптимально</td></tr>
+        <tr><td class="hl">Дообучение под similarity</td><td>Sentence-BERT и подобные — см. §04</td><td class="good">то, что реально используется в проде</td></tr>
+      </table></div>
+      <div class="note warn">Именно из проблемы «сырой BERT плохо работает для similarity out-of-the-box» и родился весь следующий раздел заметки — Sentence-BERT, contrastive learning и вся современная экосистема text-embedding-моделей.</div>
+    </section>
+
+    <!-- 04 SENTENCE -->
+    <section class="topic" id="sentence">
+      <div class="topic-head">
+        <h2><span class="idx">04</span>Sentence-эмбеддинги и contrastive learning</h2>
+        <div class="badges"><span class="badge b-mainstream">основа всех совр. text-embedding моделей</span></div>
+      </div>
+      <p class="dek"><b>Sentence-BERT</b> (2019) дообучает BERT в siamese/triplet-сетке: два предложения проходят через одну и ту же модель, из выходов делается mean pooling, и лосс явно учит «похожие предложения — близко, разные — далеко».</p>
+      <div class="formula">
+        <div class="formula-label">InfoNCE / Contrastive loss (упрощённо)</div>
+        L = −log( exp(sim(q,d⁺)/τ) / Σᵢ exp(sim(q,dᵢ)/τ) ) &nbsp;<span class="cm">// d⁺ — правильный ответ, dᵢ — весь батч (включая «негативы»), τ — temperature</span>
+      </div>
+      <p><b>SimCSE</b> (2021) показал неожиданно эффективный трюк: если пропустить одно и то же предложение через модель <b>дважды</b> с разным dropout — получаются два слегка разных вектора, которые можно использовать как «позитивную пару» без разметки вообще (unsupervised contrastive learning).</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Triplet loss</h4><ul><li>явные тройки (anchor, positive, negative)</li><li>нужен margin — гиперпараметр, требует тюнинга</li></ul></div>
+        <div class="pill-box"><h4>Multiple Negatives Ranking Loss</h4><ul><li>каждый позитив в батче — негатив для всех остальных примеров (in-batch negatives)</li><li>эффективнее по данным — не нужно явно размечать негативы</li></ul></div>
+      </div>
+      <div class="note">Качество contrastive-обучения сильно зависит от <b>hard negatives</b> — «сложных» негативов, похожих на позитив, но неправильных (см. §17 про дообучение). Случайные негативы из батча быстро становятся «слишком лёгкими», и модель перестаёт учиться на поздних эпохах.</div>
+      <div class="usedin"><span>Sentence-BERT</span><span>SimCSE</span><span>Universal Sentence Encoder</span></div>
+    </section>
+
+    <!-- 05 BI-CROSS -->
+    <section class="topic" id="bicross">
+      <div class="topic-head">
+        <h2><span class="idx">05</span>Bi-Encoder vs Cross-Encoder</h2>
+        <div class="badges"><span class="badge b-mainstream">оба используются, на разных этапах</span></div>
+      </div>
+      <p class="dek">Это не конкурирующие подходы, а два разных инструмента, которые почти всегда комбинируют в одном пайплайне (см. §14 reranking).</p>
+      <div class="table-wrap"><table>
+        <tr><th></th><th>Bi-Encoder</th><th>Cross-Encoder</th></tr>
+        <tr><td class="hl">Как считает</td><td>query и document кодируются <b>отдельно</b>, similarity — потом (dot product)</td><td>query и document подаются <b>вместе</b> в одну модель, на выходе — score похожести</td></tr>
+        <tr><td class="hl">Скорость</td><td class="good">эмбеддинг документа считается один раз заранее и кешируется</td><td class="bad">нужно заново прогонять модель на каждую пару query-document</td></tr>
+        <tr><td class="hl">Качество</td><td class="mid">хорошее</td><td class="good">выше — модель видит явное взаимодействие токенов query и document друг с другом</td></tr>
+        <tr><td class="hl">Масштабируемость</td><td class="good">можно искать по миллионам документов через ANN</td><td class="bad">нереально прогнать через миллионы документов за разумное время</td></tr>
+      </table></div>
+      <div class="note">Отсюда стандартный two-stage паттерн в проде: bi-encoder быстро находит top-100 кандидатов из миллионов (§11 ANN), затем cross-encoder точно переранжирует эти 100 (§14).</div>
+    </section>
+
+    <!-- 06 COLBERT -->
+    <section class="topic" id="colbert">
+      <div class="topic-head">
+        <h2><span class="idx">06</span>ColBERT — multi-vector / late interaction</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      </div>
+      <p class="dek">Компромисс между bi- и cross-encoder: вместо одного вектора на весь документ ColBERT (2020) хранит <b>отдельный вектор на каждый токен</b> документа.</p>
+      <div class="formula">
+        <div class="formula-label">MaxSim (late interaction)</div>
+        score(q,d) = Σ<sub>i∈q</sub> max<sub>j∈d</sub> ( q<sub>i</sub> · d<sub>j</sub> ) &nbsp;<span class="cm">// для каждого токена запроса берём его лучшее совпадение среди токенов документа, затем суммируем</span>
+      </div>
+      <p>Это даёт качество, близкое к cross-encoder (учитывается token-level взаимодействие), но сохраняет возможность предвычислить и закешировать эмбеддинги документов заранее — в отличие от настоящего cross-encoder.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul><li>Качество ближе к cross-encoder</li><li>Документы кешируются заранее, как в bi-encoder</li></ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul><li>Хранилище — на порядок больше (вектор на каждый токен, а не один на документ)</li><li>Индексация и поиск сложнее — нужна специальная инфраструктура (PLAID-индекс и т.п.)</li></ul></div>
+      </div>
+      <div class="usedin"><span>ColBERT / ColBERTv2</span><span>PLAID (эффективный индекс для ColBERT)</span></div>
+    </section>
+
+    <!-- 07 UNIVERSAL -->
+    <section class="topic" id="universal">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>Универсальные instruction-tuned эмбеддеры</h2>
+        <div class="badges"><span class="badge b-mainstream">сегодняшний стандарт</span></div>
+      </div>
+      <p class="dek">Текущее поколение (2023–2025): большие модели, обученные на смеси огромного числа задач и датасетов сразу, часто с явной <b>инструкцией</b>, объясняющей модели, для какой задачи считается эмбеддинг.</p>
+      <div class="formula">
+        <div class="formula-label">Instruction-prefix (пример, E5/BGE-style)</div>
+        "Represent this sentence for searching relevant passages: {query}" &nbsp;<span class="cm">// разный префикс для query и document — асимметричный поиск</span>
+      </div>
+      <p>Почему это важно: один и тот же текст должен кодироваться по-разному в зависимости от задачи (поиск похожих вопросов ≠ поиск похожих по теме документов ≠ классификация). Инструкция — это способ передать «намерение» модели без дообучения отдельной модели под каждую задачу.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Модель</th><th>Кто</th><th>Особенность</th></tr>
+        <tr><td class="hl">E5 / E5-mistral</td><td>Microsoft</td><td>instruction-based, семейство размеров от small до XL</td></tr>
+        <tr><td class="hl">BGE (BAAI General Embedding)</td><td>BAAI</td><td>сильные результаты на MTEB, открытые веса</td></tr>
+        <tr><td class="hl">GTE</td><td>Alibaba</td><td>general text embeddings, широкий охват задач</td></tr>
+        <tr><td class="hl">text-embedding-3</td><td>OpenAI</td><td>API-only, поддерживает Matryoshka-обрезку размерности «из коробки» (см. §09)</td></tr>
+        <tr><td class="hl">Instructor</td><td>research</td><td>один из первых, явно популяризировавших instruction-эмбеддинги</td></tr>
+      </table></div>
+      <div class="note">Актуальный рейтинг качества этих моделей быстро меняется — свежие цифры смотрите в лидерборде MTEB (§18), а не полагайтесь на память любой модели, включая эту заметку.</div>
+    </section>
+
+    <!-- 08 MULTIMODAL -->
+    <section class="topic" id="multimodal">
+      <div class="topic-head">
+        <h2><span class="idx">08</span>Мультимодальные эмбеддинги: CLIP и наследники</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek"><b>CLIP</b> (OpenAI, 2021) обучает image-encoder и text-encoder <b>в одном общем векторном пространстве</b> через contrastive loss на парах (картинка, подпись) — картинка кота и текст «фото кота» должны оказаться рядом.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Что это даёт</h4><ul>
+          <li>Zero-shot классификация изображений — просто сравнить эмбеддинг картинки с эмбеддингами текстовых меток классов</li>
+          <li>Поиск «картинка по тексту» и «текст по картинке» в одном индексе</li>
+        </ul></div>
+        <div class="pill-box"><h4>Развитие идеи</h4><ul>
+          <li><b>ALIGN</b> (Google) — похожий подход на ещё большем, более шумном датасете</li>
+          <li><b>SigLIP</b> (Google, 2023) — заменил softmax-based contrastive loss на sigmoid loss, что стабильнее и не требует огромных батчей для хороших негативов</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>CLIP</span><span>ALIGN</span><span>SigLIP</span><span>используется как visual backbone в LLaVA и др. VLM</span></div>
+    </section>
+
+    <!-- 09 MATRYOSHKA -->
+    <section class="topic" id="matryoshka">
+      <div class="topic-head">
+        <h2><span class="idx">09</span>Matryoshka Representation Learning (MRL)</h2>
+        <div class="badges"><span class="badge b-emerging">emerging, 2024</span></div>
+      </div>
+      <p class="dek">Идея (Kusupati et al., 2022, массово подхвачена в 2024): обучить эмбеддинг так, чтобы <b>первые k координат вектора уже сами по себе были хорошим эмбеддингом</b> — как вложенные матрёшки. Обычный вектор на 1024 измерения при обрезке до 128 теряет смысл почти полностью; matryoshka-вектор при той же обрезке остаётся качественным, просто чуть менее точным.</p>
+      <p>Достигается это добавлением к обучающему лоссу суммы contrastive-лоссов на нескольких вложенных префиксах вектора (напр. на первых 64, 128, 256, 512 и полных 1024 измерениях одновременно), а не только на полном векторе.</p>
+      <div class="note">Практический эффект: одна модель отдаёт вектор, который можно на лету обрезать под нужный баланс качество/скорость/память — без переобучения и без отдельной модели под каждую размерность. OpenAI text-embedding-3 и многие открытые модели 2024+ уже используют MRL «из коробки».</div>
+      <div class="usedin"><span>OpenAI text-embedding-3</span><span>Nomic Embed</span><span>множество открытых моделей 2024+</span></div>
+    </section>
+
+    <!-- 10 QUANT -->
+    <section class="topic" id="quant">
+      <div class="topic-head">
+        <h2><span class="idx">10</span>Квантование эмбеддингов</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream в проде</span></div>
+      </div>
+      <p class="dek">Хранить миллиард эмбеддингов по 1536 float32-чисел каждый — это ~6ТБ только на сами векторы. Квантование резко снижает этот объём ценой небольшой потери точности поиска.</p>
+      <div class="chart-box">
+        <div class="chart-title">Относительный размер вектора по типу квантования</div>
+        <div class="chart-sub">float32 = 100% (база), иллюстративные величины</div>
+        <svg viewBox="0 0 640 260" width="100%">
+          <line x1="60" y1="220" x2="620" y2="220" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="60" y1="220" x2="620" y2="220" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="223" text-anchor="end">0</text>
+            <line x1="60" y1="170" x2="620" y2="170" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="173" text-anchor="end">25</text>
+            <line x1="60" y1="120" x2="620" y2="120" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="123" text-anchor="end">50</text>
+            <line x1="60" y1="70" x2="620" y2="70" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="73" text-anchor="end">75</text>
+            <line x1="60" y1="20" x2="620" y2="20" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="23" text-anchor="end">100%</text>
+          </g>
+          <rect x="79.6" y="20.0" width="72.8" height="200" fill="#e0355c" rx="3"/>
+          <rect x="191.6" y="120.0" width="72.8" height="100" fill="#ff3d68" rx="3"/>
+          <rect x="303.6" y="170.0" width="72.8" height="50" fill="#2cc4d9" rx="3"/>
+          <rect x="415.6" y="208.0" width="72.8" height="12" fill="#7c4dff" rx="3"/>
+          <rect x="527.6" y="213.8" width="72.8" height="6.2" fill="#3ecf8e" rx="3"/>
+          <g font-family="IBM Plex Mono" font-size="12" fill="#eeeeee" text-anchor="middle">
+            <text x="116" y="14">100%</text><text x="228" y="114">50%</text><text x="340" y="164">25%</text><text x="452" y="202">6%</text><text x="564" y="207">3.1%</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#a3a3a3" text-anchor="middle">
+            <text x="116" y="238">float32</text><text x="228" y="238">float16</text><text x="340" y="238">int8</text><text x="452" y="238">PQ (8×8)</text><text x="564" y="238">binary</text>
+          </g>
+        </svg>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Scalar quantization (int8)</h4><ul><li>каждое число округляется в диапазон [-127,127] по калиброванному min/max</li><li>потеря recall обычно &lt;1-2%, экономия памяти 4×</li></ul></div>
+        <div class="pill-box"><h4>Product Quantization (PQ)</h4><ul><li>вектор режется на подвектора, каждый заменяется индексом ближайшего центроида из обученного codebook</li><li>сильное сжатие (10-30×), но требует обучения codebook на данных заранее</li></ul></div>
+      </div>
+      <p><b>Binary quantization</b> — каждая координата становится 1 битом (знак числа). Даёт экстремальное сжатие (32×) и позволяет считать similarity через Hamming distance (XOR + popcount) — на порядки быстрее float-арифметики. На удивление, для многих современных высокоразмерных эмбеддингов (1536+) recall после binary-квантования + rescoring топ-кандидатов float-версией теряется совсем немного.</div>
+      <div class="note">Стандартный продовый паттерн: искать по сжатым (binary/int8) векторам быстро, затем пересчитать точный cosine на float32 только для top-N кандидатов — «квантование для поиска, точность для финального ранжирования».</div>
+    </section>
+
+    <!-- 11 ANN -->
+    <section class="topic" id="ann">
+      <div class="topic-head">
+        <h2><span class="idx">11</span>ANN-индексация: как искать среди миллиардов векторов</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Точный (brute-force) поиск ближайшего соседа — O(n) на запрос, при миллиарде векторов это неприемлемо медленно. Approximate Nearest Neighbor (ANN) жертвует гарантией точности ради скорости.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Метод</th><th>Идея</th><th>Recall/скорость</th><th>Статус</th></tr>
+        <tr><td class="hl">Brute-force / Flat</td><td>честно сравнить со всеми</td><td class="good">100% recall, медленно</td><td><span class="badge b-niche">для малых баз / baseline</span></td></tr>
+        <tr><td class="hl">LSH (Locality-Sensitive Hashing)</td><td>хеш-функции, при которых похожие вектора чаще попадают в одно ведро</td><td class="mid">ниже recall, чем HNSW при том же QPS</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td class="hl">IVF (Inverted File Index)</td><td>кластеризовать пространство (k-means), искать только в ближайших кластерах (nprobe штук)</td><td class="mid">хороший баланс, особенно вместе с PQ</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td class="hl">HNSW (Hierarchical Navigable Small World)</td><td>многослойный граф соседства — поиск спускается с «редкого» верхнего слоя к «плотному» нижнему</td><td class="good">лучший recall/скорость на практике</td><td><span class="badge b-mainstream">де-факто стандарт</span></td></tr>
+        <tr><td class="hl">DiskANN</td><td>граф-индекс, спроектированный жить на SSD, а не только в RAM</td><td class="good">позволяет индексировать во много раз больше данных, чем помещается в память</td><td><span class="badge b-emerging">emerging</span></td></tr>
+      </table></div>
+      <div class="chart-box">
+        <div class="chart-title">Recall@10 vs скорость поиска (QPS)</div>
+        <div class="chart-sub">Log-шкала по X. Иллюстративные значения — реальные цифры зависят от датасета и параметров индекса.</div>
+        <svg viewBox="0 0 640 300" width="100%" style="overflow:visible;">
+          <line x1="60" y1="260" x2="620" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <line x1="60" y1="20" x2="60" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="60" y1="260" x2="620" y2="260" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="263" text-anchor="end">60%</text>
+            <line x1="60" y1="200" x2="620" y2="200" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="203" text-anchor="end">70%</text>
+            <line x1="60" y1="140" x2="620" y2="140" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="143" text-anchor="end">80%</text>
+            <line x1="60" y1="80" x2="620" y2="80" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="83" text-anchor="end">90%</text>
+            <line x1="60" y1="20" x2="620" y2="20" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="23" text-anchor="end">100%</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" text-anchor="middle">
+            <text x="201" y="278">100</text><text x="402" y="278">1K</text><text x="604" y="278">10K QPS</text>
+          </g>
+          <circle cx="140.2" cy="20.0" r="5" fill="#e0355c"/><text x="150" y="16" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">Brute-force</text>
+          <circle cx="463.1" cy="50.0" r="5" fill="#2cc4d9"/><text x="400" y="42" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">IVF</text>
+          <circle cx="543.4" cy="32.0" r="5" fill="#ff3d68"/><text x="480" y="26" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">HNSW</text>
+          <circle cx="584.5" cy="110.0" r="5" fill="#7c4dff"/><text x="470" y="115" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">IVF+PQ</text>
+          <circle cx="604.0" cy="200.0" r="5" fill="#3ecf8e"/><text x="500" y="215" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">LSH</text>
+        </svg>
+      </div>
+      <div class="note">Ключевые параметры тюнинга в проде: у HNSW — <code>ef_search</code> (сколько кандидатов держать при обходе графа: выше = точнее, но медленнее), у IVF — <code>nprobe</code> (сколько кластеров проверять). Это главный рычаг компромисса recall/latency без переиндексации.</div>
+    </section>
+
+    <!-- 12 VECTORDB -->
+    <section class="topic" id="vectordb">
+      <div class="topic-head"><h2><span class="idx">12</span>Векторные базы данных</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Инструмент</th><th>Тип</th><th>Особенность</th></tr>
+        <tr><td class="hl">FAISS</td><td>библиотека (Meta)</td><td>не БД, а низкоуровневая библиотека индексов — часто используется как движок внутри других решений</td></tr>
+        <tr><td class="hl">Qdrant</td><td>векторная БД</td><td>написана на Rust, сильная поддержка фильтрации по метаданным при поиске</td></tr>
+        <tr><td class="hl">Milvus</td><td>векторная БД</td><td>рассчитана на очень большие распределённые развёртывания</td></tr>
+        <tr><td class="hl">Pinecone</td><td>managed-сервис</td><td>полностью облачный, без самостоятельного администрирования</td></tr>
+        <tr><td class="hl">Weaviate</td><td>векторная БД</td><td>встроенная модульность под разные модели эмбеддингов, GraphQL-API</td></tr>
+        <tr><td class="hl">pgvector</td><td>расширение Postgres</td><td>векторный поиск прямо в обычной реляционной БД — просто, если данные и так в Postgres</td></tr>
+      </table></div>
+      <div class="note">Все перечисленные, кроме pgvector в его простейшем режиме, под капотом используют HNSW и/или IVF (§11) — отличаются друг от друга не алгоритмом поиска, а инфраструктурой: масштабирование, фильтрация, консистентность, операционная простота.</div>
+    </section>
+
+    <!-- 13 HYBRID -->
+    <section class="topic" id="hybrid">
+      <div class="topic-head">
+        <h2><span class="idx">13</span>Гибридный поиск: dense + sparse</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Dense-эмбеддинги отлично ловят смысл, но плохи в точных совпадениях (артикулы, имена, редкие термины). BM25 (§01) — наоборот. Гибридный поиск запускает оба параллельно и объединяет результаты.</p>
+      <div class="formula">
+        <div class="formula-label">Reciprocal Rank Fusion (RRF)</div>
+        score(d) = Σ 1 / (k + rank<sub>i</sub>(d)) &nbsp;<span class="cm">// суммируем по всем системам ранжирования i (напр. dense и BM25); k — константа сглаживания, обычно 60</span>
+      </div>
+      <p>Преимущество RRF — не нужно нормализовать несопоставимые шкалы скора (cosine similarity 0.87 vs BM25-score 14.2) — используется только позиция (rank) документа в каждом списке, а не абсолютное значение.</p>
+      <div class="usedin"><span>Elasticsearch (dense_vector + BM25)</span><span>Weaviate hybrid search</span><span>Qdrant hybrid queries</span></div>
+    </section>
+
+    <!-- 14 RERANK -->
+    <section class="topic" id="rerank">
+      <div class="topic-head"><h2><span class="idx">14</span>Reranking: второй, точный проход</h2></div>
+      <p class="dek">Стандартный two-stage retrieval: bi-encoder / ANN быстро достаёт top-50-200 кандидатов из миллионов, затем cross-encoder (§05) точно и дорого переранжирует именно эту сотню.</p>
+      <div class="note">Reranker почти всегда даёт заметный прирост качества (nDCG/recall) практически бесплатно по инфраструктуре, потому что считает не миллионы, а сотню пар — популярные open-source варианты: <code>bge-reranker</code>, <code>cross-encoder/ms-marco-*</code>; из managed — Cohere Rerank.</div>
+    </section>
+
+    <!-- 15 RAG -->
+    <section class="topic" id="rag">
+      <div class="topic-head">
+        <h2><span class="idx">15</span>Техники поверх поиска: чанкинг, HyDE, фильтры, MMR</h2>
+        <div class="badges"><span class="badge b-mainstream">то, что реально используется в RAG</span></div>
+      </div>
+      <p class="dek">Отдельный слой техник — не про сам эмбеддинг, а про то, как правильно построить запрос и организовать данные вокруг retrieval-системы.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Стратегии чанкинга</h4><ul>
+          <li><b>Fixed-size</b> — фиксированное число токенов, простое, но режет предложения посередине</li>
+          <li><b>Semantic chunking</b> — резать по смысловым границам (по эмбеддинг-similarity соседних предложений)</li>
+          <li><b>Sentence-window / parent-document</b> — искать по маленькому чанку, но подавать в LLM больший «родительский» кусок вокруг него</li>
+        </ul></div>
+        <div class="pill-box"><h4>Query-side техники</h4><ul>
+          <li><b>Query expansion</b> — переформулировать/расширить запрос перед поиском (в т.ч. через LLM)</li>
+          <li><b>HyDE</b> (Hypothetical Document Embeddings) — попросить LLM сгенерировать «гипотетический ответ», искать по эмбеддингу этого ответа, а не самого вопроса</li>
+          <li><b>Metadata filtering</b> — сузить поиск по структурным полям (дата, автор, тип) до/во время ANN-поиска</li>
+        </ul></div>
+      </div>
+      <div class="formula">
+        <div class="formula-label">Maximal Marginal Relevance (MMR)</div>
+        MMR = argmax<sub>d∈D</sub> [ λ·sim(d,q) − (1−λ)·max<sub>d'∈S</sub> sim(d,d') ] &nbsp;<span class="cm">// S — уже выбранные документы; штрафует за похожесть на то, что уже выбрано</span>
+      </div>
+      <p>MMR решает конкретную проблему: топ-5 ближайших по чистому similarity документов часто оказываются почти дубликатами друг друга. MMR явно балансирует релевантность и разнообразие результата.</p>
+      <div class="note warn">HyDE стоит применять с осторожностью: если LLM «галлюцинирует» гипотетический ответ, поиск по такому эмбеддингу может увести дальше от реально релевантных документов, а не ближе — полезно на неоднозначных/пространных запросах, не универсально лучше прямого поиска по запросу.</div>
+    </section>
+
+    <!-- 16 OPTIMIZATION -->
+    <section class="topic" id="optimization">
+      <div class="topic-head">
+        <h2><span class="idx">16</span>Оптимизация и кэширование в проде</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>На уровне индекса</h4><ul>
+          <li>Тюнинг <code>ef_search</code>/<code>nprobe</code> под целевой recall/latency (§11)</li>
+          <li>Квантование (§10) для холодного/массового поиска, rescoring на float32 для финала</li>
+          <li>Шардирование индекса при росте базы за пределы одной машины</li>
+        </ul></div>
+        <div class="pill-box"><h4>На уровне запросов</h4><ul>
+          <li>Кэширование эмбеддингов часто повторяющихся запросов (embedding cache)</li>
+          <li>Батчинг запросов к encoder-модели вместо по одному — критично для throughput на GPU</li>
+          <li>Асинхронный / фоновый пересчёт эмбеддингов при обновлении данных, а не блокирующий на запись</li>
+        </ul></div>
+      </div>
+      <div class="note">Частая продовая ошибка — пересчитывать эмбеддинг запроса «с нуля» каждый раз без кеша, хотя большая доля трафика реальных приложений — это повторяющиеся/похожие запросы. Простой exact-match или даже semantic cache на слое запросов снимает заметную долю нагрузки на encoder.</div>
+    </section>
+
+    <!-- 17 FINETUNING -->
+    <section class="topic" id="finetuning">
+      <div class="topic-head"><h2><span class="idx">17</span>Дообучение эмбеддингов под свой домен</h2></div>
+      <p class="dek">Общая (universal) модель из §07 — хорошая база, но специфичный домен (юридические тексты, код, медицина, ваш внутренний каталог товаров) почти всегда выигрывает от дообучения.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Contrastive fine-tuning</h4><ul>
+          <li>Дообучить готовую модель на парах (query, релевантный документ) из своего домена тем же InfoNCE-лоссом (§04)</li>
+          <li>Часто достаточно тысяч, а не миллионов пар — модель уже «умеет» язык, доучивается только смещать пространство под домен</li>
+        </ul></div>
+        <div class="pill-box"><h4>Hard negative mining</h4><ul>
+          <li>Находить не случайные, а <i>обманчиво похожие</i> неправильные документы (напр. через текущую модель — «то, что она сейчас путает»)</li>
+          <li>Резко повышает качество дообучения по сравнению со случайными негативами</li>
+        </ul></div>
+      </div>
+      <p><b>Дистилляция</b> — обучить маленькую быструю модель имитировать выходы большой (напр. cross-encoder-реранкер учит bi-encoder) — способ получить часть качества дорогой модели по цене дешёвой.</p>
+    </section>
+
+    <!-- 18 EVALUATION -->
+    <section class="topic" id="evaluation">
+      <div class="topic-head"><h2><span class="idx">18</span>Как оценивают эмбеддинги</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Метрика</th><th>Что измеряет</th></tr>
+        <tr><td class="hl">Recall@k</td><td>доля запросов, где правильный документ попал в top-k результатов</td></tr>
+        <tr><td class="hl">nDCG</td><td>учитывает не только «попал ли в топ», но и позицию — правильный документ на 1-м месте лучше, чем на 10-м</td></tr>
+        <tr><td class="hl">MRR (Mean Reciprocal Rank)</td><td>среднее от 1/rank первого правильного результата — акцент на «нашли ли быстро хоть один хороший»</td></tr>
+      </table></div>
+      <p><b>MTEB</b> (Massive Text Embedding Benchmark) — стандартный публичный лидерборд, объединяющий десятки задач (классификация, кластеризация, retrieval, similarity) на многих языках сразу — используется как основной ориентир при выборе современной embedding-модели.</p>
+      <div class="note warn"><b>Embedding drift</b> — если вы меняете модель эмбеддингов (даже на «улучшенную» версию той же линейки), старые векторы в индексе становятся несовместимы с новыми запросами: два разных чекпоинта модели живут в разных пространствах. Единственное надёжное решение — полная переиндексация, частичные «патчи» не работают.</div>
+    </section>
+
+    <!-- 19 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">19</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Техника</th><th>Задача</th><th>Стоимость</th><th>Статус</th></tr>
+        <tr><td><b>TF-IDF / BM25</b></td><td>точный keyword-поиск</td><td>очень низкая</td><td><span class="badge b-mainstream">жив в гибридах</span></td></tr>
+        <tr><td><b>Word2Vec / GloVe</b></td><td>статический word-эмбеддинг</td><td>низкая</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>Sentence-BERT / SimCSE</b></td><td>sentence embedding</td><td>средняя</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>Cross-Encoder</b></td><td>точное ранжирование пары</td><td>высокая на пару</td><td><span class="badge b-mainstream">на этапе rerank</span></td></tr>
+        <tr><td><b>ColBERT</b></td><td>multi-vector retrieval</td><td>высокая по памяти</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>E5 / BGE / GTE</b></td><td>универсальный retrieval</td><td>средняя</td><td><span class="badge b-mainstream">стандарт сегодня</span></td></tr>
+        <tr><td><b>CLIP / SigLIP</b></td><td>мультимодальный поиск</td><td>средняя</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>Matryoshka (MRL)</b></td><td>адаптивная размерность</td><td>низкая (обрезка бесплатна)</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>HNSW</b></td><td>ANN-поиск</td><td>средняя память, быстрый поиск</td><td><span class="badge b-mainstream">де-факто стандарт</span></td></tr>
+        <tr><td><b>Binary / PQ quantization</b></td><td>сжатие индекса</td><td>очень низкая</td><td><span class="badge b-mainstream">mainstream в large-scale</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 20 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">20</span>Таймлайн</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">1994</div><h5>TF-IDF / BM25</h5><p>Классический sparse-поиск — база, которая до сих пор не исчезла, а живёт внутри гибридов.</p></div>
+        <div class="tl-item"><div class="yr">2013</div><h5>Word2Vec</h5><p>Первый массовый плотный word-эмбеддинг, обучаемый на сырых текстах без разметки.</p></div>
+        <div class="tl-item"><div class="yr">2014–2016</div><h5>GloVe, fastText</h5><p>Развитие идеи статических эмбеддингов; fastText добавляет субсловные n-граммы.</p></div>
+        <div class="tl-item"><div class="yr">2018</div><h5>ELMo, BERT</h5><p>Контекстные эмбеддинги — один и тот же токен получает разный вектор в разных контекстах.</p></div>
+        <div class="tl-item"><div class="yr">2019</div><h5>Sentence-BERT</h5><p>Дообучение BERT под similarity через siamese-сеть — решает проблему «сырой BERT плохо кодирует предложения».</p></div>
+        <div class="tl-item"><div class="yr">2020</div><h5>ColBERT</h5><p>Multi-vector / late interaction как компромисс bi- и cross-encoder.</p></div>
+        <div class="tl-item"><div class="yr">2021</div><h5>CLIP, SimCSE</h5><p>Мультимодальные эмбеддинги выходят в mainstream; unsupervised contrastive learning через dropout-трюк.</p></div>
+        <div class="tl-item"><div class="yr">2022</div><h5>Matryoshka Representation Learning</h5><p>Идея вложенных, обрезаемых на лету эмбеддингов — пока в основном research.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>E5, BGE, GTE, всплеск instruction-tuned эмбеддеров</h5><p>Универсальные модели с явными инструкциями по задаче становятся стандартом.</p></div>
+        <div class="tl-item"><div class="yr">2024</div><h5>Массовое внедрение MRL, binary quantization в проде</h5><p>text-embedding-3 и открытые модели делают обрезаемые эмбеддинги нормой; квантование становится стандартной практикой при масштабе.</p></div>
+        <div class="tl-item"><div class="yr">2024–2025</div><h5>DiskANN и disk-based индексы, рост RAG-инфраструктуры</h5><p>Фокус смещается с «как обучить эмбеддинг» на «как искать по миллиардам эмбеддингов дёшево» — гибридный поиск и reranking становятся частью стандартного стека, а не экзотикой.</p></div>
+      </div>
+      <h4 style="margin-top:32px; font-size:17px;">Почему конкретно отказались</h4>
+      <div class="grid2">
+        <div class="pill-box con"><h4>Статические word-эмбеддинги</h4><ul><li>Один вектор на слово не передаёт многозначность — контекстные модели полностью закрыли эту нишу</li></ul></div>
+        <div class="pill-box con"><h4>[CLS]-токен сырого BERT для similarity</h4><ul><li>Модель не обучена делать этот токен «хорошим summary» — без дообучения качество заметно ниже, чем у специализированных sentence-encoder'ов</li></ul></div>
+        <div class="pill-box con"><h4>LSH как основной ANN-метод</h4><ul><li>HNSW стабильно даёт лучший recall при том же QPS на большинстве бенчмарков — LSH остался нишевым</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 21 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">21</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек проекта: трёхуровневая память (Working/Short/Long) поверх RWKV-state + Titans-модуля.</p>
+      <div class="rec-card">
+        <h4>Long-term память — это, по сути, retrieval-задача <span class="tag">§11 §13</span></h4>
+        <p>Если Long-уровень памяти хранит много «фактов»/эпизодов, которые нужно доставать по релевантности к текущему контексту — это классическая задача ANN-поиска по эмбеддингам, а не что-то принципиально новое. HNSW-индекс поверх эмбеддингов сохранённых эпизодов — рабочий базовый вариант для промотированной в Long память.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Surprise-based promotion (Titans) и hard negative mining — похожая логика <span class="tag">§17</span></h4>
+        <p>«Удивительность» токена в Titans (§13 в заметке про attention) концептуально похожа на выбор hard negatives при дообучении эмбеддингов: в обоих случаях система явно выделяет «то, что не укладывается в ожидаемое» как более значимое для запоминания/обучения.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Квантование памяти при росте контекста <span class="tag">§10</span></h4>
+        <p>Если Long-память со временем растёт до тысяч/миллионов эпизодов, storage быстро станет узким местом — тот же паттерн «binary/int8 для поиска, float для финального rescoring» применим и к эпизодической памяти модели, не только к обычному RAG.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Matryoshka-подход к разным уровням памяти <span class="tag">§09</span></h4>
+        <p>Если у Working/Short/Long памяти разный бюджет по скорости доступа, MRL-подобная идея (один эмбеддинг, обрезаемый под разную точность) может быть естественным способом не обучать три отдельных энкодера под три уровня.</p>
+      </div>
+    </section>
+
+    <!-- 22 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">22</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">2013</span> — <b>Efficient Estimation of Word Representations in Vector Space</b> (Mikolov et al.) — Word2Vec</li>
+        <li><span class="yr">2014</span> — <b>GloVe: Global Vectors for Word Representation</b> (Pennington et al.)</li>
+        <li><span class="yr">2018</span> — <b>Deep contextualized word representations</b> (Peters et al.) — ELMo</li>
+        <li><span class="yr">2019</span> — <b>Sentence-BERT</b> (Reimers & Gurevych)</li>
+        <li><span class="yr">2020</span> — <b>ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction</b> (Khattab & Zaharia)</li>
+        <li><span class="yr">2021</span> — <b>Learning Transferable Visual Models From Natural Language Supervision</b> (Radford et al.) — CLIP</li>
+        <li><span class="yr">2021</span> — <b>SimCSE: Simple Contrastive Learning of Sentence Embeddings</b> (Gao et al.)</li>
+        <li><span class="yr">2022</span> — <b>Matryoshka Representation Learning</b> (Kusupati et al.)</li>
+        <li><span class="yr">2023</span> — <b>Towards General Text Embeddings with Multi-stage Contrastive Learning</b> (GTE)</li>
+        <li><span class="yr">2023</span> — <b>SigLIP: Sigmoid Loss for Language Image Pre-Training</b> (Zhai et al.)</li>
+        <li><span class="yr">2024</span> — <b>MTEB: Massive Text Embedding Benchmark</b> (Muennighoff et al.) — методология оценки</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>

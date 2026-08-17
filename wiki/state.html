@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State & Memory — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+.toc-related{margin-top:14px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; font-size:11.5px; color:var(--text-faint); line-height:1.7;}
+.toc-related b{color:var(--text-dim); font-weight:500; display:block; margin-bottom:4px;}
+.toc-mobile{display:none;}
+
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:660px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+.para-box{margin-top:32px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:18px 20px 16px;}
+.para-box .st-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;}
+.para-box .st-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+.note.ref{border-color:rgba(44,196,217,0.3); background:rgba(44,196,217,0.06);}
+.note.ref::before{content:"↗"; color:var(--cyan); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>state & memory / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>Три парадигмы памяти</a>
+      <a href="#rnn"><span class="n">01</span>Vanilla RNN</a>
+      <a href="#lstm"><span class="n">02</span>LSTM</a>
+      <a href="#gru"><span class="n">03</span>GRU</a>
+      <div class="grp-label">State-space модели</div>
+      <a href="#linearattn"><span class="n">04</span>Linear attention как state</a>
+      <a href="#s4"><span class="n">05</span>S4 / HiPPO</a>
+      <a href="#mamba"><span class="n">06</span>Mamba (S6)</a>
+      <a href="#mamba2"><span class="n">07</span>Mamba-2 / SSD</a>
+      <a href="#rwkv"><span class="n">08</span>RWKV: эволюция v4→v7</a>
+      <a href="#retnet"><span class="n">09</span>RetNet: retention</a>
+      <a href="#statecompare"><span class="n">10</span>Сравнение state-моделей</a>
+      <div class="grp-label">Внешняя память</div>
+      <a href="#extmem"><span class="n">11</span>Memory Networks / NTM / DNC</a>
+      <a href="#kvmem"><span class="n">12</span>KV-cache как имплицитная память</a>
+      <a href="#retrieval"><span class="n">13</span>Retrieval-память: kNN-LM, RETRO</a>
+      <a href="#compressive"><span class="n">14</span>Compressive / Recurrent Memory Transformer</a>
+      <a href="#titans"><span class="n">15</span>Titans — память, обучаемая на тесте</a>
+      <a href="#controllers"><span class="n">16</span>Memory-контроллеры и адресация</a>
+      <div class="grp-label">Итог</div>
+      <a href="#comparison"><span class="n">17</span>Сравнительная таблица</a>
+      <a href="#timeline"><span class="n">18</span>Таймлайн и отказы</a>
+      <a href="#recommendation"><span class="n">19</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">20</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+    <div class="toc-related">
+      <b>Смежные заметки</b>
+      Attention: все виды и разница<br>
+      Embeddings: полный курс<br>
+      MLP / FFN и активации<br>
+      Positional encoding<br>
+      Transformer целиком
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning</div>
+      <h1>State и память: от RNN до Mamba, RWKV и Titans</h1>
+      <p class="lede">Три разных ответа на один вопрос — «как модель помнит прошлое»: <b>растущий KV-кеш</b> (attention), <b>сжатое состояние фиксированного размера</b> (RNN/SSM/RWKV/RetNet) и <b>явный адресуемый модуль памяти</b> (NTM/DNC/Titans). Разбираем механику каждой и что осталось от классики, а что появилось только недавно.</p>
+
+      <div class="para-box">
+        <div class="st-title">Три парадигмы «памяти» модели — как растёт объём хранимого</div>
+        <div class="st-sub">По горизонтали — обработанные токены; высота/размер — сколько модель хранит о прошлом</div>
+        <svg viewBox="0 0 720 240" width="100%" style="overflow:visible;">
+          <!-- Panel A: KV-cache growing -->
+          <text x="115" y="18" font-family="IBM Plex Mono" font-size="11.5" fill="#eeeeee" text-anchor="middle">Attention: KV-кеш</text>
+          <line x1="20" y1="200" x2="210" y2="200" stroke="#3a3a3a"/>
+          <rect x="28" y="185" width="16" height="15" fill="#e0355c"/>
+          <rect x="52" y="170" width="16" height="30" fill="#e0355c"/>
+          <rect x="76" y="152" width="16" height="48" fill="#e0355c"/>
+          <rect x="100" y="132" width="16" height="68" fill="#e0355c"/>
+          <rect x="124" y="110" width="16" height="90" fill="#e0355c"/>
+          <rect x="148" y="85" width="16" height="115" fill="#e0355c"/>
+          <text x="115" y="222" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" text-anchor="middle">растёт линейно с n</text>
+
+          <!-- Panel B: fixed-size state -->
+          <text x="360" y="18" font-family="IBM Plex Mono" font-size="11.5" fill="#eeeeee" text-anchor="middle">State: RWKV / Mamba / RetNet</text>
+          <line x1="270" y1="200" x2="450" y2="200" stroke="#3a3a3a"/>
+          <rect x="300" y="90" width="60" height="55" rx="6" fill="none" stroke="#3ecf8e" stroke-width="2"/>
+          <text x="330" y="122" font-family="IBM Plex Mono" font-size="11" fill="#3ecf8e" text-anchor="middle">state</text>
+          <path d="M 360 100 C 400 90, 400 140, 362 132" fill="none" stroke="#3ecf8e" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+          <line x1="275" y1="117" x2="298" y2="117" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+          <text x="278" y="112" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b">xₜ</text>
+          <line x1="362" y1="117" x2="440" y2="117" stroke="#6b6b6b" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+          <text x="405" y="112" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b">yₜ</text>
+          <text x="360" y="222" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" text-anchor="middle">размер не зависит от n</text>
+
+          <!-- Panel C: external memory grid -->
+          <text x="605" y="18" font-family="IBM Plex Mono" font-size="11.5" fill="#eeeeee" text-anchor="middle">Внешняя память: NTM / DNC / Titans</text>
+          <circle cx="605" cy="45" r="10" fill="none" stroke="#2cc4d9" stroke-width="1.5"/>
+          <text x="605" y="49" font-family="IBM Plex Mono" font-size="9" fill="#2cc4d9" text-anchor="middle">C</text>
+          <line x1="597" y1="53" x2="522" y2="80" stroke="#2cc4d9" stroke-width="1.3" stroke-dasharray="2 2"/>
+          <line x1="613" y1="53" x2="647" y2="108" stroke="#2cc4d9" stroke-width="1.3" stroke-dasharray="2 2"/>
+          <g>
+            <rect x="502" y="80" width="38" height="28" rx="3" fill="none" stroke="#ff3d68" stroke-width="2"/>
+            <rect x="544" y="80" width="38" height="28" rx="3" fill="none" stroke="#3a3a3a"/>
+            <rect x="586" y="80" width="38" height="28" rx="3" fill="none" stroke="#3a3a3a"/>
+            <rect x="628" y="80" width="38" height="28" rx="3" fill="none" stroke="#3a3a3a"/>
+            <rect x="502" y="112" width="38" height="28" rx="3" fill="none" stroke="#3a3a3a"/>
+            <rect x="544" y="112" width="38" height="28" rx="3" fill="none" stroke="#3a3a3a"/>
+            <rect x="586" y="112" width="38" height="28" rx="3" fill="none" stroke="#ff3d68" stroke-width="2"/>
+            <rect x="628" y="112" width="38" height="28" rx="3" fill="none" stroke="#3a3a3a"/>
+          </g>
+          <text x="605" y="222" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" text-anchor="middle">контроллер адресует конкретные слоты</text>
+          <defs>
+            <marker id="arrow-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#3ecf8e"/></marker>
+            <marker id="arrow-gray" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6b6b6b"/></marker>
+          </defs>
+        </svg>
+        <p style="font-size:12.8px; color:var(--text-faint); margin:10px 0 0;">Это три принципиально разных инженерных ответа на один вопрос, и вся заметка ниже — по сути разбор того, как каждый из них эволюционировал по отдельности.</p>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>Три парадигмы «памяти» модели</h2></div>
+      <p class="dek">Прежде чем идти по истории — важно развести три вещи, которые в разговоре часто смешивают под одним словом «память».</p>
+      <div class="table-wrap"><table>
+        <tr><th>Парадигма</th><th>Что хранится</th><th>Размер со временем</th><th>Разделы</th></tr>
+        <tr><td class="hl">Растущий кеш (attention)</td><td>явное представление <i>каждого</i> прошлого токена</td><td>линейно растёт</td><td>см. заметку Attention</td></tr>
+        <tr><td class="hl">Сжатое состояние (RNN-семейство)</td><td>одно «резюме» всей истории, обновляемое на каждом шаге</td><td>константный</td><td>§01–10 этой заметки</td></tr>
+        <tr><td class="hl">Внешняя адресуемая память</td><td>отдельный банк слотов, к которым обращаются явно, по содержимому или позиции</td><td>обычно константный (фикс. число слотов) или управляемо растущий</td><td>§11–16 этой заметки</td></tr>
+      </table></div>
+      <div class="note">Все три подхода не взаимоисключающие — современные архитектуры всё чаще комбинируют их (RWKV-state + внешняя Titans-память, или attention + retrieval-память) — об этом отдельно в §19 применительно к NOVA TITAN.</div>
+    </section>
+
+    <!-- 01 RNN -->
+    <section class="topic" id="rnn">
+      <div class="topic-head">
+        <h2><span class="idx">01</span>Vanilla RNN</h2>
+        <div class="badges"><span class="badge b-legacy">legacy как backbone</span></div>
+      </div>
+      <p class="dek">Самый простой рекуррентный механизм: на каждом шаге состояние обновляется как функция от предыдущего состояния и текущего входа.</p>
+      <div class="formula">
+        <div class="formula-label">Vanilla RNN</div>
+        h<sub>t</sub> = tanh(W<sub>h</sub>·h<sub>t-1</sub> + W<sub>x</sub>·x<sub>t</sub> + b)
+      </div>
+      <div class="note warn">Проблема, которая ограничила глубину практического применения: при backpropagation through time градиент проходит через <b>одну и ту же</b> матрицу W<sub>h</sub> многократно (по числу шагов). Если её собственные значения &gt;1 — градиент взрывается, если &lt;1 — исчезает. На последовательностях в сотни шагов vanilla RNN практически не может выучить зависимости дальше десятков токенов назад.</div>
+      <div class="usedin"><span>ранние seq2seq (до 2014)</span></div>
+    </section>
+
+    <!-- 02 LSTM -->
+    <section class="topic" id="lstm">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>LSTM — гейты и «постоянная ошибочная карусель»</h2>
+        <div class="badges"><span class="badge b-legacy">legacy как backbone</span><span class="badge b-mainstream">идея гейтов жива везде</span></div>
+      </div>
+      <p class="dek">Hochreiter & Schmidhuber, 1997. Решение проблемы vanishing gradient — завести отдельную «ячейку памяти» c<sub>t</sub>, которая обновляется не умножением, а <b>сложением</b>, регулируемым обучаемыми гейтами.</p>
+      <div class="formula">
+        <div class="formula-label">LSTM — три гейта</div>
+        f<sub>t</sub> = σ(W<sub>f</sub>[h<sub>t-1</sub>,x<sub>t</sub>]) &nbsp;<span class="cm">// forget gate — что забыть из c</span><br>
+        i<sub>t</sub> = σ(W<sub>i</sub>[h<sub>t-1</sub>,x<sub>t</sub>]) &nbsp;<span class="cm">// input gate — что записать</span><br>
+        c<sub>t</sub> = f<sub>t</sub>⊙c<sub>t-1</sub> + i<sub>t</sub>⊙tanh(W<sub>c</sub>[h<sub>t-1</sub>,x<sub>t</sub>]) &nbsp;<span class="cm">// сложение, а не умножение — ключевое отличие от vanilla RNN</span><br>
+        o<sub>t</sub> = σ(W<sub>o</sub>[h<sub>t-1</sub>,x<sub>t</sub>]), &nbsp; h<sub>t</sub> = o<sub>t</sub>⊙tanh(c<sub>t</sub>) &nbsp;<span class="cm">// output gate</span>
+      </div>
+      <p>Идея forget-gate ≈1 в нужные моменты — та же самая «constant error carousel»: если f<sub>t</sub>≈1, градиент через c<sub>t</sub>=c<sub>t-1</sub>+... проходит почти без затухания на много шагов назад — прямой концептуальный предок residual-connection в Transformer (см. заметку Transformer §00).</p>
+      <div class="note warn">Почему как backbone для языковых моделей вытеснен: обновление h<sub>t</sub> зависит от h<sub>t-1</sub> — обработка строго последовательна, не распараллеливается по времени при обучении. На длинных последовательностях и больших датасетах это стало основным узким местом относительно Transformer, который параллелится по всем токенам сразу.</div>
+      <div class="usedin"><span>seq2seq машинный перевод (до 2017)</span><span>идея гейтов — во всех GLU-вариантах (см. заметку MLP §06) и в RWKV/Mamba (§06–08 ниже)</span></div>
+    </section>
+
+    <!-- 03 GRU -->
+    <section class="topic" id="gru">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>GRU — упрощение LSTM</h2>
+        <div class="badges"><span class="badge b-legacy">legacy</span></div>
+      </div>
+      <p class="dek">Cho et al., 2014. Объединяет forget и input гейты в один update-гейт, убирает отдельную cell-память c<sub>t</sub> — меньше параметров, обучается немного быстрее, качество на большинстве задач сопоставимо с LSTM.</p>
+      <div class="formula">
+        <div class="formula-label">GRU</div>
+        z<sub>t</sub> = σ(W<sub>z</sub>[h<sub>t-1</sub>,x<sub>t</sub>]) &nbsp;<span class="cm">// update gate</span><br>
+        h<sub>t</sub> = (1−z<sub>t</sub>)⊙h<sub>t-1</sub> + z<sub>t</sub>⊙h̃<sub>t</sub> &nbsp;<span class="cm">// линейная интерполяция старого и нового состояния</span>
+      </div>
+      <div class="note">Форма z<sub>t</sub>⊙new + (1−z<sub>t</sub>)⊙old — это тот же математический паттерн, что повторится в RWKV decay (§08) и в Titans memory update (§15): линейная интерполяция между «сохранить как было» и «заменить новым», регулируемая обучаемым коэффициентом.</div>
+      <div class="usedin"><span>seq2seq (2014–2017)</span></div>
+    </section>
+
+    <!-- 04 LINEAR ATTN AS STATE -->
+    <section class="topic" id="linearattn">
+      <div class="topic-head">
+        <h2><span class="idx">04</span>Мост к современности: linear attention как рекуррентность</h2>
+        <div class="badges"><span class="badge b-mainstream">концептуальная основа §05–09</span></div>
+      </div>
+      <p class="dek">Заметка Attention (§07) уже показывала: linear attention можно переписать в рекуррентной форме. Это ключевой мост между «классическими RNN» (§01–03) и современными state-моделями (§05–09) — они формально принадлежат одному семейству.</p>
+      <div class="formula">
+        <div class="formula-label">Linear attention ≡ матричная рекуррентность</div>
+        S<sub>t</sub> = S<sub>t-1</sub> + φ(k<sub>t</sub>)v<sub>t</sub>ᵀ &nbsp;<span class="cm">// S — матрица d×d, а не вектор — «состояние» большего размера, чем у классического RNN</span><br>
+        y<sub>t</sub> = φ(q<sub>t</sub>)ᵀS<sub>t</sub>
+      </div>
+      <p>Отличие от vanilla RNN — не качественное, а по устройству: состояние S — не вектор, а матрица (внешнее произведение ключей и значений), и никакой нелинейности внутри рекуррентности нет (в отличие от tanh в RNN) — это то, что делает возможным эффективное параллельное вычисление при обучении (parallel/chunkwise формы, см. §08–09).</p>
+    </section>
+
+    <!-- 05 S4 -->
+    <section class="topic" id="s4">
+      <div class="topic-head">
+        <h2><span class="idx">05</span>S4 и HiPPO: рекуррентность из теории управления</h2>
+        <div class="badges"><span class="badge b-legacy">как самостоятельная модель</span><span class="badge b-mainstream">основа Mamba</span></div>
+      </div>
+      <p class="dek">Gu et al., 2021. Другая родословная — не от RNN, а от классических непрерывных линейных динамических систем теории управления.</p>
+      <div class="formula">
+        <div class="formula-label">Непрерывная state-space модель</div>
+        h'(t) = A·h(t) + B·x(t) &nbsp;<span class="cm">// A, B — матрицы, обучаемые или заданные</span><br>
+        y(t) = C·h(t) &nbsp;<span class="cm">// линейный readout из состояния</span>
+      </div>
+      <p><b>HiPPO</b> (2020, предшественник S4) — способ инициализировать матрицу A так, чтобы состояние h оптимально (в некоторой математически строгой мере) сжимало всю историю входа в фиксированную размерность — не эвристика, а решение конкретной задачи наилучшего онлайн-сжатия функции по ортогональным полиномам.</p>
+      <p>Ключевая инженерная находка S4 — <b>дискретизация + структурированная параметризация</b> A (диагональная плюс низкоранговая, DPLR), которая позволяет вычислять рекуррентность как свёртку при обучении — эффективно на GPU, в отличие от честного пошагового RNN.</p>
+      <div class="note warn">Почему S4 сам по себе не стал массовым LLM-backbone: матрицы A, B, C в исходном S4 <b>не зависят от входа</b> — модель не может «решать», что запомнить, а что забыть, исходя из содержимого конкретного токена. Именно это ограничение снял Mamba (§06).</div>
+      <div class="usedin"><span>S4</span><span>задачи с очень длинными последовательностями (аудио, геномика) до эпохи Mamba</span></div>
+    </section>
+
+    <!-- 06 MAMBA -->
+    <section class="topic" id="mamba">
+      <div class="topic-head">
+        <h2><span class="idx">06</span>Mamba — Selective State Space (S6)</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Gu & Dao, 2023. Главное изменение относительно S4 — сделать A, B, C (и, что важнее, шаг дискретизации Δ) <b>функциями входа</b>, а не константами.</p>
+      <div class="formula">
+        <div class="formula-label">Selective SSM</div>
+        B<sub>t</sub>, C<sub>t</sub>, Δ<sub>t</sub> = f(x<sub>t</sub>) &nbsp;<span class="cm">// линейные проекции входа — теперь параметры рекуррентности зависят от содержимого токена</span><br>
+        h<sub>t</sub> = Ā<sub>t</sub>h<sub>t-1</sub> + B̄<sub>t</sub>x<sub>t</sub> &nbsp;<span class="cm">// Ā, B̄ — дискретизированные версии, тоже зависят от t через Δₜ</span>
+      </div>
+      <p>Δ<sub>t</sub> (шаг дискретизации) — центральный рычаг selectivity: большой Δ<sub>t</sub> заставляет модель «сильно впитать» текущий вход и частично забыть прошлое состояние, маленький — почти проигнорировать вход и сохранить состояние как было. Это в точности механизм «что важно запомнить, а что пропустить», которого не хватало S4.</p>
+      <div class="note">Цена selectivity — теряется возможность выразить рекуррентность как обычную свёртку (она зависит от входа на каждом шаге). Решение авторов — <b>hardware-aware parallel scan</b>: специальный алгоритм и CUDA-ядро, вычисляющие рекуррентность параллельно по времени через ассоциативное сканирование, а не последовательно шаг за шагом.</div>
+      <div class="usedin"><span>Mamba</span><span>Jamba (гибрид с attention)</span><span>Codestral Mamba</span></div>
+    </section>
+
+    <!-- 07 MAMBA2 -->
+    <section class="topic" id="mamba2">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>Mamba-2 и Structured State-Space Duality</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      </div>
+      <p class="dek">Dao & Gu, 2024. Главный результат — не просто ускорение, а теоретическое доказательство: selective SSM и linear attention (§04) — частные случаи <b>одной и той же</b> алгебраической структуры (SSD, structured state-space duality) при определённой параметризации.</p>
+      <div class="note">Практическое следствие теоремы: Mamba-2 использует скалярный (не входозависимый по каждой размерности отдельно, а один общий на голову) вариант Δ — это упрощение, которое звучит как шаг назад относительно полной selectivity Mamba-1, но именно оно позволяет вычислять рекуррентность через быстрые matmul-примитивы (как attention), а не специализированный scan — на практике заметно быстрее на современных GPU.</div>
+      <div class="usedin"><span>Mamba-2</span></div>
+    </section>
+
+    <!-- 08 RWKV -->
+    <section class="topic" id="rwkv">
+      <div class="topic-head">
+        <h2><span class="idx">08</span>RWKV: эволюция WKV от v4 до v7</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      </div>
+      <p class="dek">RWKV развивалась отдельной линией от S4/Mamba — из сообщества, явно вдохновлённого желанием совместить RNN-эффективность инференса с Transformer-эффективностью обучения. Механизм заметно менялся от версии к версии.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Версия</th><th>Ключевое изменение</th></tr>
+        <tr><td class="hl">RWKV-4</td><td>базовый WKV: константный по каналу decay + экспоненциальное взвешивание прошлых k,v (см. формулу в заметке Attention §10)</td></tr>
+        <tr><td class="hl">RWKV-5 (Eagle)</td><td>переход от скалярного state к матричному (как в linear attention §04) — больше «ёмкость» на канал</td></tr>
+        <tr><td class="hl">RWKV-6 (Finch)</td><td>data-dependent decay — то же принципиальное изменение, что Mamba внесла относительно S4: decay теперь зависит от входа, а не константа</td></tr>
+        <tr><td class="hl">RWKV-7 (Goose)</td><td>обобщённая матрица перехода состояния (generalized delta rule) — ещё более выразительное обновление state, ближе по духу к полноценной SSD (§07)</td></tr>
+      </table></div>
+      <div class="note">Заметный паттерн: RWKV, Mamba и линия «RNN→LSTM→GRU» независимо друг от друга пришли к одной и той же идее — <b>data-dependent (selective) обновление состояния лучше константного</b>. Это не совпадение, а, по сути, заново открытая необходимость гейтов (§02) на новом витке архитектур.</div>
+      <div class="usedin"><span>RWKV-4/5/6/7</span></div>
+    </section>
+
+    <!-- 09 RETNET -->
+    <section class="topic" id="retnet">
+      <div class="topic-head">
+        <h2><span class="idx">09</span>RetNet — retention в трёх эквивалентных формах</h2>
+        <div class="badges"><span class="badge b-niche">niche</span></div>
+      </div>
+      <p class="dek">Microsoft, 2023 (кратко разобран и в заметке Attention §12) — здесь глубже про главную инженерную идею: одна и та же математика вычисляется тремя разными способами в зависимости от того, что нужно — обучение или инференс.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Форма</th><th>Когда использовать</th><th>Сложность</th></tr>
+        <tr><td class="hl">Parallel</td><td>обучение — похоже на attention, весь батч сразу</td><td>O(n²), но параллельно на GPU</td></tr>
+        <tr><td class="hl">Recurrent</td><td>инференс токен-за-токеном</td><td>O(1) на шаг, O(d²) память</td></tr>
+        <tr><td class="hl">Chunkwise recurrent</td><td>компромисс — обучение на очень длинных последовательностях, где полный parallel не помещается в память</td><td>O(n·chunk), между двумя крайностями</td></tr>
+      </table></div>
+      <div class="note">Chunkwise recurrent — практически важная идея, которая с тех пор используется не только в RetNet, но и в эффективных реализациях linear attention и RWKV: разбить последовательность на блоки, внутри блока считать параллельно (как attention), между блоками — рекуррентно (передавая state).</div>
+      <div class="usedin"><span>RetNet</span><span>YOCO</span><span>идея chunkwise — заимствована во многих linear-attention реализациях</span></div>
+    </section>
+
+    <!-- 10 STATECOMPARE -->
+    <section class="topic" id="statecompare">
+      <div class="topic-head"><h2><span class="idx">10</span>Память при инференсе: во сколько раз меньше, чем KV-кеш</h2></div>
+      <div class="chart-box">
+        <div class="chart-title">Объём хранимого «прошлого» при росте числа обработанных токенов</div>
+        <div class="chart-sub">Условные единицы, лог-шкала по Y. Внешняя память показана с фиксированным числом слотов — конкретный размер зависит от конфигурации, здесь для примера.</div>
+        <svg viewBox="0 0 640 300" width="100%" style="overflow:visible;">
+          <line x1="60" y1="260" x2="620" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <line x1="60" y1="20" x2="60" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="60" y1="260.0" x2="620" y2="260.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="263.5" text-anchor="end">1</text>
+            <line x1="60" y1="157.1" x2="620" y2="157.1" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="160.6" text-anchor="end">8</text>
+            <line x1="60" y1="20.0" x2="620" y2="20.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="46" y="23.5" text-anchor="end">128</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#98a2ba" text-anchor="middle">
+            <text x="60" y="278">1K</text><text x="200" y="278">4K</text><text x="340" y="278">16K</text><text x="480" y="278">64K</text><text x="620" y="278">128K</text>
+          </g>
+          <path d="M 60.0 260.0 L 200.0 191.4 L 340.0 122.9 L 480.0 54.3 L 620.0 20.0" fill="none" stroke="#e0355c" stroke-width="2.2"/>
+          <path d="M 60.0 260.0 L 200.0 260.0 L 340.0 260.0 L 480.0 260.0 L 620.0 260.0" fill="none" stroke="#3ecf8e" stroke-width="2.2"/>
+          <path d="M 60.0 157.1 L 200.0 157.1 L 340.0 157.1 L 480.0 157.1 L 620.0 157.1" fill="none" stroke="#2cc4d9" stroke-width="2.2" stroke-dasharray="4 3"/>
+        </svg>
+        <div class="legend">
+          <span><i style="background:#e0355c"></i>Attention KV-кеш — растёт линейно</span>
+          <span><i style="background:#3ecf8e"></i>State (RWKV/Mamba/RetNet) — константа</span>
+          <span><i style="background:#2cc4d9"></i>Внешняя память с фикс. числом слотов — константа большего размера</span>
+        </div>
+      </div>
+      <div class="note">Ось разделяет два независимых вопроса: «сколько байт хранится» (этот график) и «сколько информации реально <i>доступно</i> модели при ответе» (качество/recall) — константный размер не означает автоматически потерю качества, но означает, что вся история сжимается в фиксированный «бюджет», в отличие от honest KV-кеша, который в принципе хранит всё.</div>
+    </section>
+
+    <!-- 11 EXTMEM -->
+    <section class="topic" id="extmem">
+      <div class="topic-head">
+        <h2><span class="idx">11</span>Внешняя память: Memory Networks, NTM, DNC</h2>
+        <div class="badges"><span class="badge b-legacy">legacy как архитектура</span><span class="badge b-mainstream">идея адресации жива в Titans</span></div>
+      </div>
+      <p class="dek">Параллельная (2014–2016) линия исследований, независимая от attention/RNN: явно отделить «вычислительный модуль» (контроллер) от «модуля памяти» — банка слотов, к которым контроллер обращается через операции чтения/записи, как процессор к RAM.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Memory Networks (Weston et al., 2014)</h4><ul>
+          <li>Внешняя память как набор векторов фактов; чтение — через что-то вроде attention по содержимому (predecessor самой идеи attention над памятью)</li>
+        </ul></div>
+        <div class="pill-box"><h4>Neural Turing Machine (Graves et al., 2014)</h4><ul>
+          <li>Явные read/write головы, дифференцируемая адресация: <b>content-based</b> (по похожести на текущий query, как в attention) и <b>location-based</b> (сдвиг относительно предыдущей позиции чтения — аналог указателя в обычной памяти компьютера)</li>
+        </ul></div>
+      </div>
+      <p><b>Differentiable Neural Computer</b> (Graves et al., 2016) добавил к NTM явное отслеживание использования памяти (usage-based allocation — какие слоты свободны) и temporal linkage (в каком порядке что записывалось) — попытка воспроизвести структуры данных вроде связных списков внутри дифференцируемой памяти.</p>
+      <div class="note warn">Почему как самостоятельная архитектура не прижилась в языковых моделях: сложные, нестабильные при обучении механизмы адресации плохо масштабировались, а обычный attention над растущим контекстом (KV-кеш) на практике решал ту же задачу проще и с лучшим масштабированием на доступном на тот момент железе. Идея явной, обучаемой read/write адресации, впрочем, вернулась почти десятилетие спустя в Titans (§15).</div>
+      <div class="usedin"><span>Memory Networks</span><span>Neural Turing Machine</span><span>Differentiable Neural Computer</span></div>
+    </section>
+
+    <!-- 12 KVMEM -->
+    <section class="topic" id="kvmem">
+      <div class="topic-head"><h2><span class="idx">12</span>KV-кеш как имплицитная память</h2></div>
+      <p class="dek">Стоит явно назвать то, что часто остаётся неявным: обычный attention с растущим KV-кешем — это тоже архитектура внешней памяти, просто с максимально простой политикой — <b>«хранить абсолютно всё, адресовать через content-based attention»</b>, без всякого явного контроллера принятия решений о том, что забыть.</p>
+      <div class="note ref">Подробный разбор того, как эту «память» можно сжимать (квантование, MQA/GQA/MLA) — в заметках Attention (§08, §14) и Embeddings (§10) применительно к retrieval. Здесь важно другое: любая техника сокращения KV-кеша (§08 заметки Attention) — это фактически движение <i>от</i> парадигмы «хранить всё» <i>к</i> парадигме «сжатое состояние» (§01–09 этой заметки) — граница между «attention» и «state» на практике более размыта, чем кажется по названиям.</div>
+    </section>
+
+    <!-- 13 RETRIEVAL -->
+    <section class="topic" id="retrieval">
+      <div class="topic-head">
+        <h2><span class="idx">13</span>Retrieval-augmented память: kNN-LM, Memorizing Transformers, RETRO</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream (в основном как RAG, см. Embeddings)</span></div>
+      </div>
+      <p class="dek">Ещё один путь к «памяти сверх контекстного окна»: не пытаться сжать всю историю в state и не хранить её в KV-кеше, а вынести в отдельное, потенциально огромное <b>внешнее хранилище</b> и доставать оттуда релевантное по запросу — по сути, retrieval из заметки Embeddings, применённый не к внешним документам, а к собственной памяти модели.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Метод</th><th>Идея</th></tr>
+        <tr><td class="hl">kNN-LM (Khandelwal et al., 2019)</td><td>интерполировать предсказание модели с распределением, полученным через kNN-поиск по датастору пар (контекст, следующий токен) — не нужно дообучать модель, чтобы «запомнить» новые данные</td></tr>
+        <tr><td class="hl">Memorizing Transformers (2022)</td><td>явный слой k-NN attention к внешней (не обучаемой градиентом, просто растущей) памяти прошлых key-value пар — модель «помнит» весь пройденный за жизнь текст, а не только текущее окно</td></tr>
+        <tr><td class="hl">RETRO (DeepMind, 2022)</td><td>ретривит похожие текстовые чанки из огромного корпуса (не из собственной истории диалога) и подмешивает их через cross-attention — способ дать маленькой модели знания, которые иначе пришлось бы «запоминать» в весах</td></tr>
+      </table></div>
+      <div class="note">Общая идея, которая объединяет эти методы с RAG (заметка Embeddings §15) — <b>параметрическая память</b> (то, что выучено в весах модели) и <b>непараметрическая память</b> (то, что достаётся поиском из внешнего хранилища на лету) — не конкурирующие, а взаимодополняющие механизмы: первая даёт общие способности и стиль, вторая — точные, легко обновляемые факты.</div>
+      <div class="usedin"><span>kNN-LM</span><span>Memorizing Transformers</span><span>RETRO</span></div>
+    </section>
+
+    <!-- 14 COMPRESSIVE -->
+    <section class="topic" id="compressive">
+      <div class="topic-head">
+        <h2><span class="idx">14</span>Compressive Transformer и Recurrent Memory Transformer</h2>
+        <div class="badges"><span class="badge b-legacy">largely legacy</span></div>
+      </div>
+      <p class="dek">Промежуточный путь между «выбросить старый контекст» и «хранить всё»: старые токены не удаляются и не хранятся честно, а <b>сжимаются</b> в компактное представление меньшего размера при выходе за пределы окна.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Compressive Transformer (DeepMind, 2019)</h4><ul>
+          <li>Токены, выпадающие из обычного окна внимания, не отбрасываются, а сжимаются (напр. через 1D-свёртку или pooling) в отдельную «сжатую память» меньшего размера, к которой тоже применяется attention</li>
+        </ul></div>
+        <div class="pill-box"><h4>Recurrent Memory Transformer (2022)</h4><ul>
+          <li>Вводит обучаемые «memory-токены», которые передаются от одного сегмента последовательности к следующему — фактически рекуррентность на уровне сегментов, а не отдельных токенов</li>
+        </ul></div>
+      </div>
+      <div class="note warn">Почему в основном вытеснены: рост доступной длины контекста напрямую (через эффективный attention, RoPE-scaling, YaRN — см. заметки Attention и Positional) во многих случаях снял саму потребность в сжатии — проще честно обработать более длинный контекст, чем поддерживать отдельный механизм сжатия старой информации.</div>
+      <div class="usedin"><span>Compressive Transformer</span><span>Recurrent Memory Transformer (RMT)</span></div>
+    </section>
+
+    <!-- 15 TITANS -->
+    <section class="topic" id="titans">
+      <div class="topic-head">
+        <h2><span class="idx">15</span>Titans: память, которая учится прямо на инференсе</h2>
+        <div class="badges"><span class="badge b-emerging">emerging, 2024</span></div>
+      </div>
+      <p class="dek">Уже разбирался в заметке Attention §13 — здесь глубже про механику и про то, как это соотносится с историей §01–14 выше. Ключевое отличие Titans от всего перечисленного: память — это не банк векторов и не KV-кеш, а <b>небольшая нейросеть (MLP)</b>, чьи веса обновляются градиентным шагом прямо во время инференса.</p>
+      <div class="formula">
+        <div class="formula-label">Surprise-based update (повтор из заметки Attention, с акцентом на связь с §01–04)</div>
+        S<sub>t</sub> = η·S<sub>t-1</sub> − γ<sub>t</sub>·∇ℓ(M<sub>t-1</sub>; x<sub>t</sub>) &nbsp;<span class="cm">// S — momentum «удивления»; та же роль, что gate в LSTM/GRU</span><br>
+        M<sub>t</sub> = (1−α<sub>t</sub>)·M<sub>t-1</sub> + S<sub>t</sub> &nbsp;<span class="cm">// M — веса memory-MLP; forget-подобная интерполяция, как в §02–03</span>
+      </div>
+      <div class="note">Titans закольцовывает всю историю заметки: forget-gate LSTM (§02) → update-gate GRU (§03) → data-dependent decay Mamba/RWKV (§06, §08) → и теперь α<sub>t</sub> Titans — один и тот же математический паттерн («сохранить часть старого + добавить часть нового, оба коэффициента обучаемы и зависят от входа»), заново изобретаемый на каждом витке архитектур с 1997 года.</div>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Что принципиально новое</h4><ul>
+          <li>«Ёмкость» памяти не фиксирована размером вектора/матрицы состояния — это веса целой сети, потенциально сколь угодно выразительной</li>
+          <li>Обучение памяти происходит на инференсе, а не только во время претрейна — ближе к тому, как человек запоминает новое в моменте</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Открытые вопросы</h4><ul>
+          <li>Стабильность градиентного обновления весов «на лету» в длинном диалоге — вопрос, для которого пока меньше проверенной практики, чем для константного-размера state (§01–09)</li>
+          <li>Дополнительный compute на каждый токен (вычисление ∇ℓ) по сравнению с простым умножением/сложением в RWKV/Mamba</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>Titans (Google, 2024)</span></div>
+    </section>
+
+    <!-- 16 CONTROLLERS -->
+    <section class="topic" id="controllers">
+      <div class="topic-head"><h2><span class="idx">16</span>Memory-контроллеры и адресация: сводный взгляд</h2></div>
+      <p class="dek">Через всю заметку проходит один и тот же вопрос — «что читать/писать и когда» — который каждая архитектура решает своим механизмом адресации.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Механизм</th><th>Тип адресации</th><th>Где встречается</th></tr>
+        <tr><td class="hl">Content-based (по похожести)</td><td>читать то, что похоже на текущий query — как в attention</td><td>Memory Networks, NTM (частично), attention/KV-кеш, retrieval-память</td></tr>
+        <tr><td class="hl">Location-based (по позиции/сдвигу)</td><td>обращаться по индексу или сдвигу относительно предыдущего чтения</td><td>NTM, DNC (temporal linkage)</td></tr>
+        <tr><td class="hl">Gate-based (скалярный/векторный гейт)</td><td>решение «сколько сохранить / сколько заменить» на каждый канал состояния, без явного «адреса»</td><td>LSTM, GRU, RWKV, Mamba (через Δ)</td></tr>
+        <tr><td class="hl">Learned surprise (градиентный сигнал)</td><td>«интересность» входа определяется через величину градиента внутренней ошибки предсказания</td><td>Titans</td></tr>
+      </table></div>
+      <div class="note">Первые два типа адресации (content/location) — это «явная память» в духе процессора и RAM; вторые два (gate/surprise) — «неявная память», растворённая в самом процессе обновления состояния, без отдельного понятия «слота» вообще. Выбор между ними — по сути выбор между интерпретируемостью/точным контролем и простотой/эффективностью.</div>
+    </section>
+
+    <!-- 17 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">17</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Механизм</th><th>Тип</th><th>Размер при инференсе</th><th>Точный recall</th><th>Статус</th></tr>
+        <tr><td><b>Vanilla RNN</b></td><td>сжатое состояние</td><td>константный</td><td class="bad">слабый</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>LSTM / GRU</b></td><td>сжатое состояние + гейты</td><td>константный</td><td class="mid">средний</td><td><span class="badge b-legacy">legacy backbone</span></td></tr>
+        <tr><td><b>S4</b></td><td>SSM, input-independent</td><td>константный</td><td class="mid">средний</td><td><span class="badge b-legacy">largely legacy</span></td></tr>
+        <tr><td><b>Mamba / Mamba-2</b></td><td>selective SSM</td><td>константный</td><td class="mid">средний</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>RWKV</b></td><td>линейная рекуррентность + гейты</td><td>константный</td><td class="mid">средний</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>RetNet</b></td><td>retention (3 формы)</td><td>константный</td><td class="mid">средний</td><td><span class="badge b-niche">niche</span></td></tr>
+        <tr><td><b>NTM / DNC</b></td><td>внешняя явная память</td><td>константный (N слотов)</td><td class="good">точный (по дизайну)</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>KV-кеш (attention)</b></td><td>«хранить всё» память</td><td>растёт линейно</td><td class="good">отличный</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>Retrieval (kNN-LM/RETRO)</b></td><td>внешнее хранилище + поиск</td><td>внешнее, не в контексте</td><td class="good">точный на найденном</td><td><span class="badge b-mainstream">mainstream (как RAG)</span></td></tr>
+        <tr><td><b>Titans</b></td><td>обучаемая на инференсе память</td><td>константный (веса MLP)</td><td class="good">хороший (long-term)</td><td><span class="badge b-emerging">emerging</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 18 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">18</span>Таймлайн</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">1997</div><h5>LSTM</h5><p>Гейты и сложение вместо умножения решают vanishing gradient — идея, которая будет заново открываться следующие 25+ лет.</p></div>
+        <div class="tl-item"><div class="yr">2014</div><h5>GRU, Memory Networks, Neural Turing Machine</h5><p>Упрощение гейтов (GRU) и, параллельно, первая явная внешняя дифференцируемая память (NTM/MemNN).</p></div>
+        <div class="tl-item"><div class="yr">2016</div><h5>Differentiable Neural Computer</h5><p>Усложнение NTM: usage tracking, temporal linkage — попытка воспроизвести структуры данных внутри нейросети.</p></div>
+        <div class="tl-item"><div class="yr">2017</div><h5>Transformer вытесняет RNN как backbone</h5><p>Параллелизуемость обучения перевешивает теоретическую элегантность рекуррентности.</p></div>
+        <div class="tl-item"><div class="yr">2019</div><h5>Compressive Transformer, kNN-LM</h5><p>Два разных пути к памяти сверх окна: сжатие старого контекста и retrieval из внешнего хранилища.</p></div>
+        <div class="tl-item"><div class="yr">2021</div><h5>S4</h5><p>Рекуррентность возвращается — на этот раз из теории управления, с эффективным параллельным обучением через свёртку.</p></div>
+        <div class="tl-item"><div class="yr">2022</div><h5>RETRO, Memorizing Transformers, RWKV-4</h5><p>Retrieval-память на масштабе; RWKV начинает собственную линию развития linear-recurrence.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>Mamba, RetNet</h5><p>Selective SSM и retention — оба независимо приходят к необходимости data-dependent обновления состояния.</p></div>
+        <div class="tl-item"><div class="yr">2024</div><h5>Mamba-2 (SSD), RWKV-6/7, Titans</h5><p>Теоретическое объединение linear attention и SSM; RWKV догоняет selectivity; внешняя обучаемая-на-тесте память возвращается на новом уровне.</p></div>
+      </div>
+      <h4 style="margin-top:32px; font-size:17px;">Почему конкретно отказались</h4>
+      <div class="grid2">
+        <div class="pill-box con"><h4>Vanilla RNN / LSTM / GRU как backbone LLM</h4><ul><li>Строго последовательное обучение не параллелится по времени — Transformer выигрывает по эффективности обучения на доступном железе</li></ul></div>
+        <div class="pill-box con"><h4>S4 без selectivity</h4><ul><li>Input-independent A/B/C не позволяют модели решать, что запомнить — Mamba показала, что это решаемо без потери эффективности</li></ul></div>
+        <div class="pill-box con"><h4>NTM / DNC как целостная архитектура</h4><ul><li>Сложная, нестабильная адресация плохо масштабировалась; attention над KV-кешем решал ту же задачу проще на тогдашнем железе</li></ul></div>
+        <div class="pill-box con"><h4>Compressive Transformer / RMT</h4><ul><li>Рост доступной длины контекста напрямую (эффективный attention + RoPE-scaling) во многих сценариях снял саму потребность в сжатии старого контекста</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 19 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">19</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек: RWKV-state (§08) + local linear attention (§04) + Titans-модуль (§15) в контроллере/памяти.</p>
+      <div class="rec-card">
+        <h4>state.py — RWKV-подобная рекуррентность закрывает «средний горизонт» дёшево <span class="tag">§08 §10</span></h4>
+        <p>Судя по константному размеру состояния (§10), RWKV-часть — правильный кандидат на «Working»-уровень: быстрый, дешёвый по памяти доступ к недавнему контексту без растущего KV-кеша. Стоит явно решить, какую версию WKV использовать (v4 vs v6/v7) — data-dependent decay (v6+) даёт больше выразительности, но и больше compute на шаг.</p>
+      </div>
+      <div class="rec-card">
+        <h4>controller.py + memory.py — это ровно вопрос §16 (адресация) <span class="tag">§11 §16</span></h4>
+        <p>При проектировании трёхуровневой памяти стоит явно решить, какой тип адресации использует каждый уровень: content-based (attention-подобный поиск по содержимому) для Long-памяти vs gate-based (как в §02–03, §08) для Short — это разные, отдельно настраиваемые компоненты, а не одна общая политика на всю систему.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Titans-модуль ближе к NTM/DNC по духу, чем к RWKV/Mamba <span class="tag">§11 §15</span></h4>
+        <p>Стоит явно опираться на историю NTM/DNC (§11) при проектировании controller.py — усложнения вроде usage-based allocation и temporal linkage, которые DNC добавил поверх NTM, могут быть релевантны при масштабировании Titans-памяти до тысяч/миллионов записей, даже если сам Titans этого явно не описывает.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Retrieval-память (§13) — запасной путь, если Titans окажется нестабильным на практике <span class="tag">§13</span></h4>
+        <p>Если градиентное обновление весов памяти «на лету» (§15) окажется сложным для стабильного обучения, подход в духе kNN-LM/Memorizing Transformers — явное хранилище прошлых состояний + retrieval по содержимому — более консервативная, проверенная временем альтернатива для Long-уровня.</p>
+      </div>
+    </section>
+
+    <!-- 20 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">20</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">1997</span> — <b>Long Short-Term Memory</b> (Hochreiter & Schmidhuber)</li>
+        <li><span class="yr">2014</span> — <b>Neural Turing Machines</b> (Graves et al.)</li>
+        <li><span class="yr">2014</span> — <b>Memory Networks</b> (Weston et al.)</li>
+        <li><span class="yr">2014</span> — <b>Learning Phrase Representations using RNN Encoder-Decoder</b> (Cho et al.) — GRU</li>
+        <li><span class="yr">2016</span> — <b>Hybrid computing using a neural network with dynamic external memory</b> (Graves et al.) — DNC</li>
+        <li><span class="yr">2019</span> — <b>Generalization through Memorization: Nearest Neighbor Language Models</b> (Khandelwal et al.) — kNN-LM</li>
+        <li><span class="yr">2019</span> — <b>Compressive Transformers for Long-Range Sequence Modelling</b> (Rae et al.)</li>
+        <li><span class="yr">2021</span> — <b>Efficiently Modeling Long Sequences with Structured State Spaces</b> (Gu et al.) — S4</li>
+        <li><span class="yr">2022</span> — <b>Improving Language Models by Retrieving from Trillions of Tokens</b> (Borgeaud et al.) — RETRO</li>
+        <li><span class="yr">2022</span> — <b>Memorizing Transformers</b> (Wu et al.)</li>
+        <li><span class="yr">2023</span> — <b>Mamba: Linear-Time Sequence Modeling with Selective State Spaces</b> (Gu & Dao)</li>
+        <li><span class="yr">2023</span> — <b>Retentive Network</b> (Sun et al.)</li>
+        <li><span class="yr">2024</span> — <b>Transformers are SSMs</b> (Dao & Gu) — Mamba-2</li>
+        <li><span class="yr">2024</span> — <b>Titans: Learning to Memorize at Test Time</b> (Behrouz et al.)</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. Часть серии: Attention · Embeddings · MLP/FFN · Positional Encoding · Transformer · State & Memory. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>

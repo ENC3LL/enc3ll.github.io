@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Mechanics — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+.toc-related{margin-top:14px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; font-size:11.5px; color:var(--text-faint); line-height:1.7;}
+.toc-related b{color:var(--text-dim); font-weight:500; display:block; margin-bottom:4px;}
+.toc-mobile{display:none;}
+
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:660px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+.curve-box{margin-top:32px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:18px 20px 14px;}
+.curve-box .st-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;}
+.curve-box .st-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+.note.ref{border-color:rgba(44,196,217,0.3); background:rgba(44,196,217,0.06);}
+.note.ref::before{content:"↗"; color:var(--cyan); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>training mechanics / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>Цикл обучения целиком</a>
+      <a href="#sgd"><span class="n">01</span>SGD и Momentum</a>
+      <a href="#adam"><span class="n">02</span>Adam / AdamW</a>
+      <a href="#neweropt"><span class="n">03</span>Lion / Sophia / Muon</a>
+      <div class="grp-label">Расписание и стабильность</div>
+      <a href="#lrschedule"><span class="n">04</span>LR-schedules: warmup, cosine, WSD</a>
+      <a href="#batchsize"><span class="n">05</span>Batch size и LR scaling</a>
+      <a href="#clipping"><span class="n">06</span>Gradient clipping</a>
+      <a href="#precision"><span class="n">07</span>Mixed precision: fp16/bf16/fp8</a>
+      <a href="#accumulation"><span class="n">08</span>Gradient accumulation</a>
+      <a href="#regularization"><span class="n">09</span>Регуляризация в LLM-претрейне</a>
+      <a href="#stability"><span class="n">10</span>z-loss, soft-capping, QK-norm</a>
+      <a href="#data"><span class="n">11</span>Данные: curriculum, mixing, dedup</a>
+      <div class="grp-label">Распределённое обучение</div>
+      <a href="#dp"><span class="n">12</span>Data Parallelism</a>
+      <a href="#zero"><span class="n">13</span>ZeRO / FSDP</a>
+      <a href="#parallelism"><span class="n">14</span>Tensor / Pipeline / 3D</a>
+      <a href="#checkpointing"><span class="n">15</span>Activation checkpointing</a>
+      <div class="grp-label">Итог</div>
+      <a href="#comparison"><span class="n">16</span>Сравнительная таблица</a>
+      <a href="#timeline"><span class="n">17</span>Таймлайн и отказы</a>
+      <a href="#recommendation"><span class="n">18</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">19</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+    <div class="toc-related">
+      <b>Смежные заметки</b>
+      Attention · Embeddings<br>
+      MLP / FFN · Positional<br>
+      Transformer · State & Memory
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning</div>
+      <h1>Механика обучения: оптимизаторы, LR-расписания, распределённый претрейн</h1>
+      <p class="lede">Архитектура (см. предыдущие заметки серии) определяет, <b>что</b> вычисляет модель. Эта заметка — про то, <b>как</b> её вообще заставляют обучаться на кластере из тысяч GPU: чем обновлять веса, как менять learning rate по ходу, как не взорвать градиенты и как разложить модель, которая не помещается в память одной видеокарты.</p>
+
+      <div class="curve-box">
+        <div class="st-title">Три формы LR-расписания</div>
+        <div class="st-sub">Learning rate (Y) на протяжении обучения (X) — все три начинаются одинаковым linear warmup, дальше расходятся</div>
+        <svg viewBox="0 0 720 240" width="100%" style="overflow:visible;">
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="50" y1="204.0" x2="700" y2="204.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="40" y="207" text-anchor="end">0</text>
+            <line x1="50" y1="112.0" x2="700" y2="112.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="40" y="115" text-anchor="end">0.5</text>
+            <line x1="50" y1="20.0" x2="700" y2="20.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="40" y="23" text-anchor="end">max LR</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#a3a3a3" text-anchor="middle">
+            <text x="50" y="222">0%</text><text x="375" y="222">50%</text><text x="700" y="222">100% (шаги обучения)</text>
+          </g>
+          <path d="M 50.0 204.0 L 58.2 157.4 L 66.5 110.8 L 74.7 64.3 L 82.9 20.0 L 91.1 20.1 L 99.4 20.3 L 107.6 20.7 L 115.8 21.3 L 124.1 22.0 L 132.3 22.9 L 140.5 24.0 L 148.7 25.2 L 157.0 26.5 L 165.2 28.0 L 173.4 29.7 L 181.6 31.5 L 189.9 33.4 L 198.1 35.5 L 206.3 37.7 L 214.6 40.0 L 222.8 42.5 L 231.0 45.0 L 239.2 47.7 L 247.5 50.5 L 255.7 53.5 L 263.9 56.5 L 272.2 59.6 L 280.4 62.8 L 288.6 66.1 L 296.8 69.5 L 305.1 72.9 L 313.3 76.5 L 321.5 80.0 L 329.7 83.7 L 338.0 87.4 L 346.2 91.1 L 354.4 94.9 L 362.7 98.7 L 370.9 102.5 L 379.1 106.3 L 387.3 110.2 L 395.6 114.0 L 403.8 117.9 L 412.0 121.7 L 420.3 125.5 L 428.5 129.3 L 436.7 133.1 L 444.9 136.8 L 453.2 140.5 L 461.4 144.1 L 469.6 147.7 L 477.8 151.2 L 486.1 154.7 L 494.3 158.1 L 502.5 161.3 L 510.8 164.6 L 519.0 167.7 L 527.2 170.7 L 535.4 173.6 L 543.7 176.4 L 551.9 179.1 L 560.1 181.7 L 568.4 184.1 L 576.6 186.5 L 584.8 188.6 L 593.0 190.7 L 601.3 192.6 L 609.5 194.4 L 617.7 196.1 L 625.9 197.5 L 634.2 198.9 L 642.4 200.1 L 650.6 201.1 L 658.9 202.0 L 667.1 202.7 L 675.3 203.3 L 683.5 203.7 L 691.8 203.9 L 700.0 204.0" fill="none" stroke="#ff3d68" stroke-width="2.2"/>
+          <path d="M 50.0 204.0 L 58.2 157.4 L 66.5 110.8 L 74.7 64.3 L 82.9 20.0 L 91.1 20.0 L 99.4 20.0 L 107.6 20.0 L 115.8 20.0 L 124.1 20.0 L 132.3 20.0 L 140.5 20.0 L 148.7 20.0 L 157.0 20.0 L 165.2 20.0 L 173.4 20.0 L 181.6 20.0 L 189.9 20.0 L 198.1 20.0 L 206.3 20.0 L 214.6 20.0 L 222.8 20.0 L 231.0 20.0 L 239.2 20.0 L 247.5 20.0 L 255.7 20.0 L 263.9 20.0 L 272.2 20.0 L 280.4 20.0 L 288.6 20.0 L 296.8 20.0 L 305.1 20.0 L 313.3 20.0 L 321.5 20.0 L 329.7 20.0 L 338.0 20.0 L 346.2 20.0 L 354.4 20.0 L 362.7 20.0 L 370.9 20.0 L 379.1 20.0 L 387.3 20.0 L 395.6 20.0 L 403.8 20.0 L 412.0 20.0 L 420.3 20.0 L 428.5 20.0 L 436.7 20.0 L 444.9 20.0 L 453.2 20.0 L 461.4 20.0 L 469.6 20.0 L 477.8 20.0 L 486.1 20.0 L 494.3 20.0 L 502.5 20.0 L 510.8 20.0 L 519.0 20.0 L 527.2 20.0 L 535.4 20.0 L 543.7 20.0 L 551.9 20.0 L 560.1 20.0 L 568.4 20.0 L 576.6 20.0 L 584.8 20.0 L 593.0 20.0 L 601.3 20.0 L 609.5 33.2 L 617.7 48.7 L 625.9 64.3 L 634.2 79.8 L 642.4 95.3 L 650.6 110.8 L 658.9 126.4 L 667.1 141.9 L 675.3 157.4 L 683.5 172.9 L 691.8 188.5 L 700.0 204.0" fill="none" stroke="#3ecf8e" stroke-width="2.2"/>
+          <path d="M 50.0 204.0 L 58.2 157.4 L 66.5 110.8 L 74.7 64.3 L 82.9 20.0 L 91.1 20.0 L 99.4 20.0 L 107.6 20.0 L 115.8 20.0 L 124.1 20.0 L 132.3 20.0 L 140.5 20.0 L 148.7 20.0 L 157.0 20.0 L 165.2 20.0 L 173.4 20.0 L 181.6 20.0 L 189.9 20.0 L 198.1 20.0 L 206.3 20.0 L 214.6 20.0 L 222.8 20.0 L 231.0 20.0 L 239.2 20.0 L 247.5 20.0 L 255.7 20.0 L 263.9 20.0 L 272.2 20.0 L 280.4 20.0 L 288.6 20.0 L 296.8 20.0 L 305.1 20.0 L 313.3 20.0 L 321.5 20.0 L 329.7 20.0 L 338.0 20.0 L 346.2 20.0 L 354.4 20.0 L 362.7 20.0 L 370.9 20.0 L 379.1 20.0 L 387.3 20.0 L 395.6 20.0 L 403.8 20.0 L 412.0 20.0 L 420.3 20.0 L 428.5 20.0 L 436.7 20.0 L 444.9 20.0 L 453.2 20.0 L 461.4 20.0 L 469.6 20.0 L 477.8 20.0 L 486.1 20.0 L 494.3 20.0 L 502.5 20.0 L 510.8 20.0 L 519.0 20.0 L 527.2 20.0 L 535.4 20.0 L 543.7 20.0 L 551.9 20.0 L 560.1 20.0 L 568.4 20.0 L 576.6 20.0 L 584.8 20.0 L 593.0 20.0 L 601.3 20.0 L 609.5 20.0 L 617.7 20.0 L 625.9 20.0 L 634.2 20.0 L 642.4 20.0 L 650.6 20.0 L 658.9 20.0 L 667.1 20.0 L 675.3 20.0 L 683.5 20.0 L 691.8 20.0 L 700.0 20.0" fill="none" stroke="#2cc4d9" stroke-width="2.2" stroke-dasharray="5 3"/>
+        </svg>
+        <div class="legend">
+          <span><i style="background:#ff3d68"></i>Cosine decay — плавно к нулю, самый распространённый</span>
+          <span><i style="background:#3ecf8e"></i>WSD (warmup-stable-decay) — плато, потом резкий decay</span>
+          <span><i style="background:#2cc4d9"></i>Constant после warmup — редко используется как есть</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>Цикл обучения целиком</h2></div>
+      <p class="dek">Всё, что ниже — детали одного и того же четырёхшагового цикла, повторяемого миллионы раз.</p>
+      <div class="formula">
+        <div class="formula-label">Один шаг обучения</div>
+        1. forward: ŷ = model(x) &nbsp;<span class="cm">// вычислить предсказание — сюда относится вся архитектура из предыдущих заметок</span><br>
+        2. loss: L = loss_fn(ŷ, y) &nbsp;<span class="cm">// обычно cross-entropy для CLM (см. заметку Transformer §05)</span><br>
+        3. backward: ∇L = ∂L/∂θ &nbsp;<span class="cm">// backpropagation через весь граф вычислений</span><br>
+        4. update: θ = optimizer_step(θ, ∇L, lr) &nbsp;<span class="cm">// §01–03 — как именно использовать градиент</span>
+      </div>
+      <p>Эта заметка — почти целиком про шаг 4 и вокруг него: чем обновлять параметры (§01–03), как менять lr по ходу (§04–05), как не дать градиентам взорваться или обнулиться численно (§06–07, §10), и как физически распределить эти четыре шага по тысячам GPU, когда модель и данные не помещаются на одну машину (§12–15).</p>
+    </section>
+
+    <!-- 01 SGD -->
+    <section class="topic" id="sgd">
+      <div class="topic-head">
+        <h2><span class="idx">01</span>SGD и Momentum</h2>
+        <div class="badges"><span class="badge b-legacy">legacy для LLM</span><span class="badge b-mainstream">жив в CV/классике</span></div>
+      </div>
+      <div class="formula">
+        <div class="formula-label">SGD с Momentum</div>
+        v<sub>t</sub> = β·v<sub>t-1</sub> + ∇L(θ<sub>t</sub>) &nbsp;<span class="cm">// накопленная «скорость», β обычно 0.9</span><br>
+        θ<sub>t+1</sub> = θ<sub>t</sub> − lr·v<sub>t</sub>
+      </div>
+      <p>Momentum сглаживает шумные обновления и «проносит» оптимизацию через плоские участки/локальные неровности поверхности loss, накапливая скорость в стабильном направлении — механически похоже на физический шарик с инерцией, катящийся по ландшафту loss.</p>
+      <div class="note warn">Почему не используется как основной оптимизатор для LLM: у SGD один общий learning rate на все параметры — для трансформеров с очень разными по масштабу градиентов частями (эмбеддинги vs глубокие слои) это плохо работает без тщательного per-layer тюнинга. Adam-семейство (§02) решает это адаптивно, параметр за параметром.</div>
+      <div class="usedin"><span>классические CV-сети (ResNet и др.)</span><span>иногда для fine-tuning небольших моделей</span></div>
+    </section>
+
+    <!-- 02 ADAM -->
+    <section class="topic" id="adam">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>Adam / AdamW — стандарт по умолчанию</h2>
+        <div class="badges"><span class="badge b-mainstream">де-факто стандарт</span></div>
+      </div>
+      <p class="dek">Kingma & Ba, 2014 — адаптивный learning rate <b>для каждого параметра отдельно</b>, основанный на скользящих оценках первого и второго момента градиента.</p>
+      <div class="formula">
+        <div class="formula-label">Adam</div>
+        m<sub>t</sub> = β₁m<sub>t-1</sub> + (1−β₁)∇L &nbsp;<span class="cm">// момент 1-го порядка (среднее), β₁≈0.9</span><br>
+        v<sub>t</sub> = β₂v<sub>t-1</sub> + (1−β₂)∇L² &nbsp;<span class="cm">// момент 2-го порядка (дисперсия), β₂≈0.999</span><br>
+        m̂<sub>t</sub> = m<sub>t</sub>/(1−β₁ᵗ), &nbsp; v̂<sub>t</sub> = v<sub>t</sub>/(1−β₂ᵗ) &nbsp;<span class="cm">// bias correction — критично на первых шагах</span><br>
+        θ<sub>t+1</sub> = θ<sub>t</sub> − lr·m̂<sub>t</sub>/(√v̂<sub>t</sub>+ε)
+      </div>
+      <p>Деление на √v̂ — это и есть адаптивность: параметры с исторически большим градиентом получают эффективно меньший шаг, с маленьким — больший. Bias correction нужен потому, что m и v инициализируются нулями — без коррекции первые шаги были бы искусственно занижены.</p>
+      <div class="formula">
+        <div class="formula-label">AdamW (Loshchilov & Hutter, 2017) — ключевая поправка</div>
+        θ<sub>t+1</sub> = θ<sub>t</sub> − lr·(m̂<sub>t</sub>/(√v̂<sub>t</sub>+ε) + λθ<sub>t</sub>) &nbsp;<span class="cm">// weight decay применяется напрямую к θ, а не смешивается внутрь градиента</span>
+      </div>
+      <p>В исходном Adam L2-регуляризация добавлялась <i>к градиенту</i> перед адаптивным делением на √v̂ — из-за этого эффективная сила regularization для каждого параметра искажалась той же адаптивной нормировкой. AdamW «decouple» — применяет weight decay отдельно, напрямую к весам. Разница небольшая по формуле, но заметная по факту: AdamW стал стандартом для трансформеров именно из-за этого.</p>
+      <div class="note">Занимаемая Adam/AdamW память — не мелочь: на каждый параметр модели хранятся ещё два (m и v) в fp32 — итого оптимизатор занимает <b>8 байт на параметр</b> дополнительно к самим весам. Для модели в десятки миллиардов параметров это соизмеримо с памятью самой модели — прямая причина, почему ZeRO (§13) в первую очередь шардит именно optimizer state.</div>
+      <div class="usedin"><span>AdamW: GPT-3/4, LLaMA, почти весь совр. LLM-претрейн</span></div>
+    </section>
+
+    <!-- 03 NEWER OPT -->
+    <section class="topic" id="neweropt">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>Новое поколение: Lion, Sophia, Muon</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Lion (Google, 2023)</h4><ul>
+          <li>Найден автоматическим поиском по программам оптимизации (аналогично тому, как был найден Swish в MLP §05)</li>
+          <li>Использует только <b>знак</b> момента для обновления (sign(m<sub>t</sub>)), не сам градиент — экономит память (не нужен второй момент v), но требует более осторожного подбора lr и weight decay</li>
+        </ul></div>
+        <div class="pill-box"><h4>Sophia (2023)</h4><ul>
+          <li>Использует приближение к <b>диагонали гессиана</b> (кривизне loss), а не только градиент — теоретически быстрее сходится за счёт учёта второй производной</li>
+          <li>Дороже вычислительно на шаг, но заявлен меньший общий compute до целевого loss</li>
+        </ul></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Muon (2024)</h4><ul>
+          <li>Ортогонализует обновление весов через приближённый Newton-Schulz на матрице градиента (не покомпонентно, как Adam, а с учётом структуры всей весовой матрицы)</li>
+          <li>Показывает выигрыш по compute-эффективности конкретно на матричных весах (линейные слои) — комбинируется с AdamW для эмбеддингов/норм, где неприменим</li>
+        </ul></div>
+        <div class="pill-box"><h4>Общий тренд</h4><ul>
+          <li>Все три ищут способ использовать <i>больше</i> информации о геометрии loss (знак/кривизна/структура матрицы), чем чистый Adam, либо <i>меньше</i> памяти при сравнимом качестве</li>
+        </ul></div>
+      </div>
+      <div class="note warn">Статус на сегодня: ни один не вытеснил AdamW как безопасный дефолт для претрейна LLM с нуля — у каждого есть отчёты о заметном ускорении в конкретных сетапах, но AdamW остаётся выбором с наибольшим объёмом проверенной практики на масштабе. Разумная стратегия — AdamW, если не проводился отдельный эксперимент, подтверждающий выигрыш альтернативы именно на вашей архитектуре и масштабе.</div>
+    </section>
+
+    <!-- 04 LR SCHEDULE -->
+    <section class="topic" id="lrschedule">
+      <div class="topic-head">
+        <h2><span class="idx">04</span>LR-schedules: зачем менять learning rate по ходу</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Warmup (общий для всех схем)</h4><ul>
+          <li>Первые несколько сотен–тысяч шагов lr линейно растёт от ~0 до целевого максимума</li>
+          <li>Причина: в начале обучения оценки m,v в Adam (§02) ещё не накопили статистику — большой lr на этом этапе легко «взрывает» обучение</li>
+        </ul></div>
+        <div class="pill-box"><h4>Cosine decay (после warmup)</h4><ul>
+          <li>lr плавно убывает по косинусоиде до близкого к нулю значения к концу обучения</li>
+          <li>Самая распространённая схема — простая, не требует дополнительных гиперпараметров кроме общей длины расписания</li>
+        </ul></div>
+      </div>
+      <div class="note ref">
+        <b>WSD (Warmup-Stable-Decay)</b> — более новый (2024) подход: после warmup lr держится <b>константным</b> долгое плато, и только в последние ~10-20% шагов быстро уходит в decay. Практическое преимущество перед cosine: длину общего обучения не нужно знать заранее (cosine требует зафиксировать общее число шагов для формы кривой) — можно продолжать обучение на плато сколько угодно, и запустить decay-фазу только когда решили остановиться.
+      </div>
+      <div class="note warn">Ключевая ошибка новичков: слишком короткий warmup или слишком высокий пиковый lr на большой модели — типичный симптом на кривой loss — резкий скачок вверх («loss spike») вскоре после начала обучения или после выхода из warmup.</div>
+    </section>
+
+    <!-- 05 BATCHSIZE -->
+    <section class="topic" id="batchsize">
+      <div class="topic-head"><h2><span class="idx">05</span>Batch size и масштабирование LR</h2></div>
+      <p class="dek">Больший batch size даёт менее шумную оценку градиента — что позволяет (и обычно требует) пропорционально больший learning rate, чтобы использовать эту стабильность, а не тратить её впустую на маленьких шагах.</p>
+      <div class="formula">
+        <div class="formula-label">Linear Scaling Rule (Goyal et al., 2017)</div>
+        lr_new = lr_base · (batch_size_new / batch_size_base)
+      </div>
+      <div class="note warn">Правило работает только до определённого порога — <b>critical batch size</b>: за ним увеличение batch size уже не даёт пропорционального ускорения сходимости (градиент и так достаточно точен, лишние примеры в батче не добавляют полезной информации) — просто тратит compute на больший батч без выигрыша по числу нужных шагов. Приблизительная оценка critical batch size для конкретной модели — предмет отдельных scaling-экспериментов (та же линия исследований, что Kaplan/Chinchilla scaling laws из заметки Transformer §08, но по batch size, а не по размеру модели).</div>
+    </section>
+
+    <!-- 06 CLIPPING -->
+    <section class="topic" id="clipping">
+      <div class="topic-head"><h2><span class="idx">06</span>Gradient clipping</h2></div>
+      <div class="formula">
+        <div class="formula-label">Global norm clipping</div>
+        если ‖∇L‖ &gt; max_norm: &nbsp; ∇L ← ∇L · (max_norm / ‖∇L‖) &nbsp;<span class="cm">// масштабируем весь градиент целиком, сохраняя направление</span>
+      </div>
+      <p>Считается норма градиента <b>по всем параметрам сразу</b> (не по отдельности) — если она превышает порог (типично 1.0), весь вектор градиента пропорционально сжимается. Это защита от редких, но разрушительных «выбросов» градиента — например, из-за одного аномального батча или численной нестабильности на конкретном шаге.</p>
+      <div class="note">Clipping — не средство против систематической нестабильности (слишком высокий lr, плохая инициализация) — это защита от <i>редких</i> выбросов. Если clipping срабатывает почти на каждом шаге — это симптом более глубокой проблемы конфигурации (lr, инициализация, precision), а не то, что нужно лечить более агрессивным clipping.</div>
+    </section>
+
+    <!-- 07 PRECISION -->
+    <section class="topic" id="precision">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>Mixed precision: fp32 / fp16 / bf16 / fp8</h2>
+        <div class="badges"><span class="badge b-mainstream">bf16 — стандарт для LLM</span></div>
+      </div>
+      <div class="table-wrap"><table>
+        <tr><th>Формат</th><th>Биты (знак/экспонента/мантисса)</th><th>Диапазон</th><th>Точность</th></tr>
+        <tr><td class="hl">fp32</td><td>1/8/23</td><td class="good">большой</td><td class="good">высокая</td></tr>
+        <tr><td class="hl">fp16</td><td>1/5/10</td><td class="bad">узкий — легко overflow/underflow</td><td class="mid">средняя</td></tr>
+        <tr><td class="hl">bf16</td><td>1/8/7</td><td class="good">как у fp32 (та же экспонента)</td><td class="mid">ниже fp16 по мантиссе, но диапазон не проблема</td></tr>
+        <tr><td class="hl">fp8</td><td>варианты 1/4/3 или 1/5/2</td><td class="mid">узкий</td><td class="bad">низкая, нужна аккуратная калибровка</td></tr>
+      </table></div>
+      <p>bf16 победил fp16 для обучения LLM именно из-за экспоненты: та же ширина, что у fp32, значит тот же динамический диапазон — градиенты в LLM могут быть очень маленькими или большими, и fp16 с его узким диапазоном экспоненты регулярно уходил в overflow/underflow без дополнительных костылей.</p>
+      <div class="note warn">При fp16 (в отличие от bf16) почти обязателен <b>loss scaling</b>: домножить loss на большую константу перед backward (чтобы маленькие градиенты не занулились в узком диапазоне fp16), и разделить обратно перед шагом оптимизатора. С bf16 эта техника, как правило, не нужна — ещё один довод в пользу bf16 как более простого дефолта.</div>
+      <div class="note">fp8 (H100 и новее) — следующий шаг экономии, но требует per-tensor или per-block масштабирования и куда более аккуратной инженерии, чтобы не терять качество — пока не такой безусловный дефолт, как bf16, скорее продвинутая оптимизация для больших прогонов.</div>
+    </section>
+
+    <!-- 08 ACCUMULATION -->
+    <section class="topic" id="accumulation">
+      <div class="topic-head"><h2><span class="idx">08</span>Gradient accumulation</h2></div>
+      <p class="dek">Если целевой batch size не помещается в память GPU за один forward/backward — можно накопить градиенты за несколько маленьких «микро-батчей» перед тем, как сделать шаг оптимизатора.</p>
+      <div class="formula">
+        <div class="formula-label">Gradient accumulation</div>
+        for i in range(accumulation_steps):<br>
+        &nbsp;&nbsp;loss = model(micro_batch[i]) / accumulation_steps &nbsp;<span class="cm">// делим заранее, чтобы сумма градиентов = среднему по полному батчу</span><br>
+        &nbsp;&nbsp;loss.backward() &nbsp;<span class="cm">// градиенты складываются в .grad, не обнуляются между итерациями</span><br>
+        optimizer.step() &nbsp;<span class="cm">// один раз, после накопления всех микро-батчей</span>
+      </div>
+      <div class="note">Математически эквивалентно одному честному большому батчу (с точностью до деталей типа batch normalization, которая в LLM-претрейне почти не используется — см. заметку Transformer §07 про RMSNorm) — цена лишь в том, что шаг оптимизатора происходит реже по времени, при том же суммарном объёме обработанных данных.</div>
+    </section>
+
+    <!-- 09 REGULARIZATION -->
+    <section class="topic" id="regularization">
+      <div class="topic-head"><h2><span class="idx">09</span>Регуляризация: что живо в LLM-претрейне, а что нет</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Техника</th><th>Статус в совр. LLM-претрейне</th><th>Почему</th></tr>
+        <tr><td class="hl">Dropout</td><td><span class="badge b-legacy">почти не используют</span></td><td>при обучении на огромных, разнообразных корпусах в один эпох (или меньше) переобучение — не главная проблема; dropout скорее замедляет сходимость без пользы</td></tr>
+        <tr><td class="hl">Weight decay</td><td><span class="badge b-mainstream">используется</span></td><td>работает больше как неявная регуляризация оптимизационной динамики (см. AdamW §02), чем как классическая защита от переобучения</td></tr>
+        <tr><td class="hl">Label smoothing</td><td><span class="badge b-niche">редко для претрейна</span></td><td>больше актуально для классификации/классических seq2seq задач; для CLM на огромном словаре эффект менее выражен</td></tr>
+        <tr><td class="hl">Early stopping</td><td><span class="badge b-legacy">не применимо в привычном виде</span></td><td>при одно-эпоховом (или менее) обучении на веб-масштабных данных нет привычного «переобучения на train» в смысле классического ML</td></tr>
+      </table></div>
+      <div class="note">Общая причина сдвига: классические техники регуляризации разрабатывались в режиме «много эпох на ограниченном датасете» — типичный сетап LLM-претрейна (масштаб данных сравним или превышает число параметров, часто меньше одной эпохи) делает большинство из них менее релевантными, чем при обучении CNN на ImageNet.</div>
+    </section>
+
+    <!-- 10 STABILITY -->
+    <section class="topic" id="stability">
+      <div class="topic-head">
+        <h2><span class="idx">10</span>Трюки стабильности: z-loss, logit soft-capping, QK-norm</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream в совр. LLM</span></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>z-loss</h4><ul>
+          <li>Дополнительный член лосса, штрафующий log-sum-exp логитов за отклонение от нуля — не даёт логитам «уплывать» в очень большие значения, что стабилизирует softmax численно</li>
+        </ul></div>
+        <div class="pill-box"><h4>Logit soft-capping</h4><ul>
+          <li>Применить tanh-подобное ограничение к логитам перед softmax (напр. в attention-скорах или на финальном выходном слое) — жёстко не даёт значениям выйти за диапазон, где начинаются численные проблемы</li>
+        </ul></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>QK-norm</h4><ul>
+          <li>Применить нормализацию (RMSNorm) прямо к Q и K векторам перед вычислением attention-скора — не даёт скорам расти неограниченно с глубиной сети, известная причина нестабильности обучения на очень больших моделях</li>
+        </ul></div>
+        <div class="pill-box"><h4>Общий мотив</h4><ul>
+          <li>Все три — реакция индустрии на конкретные, эмпирически найденные точки нестабильности при масштабировании LLM за пределы того, что было изучено на моделях 2018–2020 годов</li>
+        </ul></div>
+      </div>
+      <div class="note ref">Это те же общие принципы, что уже обсуждались для нормализации внутри блока в заметке Transformer (§07, §09) — здесь применены точечно к конкретным местам (логиты, Q/K), а не только к основному residual stream.</div>
+    </section>
+
+    <!-- 11 DATA -->
+    <section class="topic" id="data">
+      <div class="topic-head"><h2><span class="idx">11</span>Данные: curriculum, mixing, дедупликация</h2></div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Curriculum learning</h4><ul>
+          <li>Порядок показа данных модели — не всегда случайный: некоторые рецепты сознательно откладывают самые сложные/специализированные данные (код, математика) на более позднюю стадию обучения</li>
+        </ul></div>
+        <div class="pill-box"><h4>Data mixing</h4><ul>
+          <li>Пропорции разных источников данных (веб-текст, код, книги, диалоги) — явный гиперпараметр, который тюнят отдельно, а не берут «как есть» из сырого распределения корпуса</li>
+        </ul></div>
+      </div>
+      <div class="note warn">Дедупликация — недооценённая, но важная часть: почти дословные повторы в обучающем корпусе не просто бесполезны, а эмпирически связаны с эффектом memorization (модель запоминает конкретные строки вместо обобщения) и с нестабильностями loss на повторяющихся местах.</div>
+    </section>
+
+    <!-- 12 DP -->
+    <section class="topic" id="dp">
+      <div class="topic-head"><h2><span class="idx">12</span>Data Parallelism — базовый случай распределённого обучения</h2></div>
+      <p class="dek">Простейшая форма: полная копия модели на каждом GPU, разные GPU обрабатывают разные микро-батчи данных, градиенты усредняются между всеми копиями перед шагом оптимизатора.</p>
+      <div class="formula">
+        <div class="formula-label">DDP (Distributed Data Parallel)</div>
+        каждый GPU: ∇L_i = backward(model, micro_batch_i)<br>
+        all-reduce: ∇L = mean(∇L₁, ..., ∇L_N) &nbsp;<span class="cm">// синхронизация градиентов между всеми N GPU</span><br>
+        каждый GPU: θ = optimizer_step(θ, ∇L) &nbsp;<span class="cm">// идентичное обновление на всех копиях</span>
+      </div>
+      <div class="note warn">Ограничение: каждый GPU должен вмещать <b>полную</b> модель + полный optimizer state (§02, 8 байт/параметр только для Adam) + активации. Для моделей от ~1B+ параметров это быстро упирается в память одной видеокарты — отсюда необходимость §13–14.</div>
+    </section>
+
+    <!-- 13 ZERO -->
+    <section class="topic" id="zero">
+      <div class="topic-head">
+        <h2><span class="idx">13</span>ZeRO и FSDP: шардинг состояния оптимизатора</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream для крупных моделей</span></div>
+      </div>
+      <p class="dek">ZeRO (Rajbhandari et al., Microsoft, 2019) — вместо того чтобы дублировать optimizer state/градиенты/веса на каждом GPU целиком (как в чистом DDP), разбить их между GPU — каждый хранит только свою часть.</p>
+      <div class="chart-box">
+        <div class="chart-title">Относительная память на GPU по стадиям ZeRO</div>
+        <div class="chart-sub">100% = обычный DDP без шардинга (условные величины, зависят от N GPU и размера модели)</div>
+        <svg viewBox="0 0 640 260" width="100%">
+          <line x1="40" y1="214" x2="620" y2="214" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="40" y1="214" x2="620" y2="214" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="217" text-anchor="end">0</text>
+            <line x1="40" y1="166.5" x2="620" y2="166.5" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="169.5" text-anchor="end">25</text>
+            <line x1="40" y1="117" x2="620" y2="117" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="120" text-anchor="end">50</text>
+            <line x1="40" y1="68.5" x2="620" y2="68.5" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="71.5" text-anchor="end">75</text>
+            <line x1="40" y1="20" x2="620" y2="20" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="23" text-anchor="end">100%</text>
+          </g>
+          <rect x="63.2" y="20.0" width="98.6" height="194" fill="#e0355c" rx="3"/>
+          <rect x="208.2" y="97.6" width="98.6" height="116.4" fill="#ff3d68" rx="3"/>
+          <rect x="353.2" y="136.4" width="98.6" height="77.6" fill="#2cc4d9" rx="3"/>
+          <rect x="498.2" y="190.7" width="98.6" height="23.3" fill="#3ecf8e" rx="3"/>
+          <g font-family="IBM Plex Mono" font-size="12" fill="#eeeeee" text-anchor="middle">
+            <text x="112" y="14">100%</text><text x="257" y="92">60%</text><text x="402" y="131">40%</text><text x="547" y="185">12%</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10" fill="#a3a3a3" text-anchor="middle">
+            <text x="112" y="232">DP (без шардинга)</text><text x="257" y="232">ZeRO-1</text><text x="402" y="232">ZeRO-2</text><text x="547" y="232">ZeRO-3 / FSDP</text>
+          </g>
+        </svg>
+      </div>
+      <div class="table-wrap"><table>
+        <tr><th>Стадия</th><th>Что шардируется между GPU</th></tr>
+        <tr><td class="hl">ZeRO-1</td><td>только optimizer state (m, v в Adam) — самая «тяжёлая» по памяти часть</td></tr>
+        <tr><td class="hl">ZeRO-2</td><td>+ градиенты</td></tr>
+        <tr><td class="hl">ZeRO-3 / FSDP</td><td>+ сами веса модели — каждый GPU в любой момент хранит лишь часть параметров, недостающие «подтягиваются» по сети непосредственно перед тем, как понадобятся в forward/backward</td></tr>
+      </table></div>
+      <p><b>FSDP</b> (Fully Sharded Data Parallel, PyTorch) — по сути открытая переиспользуемая реализация той же идеи, что ZeRO-3, ставшая стандартным инструментом в экосистеме PyTorch.</p>
+      <div class="note warn">Цена ZeRO-3/FSDP — дополнительный сетевой трафик (постоянно подгружать/выгружать шарды весов) — при недостаточно быстрой межсерверной сети (interconnect) это может свести на нет выигрыш в памяти за счёт простоя GPU в ожидании данных.</div>
+    </section>
+
+    <!-- 14 PARALLELISM -->
+    <section class="topic" id="parallelism">
+      <div class="topic-head"><h2><span class="idx">14</span>Tensor / Pipeline / 3D parallelism</h2></div>
+      <p class="dek">ZeRO/FSDP (§13) шардируют состояние, но каждый GPU по-прежнему участвует в вычислении <i>всей</i> модели на своём микро-батче. Следующий уровень — разделить саму модель по вычислениям между GPU.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Tensor Parallelism</h4><ul>
+          <li>Разрезать отдельные матрицы весов (напр. внутри FFN или attention) между GPU — каждый считает часть одной и той же матричной операции, результаты собираются через collective-коммуникацию внутри слоя</li>
+          <li>Требует быстрой связи между GPU (обычно только внутри одной ноды, NVLink) — коммуникация происходит на каждом слое</li>
+        </ul></div>
+        <div class="pill-box"><h4>Pipeline Parallelism</h4><ul>
+          <li>Разные GPU отвечают за разные <b>диапазоны слоёв</b> модели целиком — данные идут по конвейеру от одной группы GPU к следующей</li>
+          <li>Основная сложность — «pipeline bubble»: GPU для поздних слоёв простаивают, пока не придут первые микро-батчи от ранних — решается разбиением на много мелких микро-батчей (interleaved scheduling)</li>
+        </ul></div>
+      </div>
+      <div class="note">«3D parallelism» — одновременное применение всех трёх осей (data + tensor + pipeline) — стандартный подход для обучения моделей масштаба сотен миллиардов параметров на тысячах GPU: data parallelism между группами нод, pipeline — между группами внутри, tensor — внутри одной ноды с быстрым NVLink.</div>
+    </section>
+
+    <!-- 15 CHECKPOINTING -->
+    <section class="topic" id="checkpointing">
+      <div class="topic-head"><h2><span class="idx">15</span>Activation checkpointing</h2></div>
+      <p class="dek">Уже упоминалось в заметке MLP (§10) применительно конкретно к FFN — здесь общий принцип. При обычном backward нужно хранить в памяти <i>все</i> промежуточные активации forward-прохода (они нужны для вычисления градиентов).</p>
+      <div class="formula">
+        <div class="formula-label">Checkpointing — обмен compute на память</div>
+        forward: сохранить только активации на границах «checkpoint»-сегментов, не внутри них<br>
+        backward: при необходимости — <b>пересчитать</b> недостающие активации внутри сегмента заново (второй forward), затем посчитать градиент
+      </div>
+      <div class="note">Цена — примерно на 30% больше compute (лишний частичный forward-проход), выигрыш — активации хранятся не для всей глубины сети, а только для чекпоинтов, что часто позволяет обучать модель, которая иначе физически не поместилась бы в память GPU при заданном batch size.</div>
+    </section>
+
+    <!-- 16 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">16</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Техника</th><th>Что решает</th><th>Цена</th><th>Статус</th></tr>
+        <tr><td><b>AdamW</b></td><td>адаптивное обновление весов</td><td>+8 байт/параметр памяти</td><td><span class="badge b-mainstream">де-факто стандарт</span></td></tr>
+        <tr><td><b>Lion / Sophia / Muon</b></td><td>меньше памяти / учёт кривизны / структура матрицы</td><td>менее проверено на масштабе</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>Warmup + cosine</b></td><td>стабильный старт + плавное завершение</td><td>нужно заранее знать длину расписания</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>WSD</b></td><td>то же + гибкая длина обучения</td><td>дополнительный гиперпараметр (длина decay-фазы)</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>bf16 mixed precision</b></td><td>2× ускорение/память без loss scaling</td><td>ниже точность мантиссы</td><td><span class="badge b-mainstream">стандарт для LLM</span></td></tr>
+        <tr><td><b>ZeRO-3 / FSDP</b></td><td>обучение моделей, не влезающих в 1 GPU</td><td>сетевой трафик</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>Tensor/Pipeline parallelism</b></td><td>масштаб на тысячи GPU</td><td>сложность инфраструктуры, pipeline bubble</td><td><span class="badge b-mainstream">для крупных прогонов</span></td></tr>
+        <tr><td><b>Activation checkpointing</b></td><td>обучение с большим batch/контекстом</td><td>+~30% compute</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 17 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">17</span>Таймлайн</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">1986</div><h5>SGD + Momentum</h5><p>Базовый рецепт оптимизации нейросетей на десятилетия вперёд.</p></div>
+        <div class="tl-item"><div class="yr">2014</div><h5>Adam</h5><p>Адаптивный per-parameter learning rate — резко упрощает подбор гиперпараметров относительно чистого SGD.</p></div>
+        <div class="tl-item"><div class="yr">2017</div><h5>AdamW, Linear Scaling Rule</h5><p>Decoupled weight decay и правило масштабирования LR при увеличении batch size на больших кластерах.</p></div>
+        <div class="tl-item"><div class="yr">2019</div><h5>ZeRO</h5><p>Шардинг optimizer state/градиентов/весов делает возможным обучение моделей, на порядки превышающих память одного GPU.</p></div>
+        <div class="tl-item"><div class="yr">2020–2022</div><h5>bf16 становится нормой, PyTorch FSDP</h5><p>Практика обучения LLM стандартизируется вокруг bf16 + FSDP как готовой инфраструктуры.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>Lion, Sophia</h5><p>Первые серьёзные попытки обойти AdamW автоматическим поиском и приближением кривизны.</p></div>
+        <div class="tl-item"><div class="yr">2024</div><h5>WSD-расписания, Muon, z-loss/QK-norm/soft-capping в массовых релизах</h5><p>Стабильность масштабирования становится отдельной инженерной дисциплиной по мере роста моделей.</p></div>
+      </div>
+      <h4 style="margin-top:32px; font-size:17px;">Почему конкретно отказались</h4>
+      <div class="grid2">
+        <div class="pill-box con"><h4>Чистый SGD (без адаптивности) для LLM</h4><ul><li>Один общий lr плохо подходит для параметров с сильно разным масштабом градиента в трансформерах — Adam решает это адаптивно</li></ul></div>
+        <div class="pill-box con"><h4>fp16 без явных костылей</h4><ul><li>Узкий динамический диапазон экспоненты регулярно приводит к overflow/underflow градиентов — bf16 с более широкой экспонентой снял саму необходимость в loss scaling</li></ul></div>
+        <div class="pill-box con"><h4>Dropout и классическая регуляризация в претрейне</h4><ul><li>Спроектированы для режима «много эпох на ограниченных данных» — почти не применимы к однопроходному обучению на веб-масштабных корпусах</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 18 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">18</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек: v0.1-скелет, нестандартная архитектура (RWKV-state + linear attention + Titans-память), обучение вероятно не на кластере из тысяч GPU.</p>
+      <div class="rec-card">
+        <h4>AdamW + warmup+cosine — безопасный старт для v0.1, а не место для экспериментов <span class="tag">§02 §04</span></h4>
+        <p>Учитывая, что сама архитектура уже нестандартна (собственные state/memory/fusion модули), разумно не комбинировать архитектурный риск с оптимизационным — AdamW и обычный warmup+cosine дают наибольший запас проверенной практики, чтобы проблемы обучения было проще отличить от проблем архитектуры.</p>
+      </div>
+      <div class="rec-card">
+        <h4>QK-norm и z-loss стоит рассмотреть заранее, если стек включает нестандартный linear attention <span class="tag">§10</span></h4>
+        <p>Кастомные attention-реализации (в отличие от давно отлаженных библиотечных) статистически чаще подвержены именно тем проблемам — неограниченному росту логитов/скоров с глубиной, — для которых эти трюки и были придуманы. Дешевле заложить их сразу, чем диагностировать нестабильность обучения постфактум.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Gradient checkpointing — вероятно нужен раньше, чем распределённый параллелизм <span class="tag">§14 §15</span></h4>
+        <p>Для одиночной или небольшой multi-GPU конфигурации (в отличие от кластера в тысячи GPU) activation checkpointing — куда более сразу применимый инструмент, чем tensor/pipeline parallelism: даёт возможность обучать на большем контексте/батче на доступном железе без усложнения инфраструктуры распределённого обучения.</p>
+      </div>
+    </section>
+
+    <!-- 19 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">19</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">2014</span> — <b>Adam: A Method for Stochastic Optimization</b> (Kingma & Ba)</li>
+        <li><span class="yr">2017</span> — <b>Accurate, Large Minibatch SGD</b> (Goyal et al.) — Linear Scaling Rule</li>
+        <li><span class="yr">2017</span> — <b>Decoupled Weight Decay Regularization</b> (Loshchilov & Hutter) — AdamW</li>
+        <li><span class="yr">2019</span> — <b>ZeRO: Memory Optimizations Toward Training Trillion Parameter Models</b> (Rajbhandari et al.)</li>
+        <li><span class="yr">2019</span> — <b>Megatron-LM</b> (Shoeybi et al.) — tensor parallelism на практике</li>
+        <li><span class="yr">2023</span> — <b>Symbolic Discovery of Optimization Algorithms</b> (Chen et al.) — Lion</li>
+        <li><span class="yr">2023</span> — <b>Sophia: A Scalable Stochastic Second-order Optimizer</b> (Liu et al.)</li>
+        <li><span class="yr">2024</span> — <b>Scaling Language Models: WSD schedules and beyond</b> (различные технические отчёты — MiniCPM и др. открытые LLM-рецепты)</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. Часть серии: Attention · Embeddings · MLP/FFN · Positional Encoding · Transformer · State & Memory · Training Mechanics. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>

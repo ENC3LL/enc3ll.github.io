@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MLP / FFN — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+.toc-mobile{display:none;}
+
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:660px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+.curve-box{margin-top:32px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:18px 20px 14px;}
+.curve-box .st-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;}
+.curve-box .st-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>mlp / ffn / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>MLP/FFN-блок в трансформере</a>
+      <a href="#sigmoid"><span class="n">01</span>Sigmoid / Tanh</a>
+      <a href="#relu"><span class="n">02</span>ReLU и dead neurons</a>
+      <a href="#leaky"><span class="n">03</span>Leaky ReLU / PReLU / ELU</a>
+      <div class="grp-label">Гладкие активации</div>
+      <a href="#gelu"><span class="n">04</span>GELU</a>
+      <a href="#silu"><span class="n">05</span>SiLU / Swish</a>
+      <div class="grp-label">Гейтинг</div>
+      <a href="#glu"><span class="n">06</span>GLU-семейство</a>
+      <a href="#swiglu"><span class="n">07</span>SwiGLU — стандарт сегодня</a>
+      <a href="#moe"><span class="n">08</span>Mixture-of-Experts FFN</a>
+      <a href="#prenorm"><span class="n">09</span>Pre-LN vs Post-LN</a>
+      <div class="grp-label">Прод и новое</div>
+      <a href="#prodopt"><span class="n">10</span>Прод-оптимизации MLP</a>
+      <a href="#kan"><span class="n">11</span>KAN — альтернатива MLP</a>
+      <a href="#moda"><span class="n">12</span>Mixture-of-Depths</a>
+      <a href="#init"><span class="n">13</span>Инициализация весов</a>
+      <div class="grp-label">Итог</div>
+      <a href="#comparison"><span class="n">14</span>Сравнительная таблица</a>
+      <a href="#timeline"><span class="n">15</span>Таймлайн и отказы</a>
+      <a href="#recommendation"><span class="n">16</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">17</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning</div>
+      <h1>MLP и активации: от Sigmoid до SwiGLU, MoE и KAN</h1>
+      <p class="lede">Feed-forward блок — это не «скучная часть» трансформера между attention-слоями, а <b>две трети всех параметров</b> современной LLM. Разбираем, какие активации почему сменяли друг друга, как устроен гейтинг (GLU/SwiGLU), зачем нужен Mixture-of-Experts и что может прийти на смену MLP как таковому.</p>
+
+      <div class="curve-box">
+        <div class="st-title">ReLU vs GELU vs SiLU</div>
+        <div class="st-sub">Три активации на одном графике — видно, где ReLU «ломается» об угол в нуле, а GELU/SiLU остаются гладкими</div>
+        <svg viewBox="0 0 720 240" width="100%" style="overflow:visible;">
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="40" y1="192.7" x2="680" y2="192.7" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="196" text-anchor="end">-1</text>
+            <line x1="40" y1="158.2" x2="680" y2="158.2" stroke="#3a3a3a"/><text x="30" y="161" text-anchor="end">0</text>
+            <line x1="40" y1="123.6" x2="680" y2="123.6" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="127" text-anchor="end">1</text>
+            <line x1="40" y1="89.1" x2="680" y2="89.1" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="92" text-anchor="end">2</text>
+            <line x1="40" y1="54.5" x2="680" y2="54.5" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="58" text-anchor="end">3</text>
+          </g>
+          <line x1="360" y1="20" x2="360" y2="220" stroke="#3a3a3a"/>
+          <path d="M 40.0 158.2 L 47.1 158.2 L 54.2 158.2 L 61.3 158.2 L 68.4 158.2 L 75.6 158.2 L 82.7 158.2 L 89.8 158.2 L 96.9 158.2 L 104.0 158.2 L 111.1 158.2 L 118.2 158.2 L 125.3 158.2 L 132.4 158.2 L 139.6 158.2 L 146.7 158.2 L 153.8 158.2 L 160.9 158.2 L 168.0 158.2 L 175.1 158.2 L 182.2 158.2 L 189.3 158.2 L 196.4 158.2 L 203.6 158.2 L 210.7 158.2 L 217.8 158.2 L 224.9 158.2 L 232.0 158.2 L 239.1 158.2 L 246.2 158.2 L 253.3 158.2 L 260.4 158.2 L 267.6 158.2 L 274.7 158.2 L 281.8 158.2 L 288.9 158.2 L 296.0 158.2 L 303.1 158.2 L 310.2 158.2 L 317.3 158.2 L 324.4 158.2 L 331.6 158.2 L 338.7 158.2 L 345.8 158.2 L 352.9 158.2 L 360.0 158.2 L 367.1 155.1 L 374.2 152.0 L 381.3 149.0 L 388.4 145.9 L 395.6 142.8 L 402.7 139.8 L 409.8 136.7 L 416.9 133.6 L 424.0 130.5 L 431.1 127.5 L 438.2 124.4 L 445.3 121.3 L 452.4 118.3 L 459.6 115.2 L 466.7 112.1 L 473.8 109.1 L 480.9 106.0 L 488.0 102.9 L 495.1 99.8 L 502.2 96.8 L 509.3 93.7 L 516.4 90.6 L 523.6 87.6 L 530.7 84.5 L 537.8 81.4 L 544.9 78.3 L 552.0 75.3 L 559.1 72.2 L 566.2 69.1 L 573.3 66.1 L 580.4 63.0 L 587.6 59.9 L 594.7 56.8 L 601.8 53.8 L 608.9 50.7 L 616.0 47.6 L 623.1 44.6 L 630.2 41.5 L 637.3 38.4 L 644.4 35.4 L 651.6 32.3 L 658.7 29.2 L 665.8 26.1 L 672.9 23.1 L 680.0 20.0" fill="none" stroke="#e0355c" stroke-width="2.2"/>
+          <path d="M 40.0 158.2 L 47.1 158.2 L 54.2 158.2 L 61.3 158.2 L 68.4 158.2 L 75.6 158.2 L 82.7 158.2 L 89.8 158.2 L 96.9 158.2 L 104.0 158.2 L 111.1 158.3 L 118.2 158.3 L 125.3 158.3 L 132.4 158.4 L 139.6 158.4 L 146.7 158.5 L 153.8 158.6 L 160.9 158.7 L 168.0 158.8 L 175.1 159.0 L 182.2 159.2 L 189.3 159.4 L 196.4 159.6 L 203.6 159.9 L 210.7 160.2 L 217.8 160.5 L 224.9 160.8 L 232.0 161.2 L 239.1 161.6 L 246.2 162.0 L 253.3 162.4 L 260.4 162.8 L 267.6 163.1 L 274.7 163.5 L 281.8 163.7 L 288.9 163.9 L 296.0 164.0 L 303.1 164.0 L 310.2 163.9 L 317.3 163.7 L 324.4 163.2 L 331.6 162.6 L 338.7 161.8 L 345.8 160.8 L 352.9 159.6 L 360.0 158.2 L 367.1 156.5 L 374.2 154.7 L 381.3 152.6 L 388.4 150.3 L 395.6 147.9 L 402.7 145.2 L 409.8 142.4 L 416.9 139.5 L 424.0 136.4 L 431.1 133.2 L 438.2 130.0 L 445.3 126.6 L 452.4 123.2 L 459.6 119.8 L 466.7 116.3 L 473.8 112.9 L 480.9 109.4 L 488.0 105.9 L 495.1 102.5 L 502.2 99.1 L 509.3 95.7 L 516.4 92.3 L 523.6 89.0 L 530.7 85.7 L 537.8 82.4 L 544.9 79.2 L 552.0 75.9 L 559.1 72.7 L 566.2 69.6 L 573.3 66.4 L 580.4 63.3 L 587.6 60.1 L 594.7 57.0 L 601.8 53.9 L 608.9 50.8 L 616.0 47.7 L 623.1 44.6 L 630.2 41.5 L 637.3 38.4 L 644.4 35.4 L 651.6 32.3 L 658.7 29.2 L 665.8 26.1 L 672.9 23.1 L 680.0 20.0" fill="none" stroke="#ff3d68" stroke-width="2.2"/>
+          <path d="M 40.0 160.7 L 47.1 160.8 L 54.2 161.0 L 61.3 161.2 L 68.4 161.4 L 75.6 161.6 L 82.7 161.8 L 89.8 162.0 L 96.9 162.3 L 104.0 162.5 L 111.1 162.8 L 118.2 163.0 L 125.3 163.3 L 132.4 163.6 L 139.6 163.9 L 146.7 164.2 L 153.8 164.5 L 160.9 164.8 L 168.0 165.1 L 175.1 165.4 L 182.2 165.7 L 189.3 166.0 L 196.4 166.3 L 203.6 166.6 L 210.7 166.8 L 217.8 167.1 L 224.9 167.3 L 232.0 167.5 L 239.1 167.6 L 246.2 167.7 L 253.3 167.8 L 260.4 167.8 L 267.6 167.7 L 274.7 167.6 L 281.8 167.4 L 288.9 167.1 L 296.0 166.7 L 303.1 166.3 L 310.2 165.7 L 317.3 165.0 L 324.4 164.2 L 331.6 163.2 L 338.7 162.2 L 345.8 161.0 L 352.9 159.6 L 360.0 158.2 L 367.1 156.6 L 374.2 154.8 L 381.3 153.0 L 388.4 151.0 L 395.6 148.8 L 402.7 146.6 L 409.8 144.2 L 416.9 141.7 L 424.0 139.1 L 431.1 136.4 L 438.2 133.6 L 445.3 130.8 L 452.4 127.8 L 459.6 124.8 L 466.7 121.7 L 473.8 118.6 L 480.9 115.4 L 488.0 112.2 L 495.1 108.9 L 502.2 105.6 L 509.3 102.3 L 516.4 99.0 L 523.6 95.7 L 530.7 92.3 L 537.8 88.9 L 544.9 85.5 L 552.0 82.2 L 559.1 78.8 L 566.2 75.4 L 573.3 72.0 L 580.4 68.7 L 587.6 65.3 L 594.7 62.0 L 601.8 58.6 L 608.9 55.3 L 616.0 52.0 L 623.1 48.7 L 630.2 45.3 L 637.3 42.0 L 644.4 38.8 L 651.6 35.5 L 658.7 32.2 L 665.8 29.0 L 672.9 25.7 L 680.0 22.5" fill="none" stroke="#3ecf8e" stroke-width="2.2" stroke-dasharray="1 0"/>
+          <circle cx="335" cy="105" r="3" fill="#ff3d68"/>
+          <text x="342" y="102" font-family="IBM Plex Mono" font-size="10" fill="#a3a3a3">GELU слегка «ныряет» ниже 0 при x&lt;0</text>
+        </svg>
+        <div class="legend">
+          <span><i style="background:#e0355c"></i>ReLU — острый угол в нуле, плоский ноль слева</span>
+          <span><i style="background:#ff3d68"></i>GELU — гладкая, небольшой провал ниже нуля</span>
+          <span><i style="background:#3ecf8e"></i>SiLU/Swish — гладкая, провал чуть глубже и правее</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>MLP/FFN-блок в трансформере</h2></div>
+      <p class="dek">В каждом слое трансформера после attention идёт position-wise feed-forward сеть — она обрабатывает каждый токен независимо (в отличие от attention, которая явно смешивает информацию между токенами).</p>
+      <div class="formula">
+        <div class="formula-label">Классический (pre-GLU) FFN</div>
+        FFN(x) = W₂ · activation(W₁·x + b₁) + b₂ &nbsp;<span class="cm">// W₁: d_model → d_ff, W₂: d_ff → d_model</span>
+      </div>
+      <p>Ключевая деталь — <b>expansion ratio</b>: скрытая размерность d_ff обычно в 4 раза больше d_model (в оригинальном Transformer 512→2048). Идея простая: attention смешивает информацию между токенами в «тесном» пространстве d_model, а FFN даёт каждому токену отдельно «подумать» в более широком пространстве, прежде чем сжаться обратно.</p>
+      <div class="note">По параметрам FFN — это обычно <b>~60-70% всех весов</b> трансформера (два матричных умножения размера d_model×4d_model против четырёх проекций d_model×d_model в attention). Именно поэтому выбор активации и структуры этого блока — не мелкая деталь, а решение, напрямую влияющее на большую часть модели.</div>
+    </section>
+
+    <!-- 01 SIGMOID -->
+    <section class="topic" id="sigmoid">
+      <div class="topic-head">
+        <h2><span class="idx">01</span>Sigmoid / Tanh — откуда всё начиналось</h2>
+        <div class="badges"><span class="badge b-legacy">legacy как основная активация</span></div>
+      </div>
+      <p class="dek">Первое поколение нейросетей (1980е–2000е) почти повсеместно использовало sigmoid или tanh — гладкие S-образные функции, ограниченные по диапазону.</p>
+      <div class="formula">
+        <div class="formula-label">Sigmoid и Tanh</div>
+        σ(x) = 1 / (1 + e⁻ˣ) &nbsp;<span class="cm">// диапазон (0,1)</span><br>
+        tanh(x) = 2σ(2x) − 1 &nbsp;<span class="cm">// диапазон (-1,1), центрирован в нуле</span>
+      </div>
+      <p>Проблема, которая их похоронила как основную активацию для глубоких сетей — <b>vanishing gradient</b>: производная sigmoid максимум 0.25 и стремится к нулю на обоих концах. В глубокой сети при обратном распространении градиенты перемножаются через десятки слоёв — если каждый множитель &lt;0.25, градиент до ранних слоёв доходит экспоненциально ослабленным, и они почти перестают обучаться.</p>
+      <div class="usedin"><span>ранние MLP</span><span>LSTM/GRU (гейты — там сигмоида уместна по смыслу, не как основная активация)</span></div>
+      <div class="note warn">Sigmoid/tanh не исчезли полностью — они остаются внутри LSTM/GRU-гейтов и внутри GLU-семейства (§06), просто перестали быть активацией <i>между слоями</i> глубоких сетей.</div>
+    </section>
+
+    <!-- 02 RELU -->
+    <section class="topic" id="relu">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>ReLU — прорыв и его цена</h2>
+        <div class="badges"><span class="badge b-mainstream">всё ещё используется</span></div>
+      </div>
+      <p class="dek">Rectified Linear Unit (популяризован в AlexNet, 2012) — предельно простая идея, которая сделала возможным обучение по-настоящему глубоких сетей.</p>
+      <div class="formula">
+        <div class="formula-label">ReLU</div>
+        ReLU(x) = max(0, x)
+      </div>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Почему выстрелило</h4><ul>
+          <li>Производная — ровно 0 или 1, никакого затухания градиента на положительной части</li>
+          <li>Тривиально дёшево вычислить (сравнение с нулём, а не экспонента)</li>
+          <li>Разреженная активация — часть нейронов буквально выключена (0), что эмпирически помогает обобщению</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Dead ReLU problem</h4><ul>
+          <li>Если вход нейрона стал отрицательным для всех примеров батча, градиент через него — ровно ноль, и веса перестают обновляться <b>навсегда</b></li>
+          <li>При большом learning rate или неудачной инициализации доля «мёртвых» нейронов может достигать десятков процентов сети</li>
+        </ul></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Производная активации — почему ReLU «умирает»</div>
+        <div class="chart-sub">У ReLU производная слева от нуля строго 0 — обратный градиент туда не проходит вообще</div>
+        <svg viewBox="0 0 640 220" width="100%">
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="50" y1="158.1" x2="620" y2="158.1" stroke="#3a3a3a"/><text x="40" y="161" text-anchor="end">0</text>
+            <line x1="50" y1="105.0" x2="620" y2="105.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="40" y="108" text-anchor="end">0.5</text>
+            <line x1="50" y1="51.9" x2="620" y2="51.9" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="40" y="55" text-anchor="end">1</text>
+          </g>
+          <line x1="335" y1="20" x2="335" y2="200" stroke="#3a3a3a"/>
+          <path d="M 50.0 158.1 L 57.1 158.1 L 64.3 158.1 L 71.4 158.1 L 78.5 158.1 L 85.6 158.1 L 92.8 158.1 L 99.9 158.1 L 107.0 158.1 L 114.1 158.1 L 121.2 158.1 L 128.4 158.1 L 135.5 158.1 L 142.6 158.1 L 149.8 158.1 L 156.9 158.1 L 164.0 158.1 L 171.1 158.1 L 178.2 158.1 L 185.4 158.1 L 192.5 158.1 L 199.6 158.1 L 206.8 158.1 L 213.9 158.1 L 221.0 158.1 L 228.1 158.1 L 235.2 158.1 L 242.4 158.1 L 249.5 158.1 L 256.6 158.1 L 263.8 158.1 L 270.9 158.1 L 278.0 158.1 L 285.1 158.1 L 292.2 158.1 L 299.4 158.1 L 306.5 158.1 L 313.6 158.1 L 320.8 158.1 L 327.9 158.1 L 335.0 105.0 L 342.1 51.9 L 349.2 51.9 L 356.4 51.9 L 363.5 51.9 L 370.6 51.9 L 377.8 51.9 L 384.9 51.9 L 392.0 51.9 L 399.1 51.9 L 406.2 51.9 L 413.4 51.9 L 420.5 51.9 L 427.6 51.9 L 434.8 51.9 L 441.9 51.9 L 449.0 51.9 L 456.1 51.9 L 463.2 51.9 L 470.4 51.9 L 477.5 51.9 L 484.6 51.9 L 491.8 51.9 L 498.9 51.9 L 506.0 51.9 L 513.1 51.9 L 520.2 51.9 L 527.4 51.9 L 534.5 51.9 L 541.6 51.9 L 548.8 51.9 L 555.9 51.9 L 563.0 51.9 L 570.1 51.9 L 577.2 51.9 L 584.4 51.9 L 591.5 51.9 L 598.6 51.9 L 605.8 51.9 L 612.9 51.9 L 620.0 51.9" fill="none" stroke="#e0355c" stroke-width="2.2"/>
+          <path d="M 50.0 158.2 L 57.1 158.2 L 64.3 158.2 L 71.4 158.2 L 78.5 158.3 L 85.6 158.4 L 92.8 158.5 L 99.9 158.6 L 107.0 158.8 L 114.1 159.1 L 121.2 159.4 L 128.4 159.7 L 135.5 160.2 L 142.6 160.7 L 149.8 161.4 L 156.9 162.2 L 164.0 163.0 L 171.1 164.0 L 178.2 165.0 L 185.4 166.1 L 192.5 167.3 L 199.6 168.4 L 206.8 169.5 L 213.9 170.4 L 221.0 171.2 L 228.1 171.7 L 235.2 171.8 L 242.4 171.5 L 249.5 170.6 L 256.6 169.1 L 263.8 166.9 L 270.9 164.0 L 278.0 160.2 L 285.1 155.6 L 292.2 150.2 L 299.4 144.0 L 306.5 137.2 L 313.6 129.7 L 320.8 121.7 L 327.9 113.4 L 335.0 105.0 L 342.1 96.6 L 349.2 88.3 L 356.4 80.3 L 363.5 72.8 L 370.6 66.0 L 377.8 59.8 L 384.9 54.4 L 392.0 49.8 L 399.1 46.0 L 406.2 43.1 L 413.4 40.9 L 420.5 39.4 L 427.6 38.5 L 434.8 38.2 L 441.9 38.3 L 449.0 38.8 L 456.1 39.6 L 463.2 40.5 L 470.4 41.6 L 477.5 42.7 L 484.6 43.9 L 491.8 45.0 L 498.9 46.0 L 506.0 47.0 L 513.1 47.8 L 520.2 48.6 L 527.4 49.3 L 534.5 49.8 L 541.6 50.3 L 548.8 50.6 L 555.9 50.9 L 563.0 51.2 L 570.1 51.4 L 577.2 51.5 L 584.4 51.6 L 591.5 51.7 L 598.6 51.8 L 605.8 51.8 L 612.9 51.8 L 620.0 51.8" fill="none" stroke="#ff3d68" stroke-width="2.2"/>
+          <text x="60" y="180" font-family="IBM Plex Mono" font-size="10.5" fill="#e0355c">ReLU: производная = 0 при x&lt;0 — градиент не идёт</text>
+          <text x="360" y="45" font-family="IBM Plex Mono" font-size="10.5" fill="#ff3d68">GELU: производная &gt; 0 почти везде</text>
+        </svg>
+      </div>
+      <div class="usedin"><span>AlexNet</span><span>ResNet</span><span>большинство CNN 2012–2019</span><span>всё ещё в некоторых MLP вне LLM</span></div>
+    </section>
+
+    <!-- 03 LEAKY -->
+    <section class="topic" id="leaky">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>Попытки починить ReLU: Leaky ReLU, PReLU, ELU</h2>
+        <div class="badges"><span class="badge b-legacy">legacy / нишевые</span></div>
+      </div>
+      <div class="table-wrap"><table>
+        <tr><th>Вариант</th><th>Формула при x&lt;0</th><th>Идея</th></tr>
+        <tr><td class="hl">Leaky ReLU</td><td class="mono">αx, α=0.01 (фикс.)</td><td>небольшой ненулевой наклон слева — градиент никогда не ровно ноль</td></tr>
+        <tr><td class="hl">PReLU</td><td class="mono">αx, α — обучаемый</td><td>наклон подбирается градиентным спуском отдельно для каждого канала</td></tr>
+        <tr><td class="hl">ELU</td><td class="mono">α(eˣ−1)</td><td>гладкая экспонента вместо прямой линии — среднее значение активаций ближе к нулю, что ускоряет обучение</td></tr>
+      </table></div>
+      <div class="note warn">Почему не стали мейнстримом: прирост качества на практике оказался небольшим и непостоянным между задачами, а PReLU/ELU дороже вычислительно, чем ReLU. Когда пришли GELU/SiLU (§04–05) с более убедительным и стабильным приростом качества именно в трансформерах, это семейство осталось нишевым — встречается в основном в CNN-архитектурах, а не в современных LLM.</div>
+    </section>
+
+    <!-- 04 GELU -->
+    <section class="topic" id="gelu">
+      <div class="topic-head">
+        <h2><span class="idx">04</span>GELU — гладкая, вероятностная</h2>
+        <div class="badges"><span class="badge b-mainstream">стандарт 2018–2023</span></div>
+      </div>
+      <p class="dek">Gaussian Error Linear Unit (Hendrycks & Gimpel, 2016; массово — BERT, 2018) — вместо жёсткого «пропустить/обнулить» ReLU, GELU взвешивает вход его собственной вероятностью быть пропущенным.</p>
+      <div class="formula">
+        <div class="formula-label">GELU (точное определение)</div>
+        GELU(x) = x · Φ(x) &nbsp;<span class="cm">// Φ — функция накопленного распределения (CDF) стандартного нормального</span><br>
+        <span class="cm">// на практике почти всегда используют tanh-аппроксимацию:</span><br>
+        GELU(x) ≈ 0.5x·(1 + tanh(√(2/π)·(x + 0.044715x³)))
+      </div>
+      <p>Интуиция: GELU можно представить как «стохастический ReLU» — умножение x на случайную величину-индикатор, которая с большей вероятностью равна 1 для больших x и 0 для маленьких/отрицательных, где вероятность берётся из нормального распределения. GELU(x) — это матожидание такого случайного «переключателя», в замкнутой форме.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Почему лучше ReLU</h4><ul>
+          <li>Гладкая всюду — нет излома в нуле, производная непрерывна</li>
+          <li>Небольшой отрицательный «провал» при x чуть меньше 0 — в отличие от ReLU, слабо отрицательные входы не обнуляются полностью, а слегка подавляются</li>
+          <li>Ни один нейрон не «умирает» насовсем — градиент почти нигде не строго ноль</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Дороже вычислительно, чем ReLU (нужны tanh/erf)</li>
+          <li>На чистых CNN-задачах выигрыш относительно ReLU не всегда заметен</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>BERT</span><span>GPT-2 / GPT-3</span><span>ранние T5</span><span>ViT</span></div>
+    </section>
+
+    <!-- 05 SILU -->
+    <section class="topic" id="silu">
+      <div class="topic-head">
+        <h2><span class="idx">05</span>SiLU / Swish — self-gated активация</h2>
+        <div class="badges"><span class="badge b-mainstream">компонент SwiGLU (см. §07)</span></div>
+      </div>
+      <p class="dek">Swish был найден Google Brain (2017) через <b>автоматический поиск</b> по пространству функций-активаций (neural architecture search применённый к самой активации), а не придуман вручную. SiLU (Sigmoid Linear Unit) — тот же самый частный случай Swish с фиксированным β=1.</p>
+      <div class="formula">
+        <div class="formula-label">SiLU / Swish (β=1)</div>
+        SiLU(x) = x · σ(x) = x / (1 + e⁻ˣ)
+      </div>
+      <p>Это «self-gated»: сам вход x используется как гейт для самого себя через сигмоиду. Форма очень похожа на GELU (см. график в шапке), но чуть отличается — «провал» ниже нуля у SiLU немного глубже и смещён.</p>
+      <div class="note">На практике SiLU и GELU почти взаимозаменяемы по качеству в большинстве бенчмарков — выбор между ними в конкретной модели часто определяется скорее традицией/эмпирикой конкретной лаборатории, чем принципиальным превосходством одной над другой. Куда важнее не то, GELU это или SiLU, а <b>используется ли гейтинг</b> вокруг неё — см. §06.</div>
+      <div class="usedin"><span>EfficientNet</span><span>компонент SwiGLU в LLaMA/PaLM/Mistral</span></div>
+    </section>
+
+    <!-- 06 GLU -->
+    <section class="topic" id="glu">
+      <div class="topic-head">
+        <h2><span class="idx">06</span>GLU-семейство: гейтинг вместо простой активации</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Gated Linear Unit (Dauphin et al., 2016, впервые для сверточных языковых моделей) — принципиально другая идея: вместо «пропустить x через одну нелинейность», взять <b>две отдельные линейные проекции</b> входа и одну использовать как содержимое, а другую — как «гейт», управляющий тем, сколько содержимого пропустить.</p>
+      <div class="formula">
+        <div class="formula-label">GLU и его варианты</div>
+        GLU(x) = (xW + b) ⊗ σ(xV + c) &nbsp;<span class="cm">// ⊗ — поэлементное умножение; σ — сигмоида-гейт</span><br>
+        GEGLU(x) = (xW + b) ⊗ GELU(xV + c)<br>
+        SwiGLU(x) = (xW + b) ⊗ SiLU(xV + c)<br>
+        ReGLU(x) = (xW + b) ⊗ ReLU(xV + c)
+      </div>
+      <p>Здесь сама «активация» (сигмоида/GELU/SiLU/ReLU) применяется не к основному сигналу, а только к гейту — модель обучаемо решает, какую долю каждого канала содержимого пропустить, а не жёстко применяет одну и ту же нелинейность ко всем каналам одинаково.</p>
+      <div class="note warn">Важная практическая деталь: GLU-варианты используют <b>3 весовые матрицы</b> вместо 2 (W и V вместо одной, плюс матрица выхода) — при том же d_ff это на 50% больше параметров. На практике это компенсируют, уменьшая d_ff (см. «правило 2/3» в §07), а не добавляя параметры сверх бюджета.</div>
+      <div class="usedin"><span>GLU (свёрточные LM, 2016)</span><span>GEGLU (T5 v1.1)</span><span>SwiGLU (PaLM, LLaMA — см. §07)</span></div>
+    </section>
+
+    <!-- 07 SWIGLU -->
+    <section class="topic" id="swiglu">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>SwiGLU — стандарт де-факто в современных LLM</h2>
+        <div class="badges"><span class="badge b-mainstream">де-факто стандарт</span></div>
+      </div>
+      <p class="dek">PaLM (Google, 2022) одним из первых системно показал: замена обычного GELU-FFN на SwiGLU-FFN даёт стабильный прирост качества «почти бесплатно» при равном бюджете параметров. С тех пор SwiGLU — выбор по умолчанию почти для всех крупных открытых LLM.</p>
+      <div class="chart-box">
+        <div class="chart-title">«Правило 2/3»: как SwiGLU остаётся в том же бюджете параметров</div>
+        <div class="chart-sub">Скрытая размерность d_ff как множитель d_model, при равном общем числе параметров FFN-блока</div>
+        <svg viewBox="0 0 500 220" width="100%">
+          <line x1="40" y1="200" x2="460" y2="200" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="40" y1="200" x2="460" y2="200" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="203" text-anchor="end">0</text>
+            <line x1="40" y1="140" x2="460" y2="140" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="143" text-anchor="end">1×</text>
+            <line x1="40" y1="80" x2="460" y2="80" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="83" text-anchor="end">2×</text>
+            <line x1="40" y1="20" x2="460" y2="20" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="30" y="23" text-anchor="end">4×</text>
+          </g>
+          <rect x="89.5" y="20.0" width="121" height="160" fill="#e0355c" rx="3"/>
+          <rect x="309.5" y="73.3" width="121" height="106.7" fill="#ff3d68" rx="3"/>
+          <g font-family="IBM Plex Mono" font-size="12" fill="#eeeeee" text-anchor="middle">
+            <text x="150" y="14">d_ff = 4.0×d</text><text x="370" y="67">d_ff ≈ 2.67×d</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#a3a3a3" text-anchor="middle">
+            <text x="150" y="215">Plain MLP (2 матрицы)</text><text x="370" y="215">SwiGLU (3 матрицы)</text>
+          </g>
+        </svg>
+      </div>
+      <p>Из-за третьей матрицы, чтобы общее число параметров FFN-блока осталось прежним, скрытую размерность уменьшают: вместо d_ff=4·d_model берут d_ff≈(2/3)·4·d_model≈2.67·d_model. Итоговое число параметров у обоих вариантов — одинаковое (≈8·d_model²), но SwiGLU-версия эмпирически показывает лучший loss при том же бюджете.</p>
+      <div class="usedin"><span>PaLM</span><span>LLaMA / LLaMA 2 / 3</span><span>Mistral / Mixtral</span><span>Qwen 2/2.5</span><span>практически весь совр. open-weight LLM</span></div>
+    </section>
+
+    <!-- 08 MOE -->
+    <section class="topic" id="moe">
+      <div class="topic-head">
+        <h2><span class="idx">08</span>Mixture-of-Experts (MoE) FFN</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream в крупных моделях</span></div>
+      </div>
+      <p class="dek">Не альтернатива активации, а структурная замена самого FFN-блока: вместо одной плотной сети — <b>несколько параллельных FFN («экспертов»)</b>, из которых для каждого токена активируется только небольшое подмножество.</p>
+      <div class="formula">
+        <div class="formula-label">MoE FFN (top-k routing)</div>
+        y = Σ<sub>i∈TopK(router(x))</sub> g<sub>i</sub>(x) · FFN<sub>i</sub>(x) &nbsp;<span class="cm">// router выбирает k из N экспертов на токен, g — вес (softmax по выбранным)</span>
+      </div>
+      <p>Ключевой выигрыш: общее число параметров модели растёт (много экспертов), а <b>compute на токен</b> — почти нет (активны только k из N). Это разрывает жёсткую связь между «параметры = compute», которая держит плотные модели.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Огромная ёмкость модели при разумном инференс-compute</li>
+          <li>Разные эксперты могут неявно специализироваться на разных типах контента/задач</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li><b>Load balancing</b> — без явного штрафа router быстро скатывается к использованию 1-2 «любимых» экспертов, остальные не обучаются (нужен auxiliary loss на равномерность загрузки)</li>
+          <li>Все эксперты всё равно должны быть загружены в память — экономия только в compute, не в VRAM</li>
+          <li>Сложнее тренировать стабильно (routing collapse, дисбаланс)</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>Switch Transformer (Google, 2021)</span><span>Mixtral 8x7B / 8x22B</span><span>DeepSeek-MoE / DeepSeek-V3</span><span>Qwen-MoE</span></div>
+      <div class="note">DeepSeek-MoE ввёл важное уточнение: «fine-grained experts» (много маленьких экспертов вместо немногих больших) плюс несколько <b>shared experts</b>, которые активны всегда — они ловят общие для всех токенов паттерны, а специализированные эксперты — только специфичное, что снижает избыточность между экспертами.</div>
+    </section>
+
+    <!-- 09 PRENORM -->
+    <section class="topic" id="prenorm">
+      <div class="topic-head">
+        <h2><span class="idx">09</span>Куда ставить MLP относительно нормализации: Pre-LN vs Post-LN</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream (Pre-LN)</span></div>
+      </div>
+      <p class="dek">Не про сам MLP, а про то, где вокруг него стоит нормализация — но это напрямую влияет на то, как хорошо блок вообще обучается, особенно на большой глубине.</p>
+      <div class="table-wrap"><table>
+        <tr><th></th><th>Post-LN (оригинальный Transformer)</th><th>Pre-LN (совр. стандарт)</th></tr>
+        <tr><td class="hl">Схема</td><td class="mono">x + FFN(x); затем LayerNorm</td><td class="mono">x + FFN(LayerNorm(x))</td></tr>
+        <tr><td class="hl">Обучение на глубоких сетях</td><td class="bad">нестабильно без warmup learning rate</td><td class="good">стабильно, warmup не обязателен</td></tr>
+        <tr><td class="hl">Residual-путь</td><td>нормализация «внутри» residual-пути</td><td class="good">чистый residual-путь без нормализации — градиент течёт свободно от выхода к входу</td></tr>
+        <tr><td class="hl">Итоговое качество (при достаточном тюнинге)</td><td class="mid">потенциально чуть выше при удачном подборе гиперпараметров</td><td class="good">чуть ниже потолок, но гораздо надёжнее обучается</td></tr>
+      </table></div>
+      <div class="note">Pre-LN победил в индустрии не потому, что даёт строго лучшее качество, а потому что <b>надёжно обучается</b> без деликатного тюнинга warmup на очень глубоких (50+ слоёв) моделях — то, что критично при обучении LLM с одного прохода на дорогом кластере, где нельзя просто перезапускать эксперимент десять раз.</div>
+    </section>
+
+    <!-- 10 PRODOPT -->
+    <section class="topic" id="prodopt">
+      <div class="topic-head"><h2><span class="idx">10</span>Прод-оптимизации FFN-блока</h2></div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Fused kernels</h4><ul>
+          <li>Объединение линейной проекции + активации + гейтинга в одно GPU-ядро (напр. fused SwiGLU) вместо трёх отдельных операций — резко снижает число обращений к памяти (тот же принцип, что у FlashAttention)</li>
+        </ul></div>
+        <div class="pill-box"><h4>Квантование весов</h4><ul>
+          <li>FFN — большая часть параметров модели, поэтому именно её чаще всего квантуют агрессивнее (int8/int4/GPTQ/AWQ) при инференсе крупных LLM</li>
+        </ul></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>LoRA / адаптеры</h4><ul>
+          <li>При дообучении вместо полного FFN обучают низкоранговую добавку ΔW=BA (r≪d) поверх замороженных весов — резко снижает число обучаемых параметров и память под оптимизатор</li>
+        </ul></div>
+        <div class="pill-box"><h4>Активационный чекпоинтинг</h4><ul>
+          <li>Не хранить промежуточные активации FFN (самые «тяжёлые» по памяти из-за 4× расширения) при forward-проходе, а пересчитывать их заново при backward — обмен compute на память</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <!-- 11 KAN -->
+    <section class="topic" id="kan">
+      <div class="topic-head">
+        <h2><span class="idx">11</span>KAN — Kolmogorov-Arnold Networks</h2>
+        <div class="badges"><span class="badge b-emerging">emerging, 2024</span><span class="badge b-niche">пока research</span></div>
+      </div>
+      <p class="dek">KAN (Liu et al., MIT, 2024) — не вариант активации, а предложение переосмыслить сам MLP. В обычном MLP нелинейность стоит на <b>узлах</b> (после суммирования), веса на рёбрах — фиксированные числа. В KAN — наоборот: обучаемые функции стоят прямо <b>на рёбрах</b>, а узлы просто суммируют.</p>
+      <div class="formula">
+        <div class="formula-label">Идея (по теореме Колмогорова-Арнольда)</div>
+        MLP: y = W₂·σ(W₁x) &nbsp;<span class="cm">// фиксированная нелинейность σ, обучаемые линейные веса</span><br>
+        KAN: y = Σ φ<sub>i,j</sub>(x<sub>i</sub>) &nbsp;<span class="cm">// φ — обучаемая функция (обычно B-сплайн) на каждом ребре, а не число</span>
+      </div>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Заявленные плюсы</h4><ul>
+          <li>Лучшая интерпретируемость — обученные функции на рёбрах можно визуализировать напрямую</li>
+          <li>На небольших научных/символьных задачах — существенно меньше параметров для того же качества</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Проблемы на практике</h4><ul>
+          <li>Значительно дороже вычислительно на ребро (B-сплайн вместо умножения на число)</li>
+          <li>Пока не показал убедительного превосходства на масштабе языковых моделей — основные результаты на малых научных/табличных задачах</li>
+          <li>Инфраструктура и оптимизация под GPU гораздо менее зрелые, чем у MLP за 10+ лет</li>
+        </ul></div>
+      </div>
+      <div class="note warn">Статус на сегодня: перспективное направление для интерпретируемых/научных моделей небольшого масштаба, но не замена MLP в LLM — вычислительная цена на текущем железе делает это невыгодным при миллиардах параметров.</div>
+    </section>
+
+    <!-- 12 MODA -->
+    <section class="topic" id="moda">
+      <div class="topic-head">
+        <h2><span class="idx">12</span>Mixture-of-Depths и conditional compute</h2>
+        <div class="badges"><span class="badge b-emerging">emerging, 2024</span></div>
+      </div>
+      <p class="dek">Если MoE (§08) даёт токену выбрать, <i>какой</i> эксперт обработает его в этом слое, Mixture-of-Depths (DeepMind, 2024) идёт дальше: токен может вообще <b>пропустить</b> обработку в данном слое, если router решит, что она не нужна.</p>
+      <p>Router на каждом слое присваивает токену skip/process решение с фиксированным бюджетом (напр. только top-k% токенов по «важности» реально проходят через FFN этого слоя, остальные идут напрямую через residual-connection без изменений). Это своего рода MoE не «по экспертам», а «по глубине сети».</p>
+      <div class="note">Общий тренд, частью которого являются и MoE, и Mixture-of-Depths: отвязать общее число параметров модели от объёма compute, реально тратящегося на каждый конкретный токен — «не каждый токен одинаково сложен, зачем тратить на все одинаковый compute».</div>
+      <div class="usedin"><span>Mixture-of-Depths (Google DeepMind)</span><span>концептуально близко: early-exit сети, adaptive computation time</span></div>
+    </section>
+
+    <!-- 13 INIT -->
+    <section class="topic" id="init">
+      <div class="topic-head"><h2><span class="idx">13</span>Инициализация весов: коротко о важном соседе темы</h2></div>
+      <p class="dek">Выбор активации и инициализации весов исторически шли парой — неправильная инициализация может свести на нет преимущества хорошей активации.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Схема</th><th>Формула дисперсии</th><th>Под какую активацию</th></tr>
+        <tr><td class="hl">Xavier/Glorot (2010)</td><td class="mono">Var(W) = 2/(fan_in+fan_out)</td><td>sigmoid/tanh — сохраняет дисперсию сигнала для симметричных активаций</td></tr>
+        <tr><td class="hl">He/Kaiming (2015)</td><td class="mono">Var(W) = 2/fan_in</td><td>ReLU и родственники — учитывает, что примерно половина выходов ReLU занулена</td></tr>
+      </table></div>
+      <div class="note">Для трансформеров с Pre-LN (§09) чувствительность к точной схеме инициализации заметно ниже, чем в старых Post-LN/CNN-сетях — нормализация перед каждым блоком сама выравнивает масштаб сигнала, поэтому современные рецепты (напр. масштабирование инициализации по 1/√(число слоёв) для выходных проекций) больше про глубину сети, чем про конкретную активацию.</div>
+    </section>
+
+    <!-- 14 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">14</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Активация/техника</th><th>Гладкая?</th><th>Compute</th><th>Где используется</th><th>Статус</th></tr>
+        <tr><td><b>Sigmoid / Tanh</b></td><td class="good">да</td><td>средний</td><td>LSTM/GRU-гейты, GLU-гейты</td><td><span class="badge b-legacy">legacy как основная</span></td></tr>
+        <tr><td><b>ReLU</b></td><td class="bad">нет (излом)</td><td class="good">минимальный</td><td>CNN, часть небольших MLP</td><td><span class="badge b-mainstream">жив вне LLM</span></td></tr>
+        <tr><td><b>Leaky/PReLU/ELU</b></td><td class="mid">частично</td><td>средний</td><td>CNN (нишево)</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>GELU</b></td><td class="good">да</td><td>средний</td><td>BERT, GPT-2/3, ViT</td><td><span class="badge b-mainstream">широко используется</span></td></tr>
+        <tr><td><b>SiLU/Swish</b></td><td class="good">да</td><td>средний</td><td>EfficientNet, компонент SwiGLU</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>SwiGLU</b></td><td class="good">да</td><td>выше (3 матрицы)</td><td>LLaMA, Mistral, Qwen и почти весь совр. LLM</td><td><span class="badge b-mainstream">де-факто стандарт</span></td></tr>
+        <tr><td><b>MoE FFN</b></td><td>—</td><td class="good">низкий на токен, высокий по памяти</td><td>Mixtral, DeepSeek-V3</td><td><span class="badge b-mainstream">mainstream в крупных моделях</span></td></tr>
+        <tr><td><b>KAN</b></td><td class="good">да</td><td class="bad">высокий</td><td>научные/малые модели</td><td><span class="badge b-emerging">emerging / research</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 15 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">15</span>Таймлайн</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">1980е–2000е</div><h5>Sigmoid / Tanh</h5><p>Основная активация ранних сетей; ограничена vanishing gradient на глубине.</p></div>
+        <div class="tl-item"><div class="yr">2010</div><h5>Xavier-инициализация</h5><p>Первая систематическая теория инициализации весов под сохранение дисперсии сигнала.</p></div>
+        <div class="tl-item"><div class="yr">2012</div><h5>ReLU в AlexNet</h5><p>Прорыв, сделавший практичным обучение действительно глубоких сетей.</p></div>
+        <div class="tl-item"><div class="yr">2015</div><h5>He-инициализация, PReLU/ELU</h5><p>Дальнейшая настройка под особенности ReLU-подобных активаций.</p></div>
+        <div class="tl-item"><div class="yr">2016</div><h5>GLU, GELU (публикация)</h5><p>Идея гейтинга и гладкой вероятностной активации — обе поначалу замечены не сразу.</p></div>
+        <div class="tl-item"><div class="yr">2017</div><h5>Swish/SiLU через NAS</h5><p>Google Brain находит активацию автоматическим поиском, а не вручную.</p></div>
+        <div class="tl-item"><div class="yr">2018</div><h5>GELU в BERT</h5><p>GELU становится стандартом для трансформеров.</p></div>
+        <div class="tl-item"><div class="yr">2021</div><h5>Switch Transformer</h5><p>MoE впервые убедительно масштабируется на языковые модели.</p></div>
+        <div class="tl-item"><div class="yr">2022</div><h5>PaLM: SwiGLU как системный выбор</h5><p>Явно показано, что SwiGLU стабильно выигрывает у GELU-FFN при равном бюджете.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>LLaMA закрепляет SwiGLU как стандарт</h5><p>Открытая модель с широчайшим влиянием делает SwiGLU дефолтом всей экосистемы.</p></div>
+        <div class="tl-item"><div class="yr">2024</div><h5>Mixtral, DeepSeek-MoE, Mixture-of-Depths, KAN</h5><p>Фокус смещается со «какая активация лучше» на «как структурно тратить compute только там, где он нужен».</p></div>
+      </div>
+      <h4 style="margin-top:32px; font-size:17px;">Почему конкретно отказались</h4>
+      <div class="grid2">
+        <div class="pill-box con"><h4>Sigmoid/Tanh как основная активация</h4><ul><li>Vanishing gradient на глубоких сетях — ReLU и его потомки решают это принципиально лучше</li></ul></div>
+        <div class="pill-box con"><h4>Leaky ReLU / PReLU / ELU</h4><ul><li>Прирост качества оказался небольшим и непостоянным; GELU/SiLU дали более убедительный и стабильный выигрыш именно в трансформерах</li></ul></div>
+        <div class="pill-box con"><h4>Post-LN размещение нормализации</h4><ul><li>Требует деликатного warmup и плохо масштабируется на очень глубокие модели — Pre-LN надёжнее для дорогого обучения с одного прохода</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 16 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">16</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек проекта: собственные block.py/mlp.py/fusion.py/norm.py без готовых nn.Transformer-блоков.</p>
+      <div class="rec-card">
+        <h4>SwiGLU — разумный дефолт для mlp.py <span class="tag">§07</span></h4>
+        <p>Если нет специфической причины выбрать иначе, SwiGLU — наименее рискованный выбор именно потому, что это уже проверенный индустрией стандарт при аналогичном бюджете параметров. Не забыть про «правило 2/3» при выборе d_ff, иначе бюджет параметров относительно RWKV-state/attention-части незаметно съедет.</p>
+      </div>
+      <div class="rec-card">
+        <h4>norm.py как фабрика — Pre-LN размещение стоит сделать дефолтом <span class="tag">§09</span></h4>
+        <p>Раз norm.py уже спроектирован как фабрика (а не плоский модуль), имеет смысл явно поддержать выбор точки нормализации (pre/post) как параметр конфигурации block.py — но для собственной, нестандартной архитектуры (RWKV-state + linear attention + Titans-память) Pre-LN — более безопасный дефолт по тем же причинам стабильности обучения, что и в обычных трансформерах.</p>
+      </div>
+      <div class="rec-card">
+        <h4>MoE — не обязательно сейчас, но стоит держать в голове при росте модели <span class="tag">§08</span></h4>
+        <p>Для скелета v0.1 плотный SwiGLU-FFN проще и надёжнее отлаживать. Если позже понадобится масштабировать NOVA TITAN по параметрам без пропорционального роста инференс-compute — MoE-FFN является естественной точкой расширения fusion.py/mlp.py, не требующей менять RWKV-state или Titans-часть архитектуры.</p>
+      </div>
+    </section>
+
+    <!-- 17 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">17</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">2010</span> — <b>Understanding the difficulty of training deep feedforward neural networks</b> (Glorot & Bengio) — Xavier init</li>
+        <li><span class="yr">2015</span> — <b>Delving Deep into Rectifiers</b> (He et al.) — He init, PReLU</li>
+        <li><span class="yr">2016</span> — <b>Gaussian Error Linear Units (GELUs)</b> (Hendrycks & Gimpel)</li>
+        <li><span class="yr">2016</span> — <b>Language Modeling with Gated Convolutional Networks</b> (Dauphin et al.) — GLU</li>
+        <li><span class="yr">2017</span> — <b>Searching for Activation Functions</b> (Ramachandran et al.) — Swish/SiLU</li>
+        <li><span class="yr">2020</span> — <b>GLU Variants Improve Transformer</b> (Shazeer) — SwiGLU, ReGLU, GEGLU одним пакетом</li>
+        <li><span class="yr">2021</span> — <b>Switch Transformers</b> (Fedus et al.) — MoE на масштабе LLM</li>
+        <li><span class="yr">2022</span> — <b>PaLM: Scaling Language Modeling with Pathways</b> (Chowdhery et al.)</li>
+        <li><span class="yr">2024</span> — <b>KAN: Kolmogorov-Arnold Networks</b> (Liu et al.)</li>
+        <li><span class="yr">2024</span> — <b>Mixture-of-Depths</b> (Raposo et al., Google DeepMind)</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>

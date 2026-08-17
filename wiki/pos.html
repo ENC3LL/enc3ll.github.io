@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Positional Encoding — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+.toc-mobile{display:none;}
+
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:660px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+.rope-box{margin-top:32px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:18px 20px 16px; display:flex; gap:26px; flex-wrap:wrap; align-items:center;}
+.rope-box .st-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;}
+.rope-box .st-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:6px; max-width:280px;}
+.rope-box .rope-text{flex:1; min-width:240px;}
+.rope-box .rope-text p{font-size:13.6px; color:var(--text-dim); margin:0 0 10px;}
+.rope-box .rope-text p:last-child{margin-bottom:0;}
+
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>positional encoding / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>Зачем нужна позиция</a>
+      <a href="#absolute"><span class="n">01</span>Absolute / Learned</a>
+      <a href="#sinusoidal"><span class="n">02</span>Sinusoidal (2017)</a>
+      <a href="#relative"><span class="n">03</span>Relative Position (Shaw, Transformer-XL)</a>
+      <div class="grp-label">RoPE и родня</div>
+      <a href="#rope"><span class="n">04</span>RoPE — механика вращения</a>
+      <a href="#ropescale"><span class="n">05</span>Растяжение контекста: PI / NTK</a>
+      <a href="#yarn"><span class="n">06</span>YaRN</a>
+      <a href="#xpos"><span class="n">07</span>xPos</a>
+      <div class="grp-label">Альтернативы RoPE</div>
+      <a href="#alibi"><span class="n">08</span>ALiBi</a>
+      <a href="#t5bias"><span class="n">09</span>T5 relative bias</a>
+      <a href="#nope"><span class="n">10</span>NoPE</a>
+      <a href="#statepos"><span class="n">11</span>Позиция в RWKV / Mamba</a>
+      <div class="grp-label">Комбинирование и практика</div>
+      <a href="#combining"><span class="n">12</span>Как комбинируют схемы</a>
+      <a href="#multidim"><span class="n">13</span>2D/3D RoPE</a>
+      <a href="#extrapolation"><span class="n">14</span>Проблема экстраполяции</a>
+      <div class="grp-label">Итог</div>
+      <a href="#comparison"><span class="n">15</span>Сравнительная таблица</a>
+      <a href="#timeline"><span class="n">16</span>Таймлайн и отказы</a>
+      <a href="#recommendation"><span class="n">17</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">18</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning</div>
+      <h1>Позиционные кодировки: RoPE, xPos, ALiBi, YaRN и всё вокруг</h1>
+      <p class="lede">Attention сам по себе не знает про порядок токенов — позиционная схема встраивает это знание. Разбираем, чем принципиально отличаются подходы, как их комбинируют и что реально стоит за «магией» экстраполяции на контекст длиннее обучающего.</p>
+
+      <div class="rope-box">
+        <svg width="320" height="300" viewBox="0 0 320 300" style="flex-shrink:0;">
+          <circle cx="160" cy="150" r="110" fill="none" stroke="#3a3a3a" stroke-dasharray="2 4"/>
+          <line x1="50" y1="150" x2="270" y2="150" stroke="#2b2b2b"/>
+          <line x1="160" y1="40" x2="160" y2="260" stroke="#2b2b2b"/>
+          <!-- angle highlight arcs: equal relative offset -->
+          <path d="M 194.6 130.0 A 40 40 0 0 0 140.0 115.4" fill="none" stroke="#3ecf8e" stroke-width="2"/>
+          <path d="M 187.5 102.4 A 55 55 0 0 0 112.4 122.5" fill="none" stroke="#2cc4d9" stroke-width="2"/>
+          <!-- vectors -->
+          <g stroke-width="2">
+            <line x1="160" y1="150" x2="270.0" y2="150.0" stroke="#6b6b6b"/>
+            <line x1="160" y1="150" x2="255.3" y2="95.0" stroke="#3ecf8e"/>
+            <line x1="160" y1="150" x2="215.0" y2="54.7" stroke="#2cc4d9"/>
+            <line x1="160" y1="150" x2="160.0" y2="40.0" stroke="#6b6b6b"/>
+            <line x1="160" y1="150" x2="105.0" y2="54.7" stroke="#3ecf8e"/>
+            <line x1="160" y1="150" x2="64.7" y2="95.0" stroke="#2cc4d9"/>
+            <line x1="160" y1="150" x2="50.0" y2="150.0" stroke="#6b6b6b"/>
+            <line x1="160" y1="150" x2="64.7" y2="205.0" stroke="#6b6b6b"/>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">
+            <text x="273" y="154">m=0</text>
+            <text x="258" y="90" fill="#3ecf8e">m=1</text>
+            <text x="216" y="46" fill="#2cc4d9">m=2</text>
+            <text x="164" y="32">m=3</text>
+            <text x="70" y="46" fill="#3ecf8e">m=4</text>
+            <text x="18" y="90" fill="#2cc4d9">m=5</text>
+            <text x="14" y="154">m=6</text>
+            <text x="18" y="222">m=7</text>
+          </g>
+        </svg>
+        <div class="rope-text">
+          <div class="st-title">RoPE — вращение вектора на угол ∝ позиции</div>
+          <p>Каждая точка на окружности — это вектор токена на позиции m, повёрнутый на угол m·θ. Модель не хранит «номер позиции» как число — позиция буквально закодирована углом поворота.</p>
+          <p>Зелёная и голубая дуги — угол между <span class="ex-token">m=1 и m=4</span> и между <span class="ex-token">m=2 и m=5</span>. Оба смещения равны 3 позициям — и обе дуги <b>ровно одинаковы</b> по величине. Именно это свойство используется в §04: скалярное произведение двух повёрнутых векторов зависит только от разницы позиций (m−n), а не от самих m и n.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>Зачем вообще нужна позиция</h2></div>
+      <p class="dek">Self-attention (см. отдельную заметку) вычисляет softmax(QKᵀ)V — эта операция <b>перестановочно-инвариантна</b>: поменяй местами два токена во входе, и без позиционной информации выход для остальных токенов не изменится. Модель в принципе не может отличить «собака укусила человека» от «человек укусил собаку», если не добавить явное знание о порядке.</p>
+      <div class="note">Есть три принципиально разных места, куда можно «впрыснуть» позицию: (1) добавить её к <b>входному эмбеддингу</b> до первого слоя (absolute/sinusoidal), (2) встроить её прямо в <b>вычисление attention</b> — в Q,K перед скалярным произведением (RoPE) или в сам логит после (ALiBi, T5-bias), (3) не кодировать явно вообще, положившись на causal-маску (NoPE). Вся заметка ниже — про то, что происходит в этих трёх точках.</div>
+    </section>
+
+    <!-- 01 ABSOLUTE -->
+    <section class="topic" id="absolute">
+      <div class="topic-head">
+        <h2><span class="idx">01</span>Absolute / Learned positional embeddings</h2>
+        <div class="badges"><span class="badge b-legacy">legacy</span></div>
+      </div>
+      <p class="dek">Самый прямолинейный подход (GPT-1/2, BERT, ранний GPT-3): завести обучаемую таблицу эмбеддингов размером [max_seq_len, d_model] — по одному вектору на каждую возможную позицию — и просто прибавить его к эмбеддингу токена.</p>
+      <div class="formula">
+        <div class="formula-label">Absolute positional embedding</div>
+        x<sub>m</sub> = token_emb(w<sub>m</sub>) + pos_emb(m) &nbsp;<span class="cm">// pos_emb — обучаемая таблица</span>
+      </div>
+      <div class="note warn">Ключевая проблема: таблица имеет фиксированный размер max_seq_len. Позиция 2049 при обучении на max_seq_len=2048 просто <b>не существует</b> — у неё нет обученного вектора. Модель физически не может обработать более длинный контекст без дообучения/расширения таблицы. Это главная причина, по которой почти все современные LLM отказались от этого подхода.</div>
+      <div class="usedin"><span>GPT-1/2</span><span>BERT</span><span>ранний GPT-3</span></div>
+    </section>
+
+    <!-- 02 SINUSOIDAL -->
+    <section class="topic" id="sinusoidal">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>Sinusoidal — оригинальный Transformer</h2>
+        <div class="badges"><span class="badge b-legacy">legacy</span></div>
+      </div>
+      <p class="dek">Vaswani et al., 2017 предложили фиксированную (не обучаемую) формулу вместо таблицы — набор синусов и косинусов разных частот.</p>
+      <div class="formula">
+        <div class="formula-label">Sinusoidal positional encoding</div>
+        PE(m, 2i) = sin(m / 10000^(2i/d)) &nbsp;<span class="cm">// чётные измерения — синус</span><br>
+        PE(m, 2i+1) = cos(m / 10000^(2i/d)) &nbsp;<span class="cm">// нечётные — косинус, та же частота</span>
+      </div>
+      <p>Идея авторов: раз это гладкая периодическая функция, а не таблица с жёсткой границей, модель теоретически сможет экстраполировать на позиции длиннее обученных — синус определён для любого m. На практике экстраполяция получилась слабой (см. график в §14): сеть всё равно обучается на конкретном диапазоне частот и плохо обобщает далеко за его пределы.</p>
+      <div class="note">Важное отличие от §01: здесь позиция всё ещё <b>прибавляется</b> к эмбеддингу до attention, то есть кодирует абсолютную позицию, а не относительную. RoPE (§04) сделает принципиально другой шаг — встроит позицию не аддитивно, а мультипликативно, прямо в механизм attention.</div>
+      <div class="usedin"><span>Transformer (2017)</span></div>
+    </section>
+
+    <!-- 03 RELATIVE -->
+    <section class="topic" id="relative">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>Relative Positional Encoding</h2>
+        <div class="badges"><span class="badge b-legacy">legacy как отдельная схема</span><span class="badge b-mainstream">идея жива в RoPE/ALiBi</span></div>
+      </div>
+      <p class="dek">Shaw et al. (2018), затем Transformer-XL (2019) — первыми показали ключевую идею, которая позже определит всё семейство RoPE/ALiBi: важна не абсолютная позиция токена, а <b>относительное расстояние</b> между парой токенов.</p>
+      <p>Реализация — добавить обучаемый вектор смещения прямо в вычисление attention-логита, зависящий не от m и n по отдельности, а от разницы (m−n): <code>score(m,n) = q<sub>m</sub>·k<sub>n</sub> + q<sub>m</sub>·r<sub>m-n</sub></code>, где r — обучаемый relative-эмбеддинг.</p>
+      <div class="note warn">Почему как отдельная схема почти не используется сегодня: реализация дороже вычислительно (нужна дополнительная матрица relative-эмбеддингов и матричные операции для каждой пары позиций), а RoPE достигает похожего эффекта (зависимость только от m−n) гораздо дешевле — через простое поэлементное вращение, без лишних матричных умножений. Идея «важна только относительная разница» — победила, конкретная реализация Shaw/Transformer-XL — нет.</div>
+      <div class="usedin"><span>Transformer-XL</span><span>Music Transformer</span></div>
+    </section>
+
+    <!-- 04 ROPE -->
+    <section class="topic" id="rope">
+      <div class="topic-head">
+        <h2><span class="idx">04</span>RoPE — Rotary Position Embedding</h2>
+        <div class="badges"><span class="badge b-mainstream">де-факто стандарт</span></div>
+      </div>
+      <p class="dek">Su et al., 2021 (RoFormer). Ключевая идея: вместо того чтобы <b>прибавлять</b> позицию к эмбеддингу, нужно <b>повернуть</b> вектор Q и вектор K на угол, пропорциональный их позиции — ещё до вычисления скалярного произведения.</p>
+      <div class="formula">
+        <div class="formula-label">RoPE — вращение пары координат</div>
+        R(m)·x = [ x₁cos(mθ) − x₂sin(mθ), &nbsp; x₁sin(mθ) + x₂cos(mθ) ] &nbsp;<span class="cm">// вращение одной пары измерений (x₁,x₂) на угол m·θ</span><br>
+        q'<sub>m</sub> = R(m)·q<sub>m</sub>, &nbsp; k'<sub>n</sub> = R(n)·k<sub>n</sub>
+      </div>
+      <p>Вектор размерности d разбивается на d/2 пар координат, и <b>каждая пара вращается на свою частоту θ<sub>i</sub></b> (низкие индексы — быстро меняющиеся, «мелкая моторика» позиции; высокие — медленные, «крупная» позиция — идея та же, что и в sinusoidal, но применена как вращение, а не сложение).</p>
+      <div class="formula">
+        <div class="formula-label">Ключевое свойство: относительность «бесплатно»</div>
+        (R(m)q) · (R(n)k) = q · R(n−m) · k &nbsp;<span class="cm">// скалярное произведение зависит только от (n−m), не от m,n по отдельности</span>
+      </div>
+      <p>Это математический факт о вращениях: поворот на угол A, скалярно умноженный на поворот на угол B, зависит только от разницы углов (A−B). Именно это иллюстрирует круг в шапке заметки — угол между позициями 1 и 4 равен углу между позициями 2 и 5, потому что относительное расстояние (3 позиции) одинаковое.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Относительная позиция получается из самой геометрии, без лишних параметров и без сложения с эмбеддингом</li>
+          <li>Не занимает отдельную «позицию» в эмбеддинге — применяется прямо в Q,K на каждом слое</li>
+          <li>В отличие от absolute — нет жёсткого потолка длины «зашитого в таблицу»</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Всё равно плохо экстраполирует далеко за пределы обученной длины «из коробки» (см. §14) — углы для очень больших m модель никогда не видела при обучении</li>
+          <li>Требует дополнительных техник для честного расширения контекста (§05–07)</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>RoFormer</span><span>LLaMA / LLaMA 2/3</span><span>Mistral / Mixtral</span><span>Qwen</span><span>практически весь совр. open-weight LLM</span></div>
+    </section>
+
+    <!-- 05 ROPE SCALE -->
+    <section class="topic" id="ropescale">
+      <div class="topic-head">
+        <h2><span class="idx">05</span>Растяжение контекста: Position Interpolation и NTK-aware scaling</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Задача: у модели, обученной на длине L, нужно расширить рабочий контекст до L' &gt; L без полного переобучения с нуля. Оба метода ниже работают на уровне частот θ<sub>i</sub>, ничего не меняя в архитектуре.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Метод</th><th>Идея</th><th>Компромисс</th></tr>
+        <tr><td class="hl">Position Interpolation (PI)</td><td>сжать позиции: подавать модели m·(L/L') вместо m — растянуть уже виденный диапазон углов на больший контекст</td><td>требует короткого дообучения; без него «размывает» высокочастотные (близкие) позиции, где точность важнее всего</td></tr>
+        <tr><td class="hl">NTK-aware scaling</td><td>менять не позиции, а сам base θ (10000 → больше) — растягивает только медленные (дальние) частоты, оставляя быстрые (близкие) почти нетронутыми</td><td>лучше сохраняет точность на близких расстояниях по сравнению с PI, но менее равномерно на средних</td></tr>
+        <tr><td class="hl">Dynamic NTK</td><td>менять base θ «на лету» в зависимости от фактической длины текущей последовательности, а не фиксированно</td><td>не требует дообучения вообще, но менее оптимально, чем целевое дообучение под конкретную длину</td></tr>
+      </table></div>
+      <div class="note">Интуиция NTK-aware: RoPE — это набор частот от «быстрой» до «медленной» (как в sinusoidal §02). Наивное сжатие позиций (PI) одинаково сжимает все частоты сразу, теряя разрешение именно там, где оно нужнее всего — у близких токенов. NTK-scaling растягивает низкочастотные (дальние) измерения сильнее, чем высокочастотные (близкие) — по аналогии с тем, как neural tangent kernel ведёт себя на разных частотах.</div>
+    </section>
+
+    <!-- 06 YARN -->
+    <section class="topic" id="yarn">
+      <div class="topic-head">
+        <h2><span class="idx">06</span>YaRN — Yet another RoPE extensioN</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream для расширения контекста</span></div>
+      </div>
+      <p class="dek">Peng et al., 2023. Не новая позиционная схема, а «сборка лучшего из предыдущих»: YaRN комбинирует NTK-aware интерполяцию по частотам с дополнительной температурной коррекцией attention-softmax, и достигает качественного расширения контекста при значительно меньшем объёме дообучения, чем наивная PI.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Что делает YaRN</h4><ul>
+          <li>Разные измерения (частоты) масштабируются по-разному — как в NTK-aware, но с более точной формулой перехода между «не трогать» и «интерполировать»</li>
+          <li>Добавляет масштабирующий коэффициент к самому softmax внимания («temperature»), компенсируя изменение распределения attention-весов при растянутом контексте</li>
+        </ul></div>
+        <div class="pill-box"><h4>Практический результат</h4><ul>
+          <li>Расширение контекста в разы (напр. 4K→128K) при дообучении на существенно меньшем числе токенов, чем потребовалось бы для обучения такой длины с нуля</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>множество открытых LLM с расширенным контекстом (Llama-YaRN варианты и др.)</span></div>
+    </section>
+
+    <!-- 07 XPOS -->
+    <section class="topic" id="xpos">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>xPos — Extrapolatable Position Embedding</h2>
+        <div class="badges"><span class="badge b-niche">niche</span></div>
+      </div>
+      <p class="dek">Sun et al. (Microsoft), 2022. Наблюдение авторов: у ванильного RoPE все частоты вращаются с одинаковой «уверенностью» — амплитуда вектора не меняется с ростом относительного расстояния. Это отчасти и объясняет, почему далёкие позиции у RoPE плохо экстраполируются: ничто не подсказывает модели, что далёкая информация должна учитываться менее уверенно.</p>
+      <div class="formula">
+        <div class="formula-label">xPos — вращение + экспоненциальное затухание амплитуды</div>
+        xPos(x, m) = R(m)·x·ζ<sup>m</sup> &nbsp;<span class="cm">// то же вращение R(m), что в RoPE, но дополнительно домножается на затухающий коэффициент ζᵐ, ζ&lt;1</span>
+      </div>
+      <p>По сути xPos = RoPE + встроенный decay, похожий по духу на то, что происходит в RWKV/RetNet (см. §11) — чем дальше токен, тем меньше его «уверенный вклад», что эмпирически даёт заметно лучшую экстраполяцию за пределы обученной длины по сравнению с ванильным RoPE.</p>
+      <div class="note warn">Почему остался нишевым, а не стал стандартом вместо RoPE: выигрыш в экстраполяции при этом мал по сравнению с более простыми и уже отработанными подходами — NTK-scaling/YaRN поверх обычного RoPE (§05–06) дают сравнимое или лучшее практическое расширение контекста без изменения самой формулы позиционного кодирования, а значит, без необходимости менять уже отлаженную инфраструктуру обучения.</div>
+      <div class="usedin"><span>xPos (research)</span><span>концептуально близко: RetNet-decay, ALiBi</span></div>
+    </section>
+
+    <!-- 08 ALIBI -->
+    <section class="topic" id="alibi">
+      <div class="topic-head">
+        <h2><span class="idx">08</span>ALiBi — Attention with Linear Biases</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream, особенно где важна экстраполяция</span></div>
+      </div>
+      <p class="dek">Press et al., 2021. Радикально другой путь: вообще не трогать Q и K — ни складывать с ними, ни вращать. Вместо этого — прибавить простой линейный штраф прямо к готовому attention-логиту, зависящий только от расстояния между токенами.</p>
+      <div class="formula">
+        <div class="formula-label">ALiBi</div>
+        score(m,n) = q<sub>m</sub>·k<sub>n</sub> − m<sub>h</sub>·(m−n) &nbsp;<span class="cm">// m_h — фиксированный коэффициент наклона, свой для каждой attention-головы</span>
+      </div>
+      <p>Чем дальше токен n от текущего m, тем сильнее штраф — то есть дальние токены получают меньший attention-вес просто по построению, вне зависимости от Q/K. Разные головы получают разные наклоны m<sub>h</sub> (степенная прогрессия) — часть голов «смотрит широко», часть — почти только на ближайших соседей.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Лучшая экстраполяция «из коробки» среди всех схем без специальных дообучающих трюков (см. график §14) — авторы обучали на 1К токенов и тестировали на 2K+ без потери качества</li>
+          <li>Не добавляет вычислений в Q/K, дешевле RoPE по факту (штраф считается один раз на пару позиций, не зависит от содержимого)</li>
+          <li>Нет отдельных обучаемых параметров позиции вообще</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Жёсткий линейный decay — не всегда оптимален для задач, где важна информация именно из далёкого прошлого (напр. точный recall факта в начале очень длинного документа)</li>
+          <li>На некоторых бенчмарках чистого качества (не экстраполяции) немного уступает хорошо настроенному RoPE</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>BLOOM</span><span>MPT</span><span>частично в некоторых гибридных схемах</span></div>
+    </section>
+
+    <!-- 09 T5BIAS -->
+    <section class="topic" id="t5bias">
+      <div class="topic-head">
+        <h2><span class="idx">09</span>T5 relative bias — обучаемая версия того же принципа</h2>
+        <div class="badges"><span class="badge b-niche">niche</span></div>
+      </div>
+      <p class="dek">Тот же общий принцип, что у ALiBi (штраф/бонус к логиту, зависящий от расстояния), но не по фиксированной линейной формуле, а через <b>обучаемую</b> таблицу — с той оговоркой, что расстояния группируются в «бакеты» (логарифмически растущие интервалы), а не хранятся индивидуально на каждое возможное расстояние.</p>
+      <div class="formula">
+        <div class="formula-label">T5-style relative bias</div>
+        score(m,n) = q<sub>m</sub>·k<sub>n</sub> + b[bucket(m−n)] &nbsp;<span class="cm">// b — обучаемая таблица, bucket() группирует далёкие расстояния грубее, близкие — точнее</span>
+      </div>
+      <div class="note">Логарифмическое разбиение на бакеты — та же идея, что часто встречается в позиционных схемах в целом: точное различие между соседними токенами важно, а точное различие между «500 и 501 токенов назад» — почти нет, так что для них можно использовать один и тот же обучаемый бакет.</div>
+      <div class="usedin"><span>T5</span><span>ранние вариации в encoder-decoder моделях</span></div>
+    </section>
+
+    <!-- 10 NOPE -->
+    <section class="topic" id="nope">
+      <div class="topic-head">
+        <h2><span class="idx">10</span>NoPE — вообще без позиционного кодирования</h2>
+        <div class="badges"><span class="badge b-emerging">emerging / research</span></div>
+      </div>
+      <p class="dek">Контринтуитивный, но эмпирически рабочий результат (Kazemnejad et al., 2023 и др.): в <b>causal</b> (декодер-only) моделях явная позиционная схема может быть вообще не нужна — сама causal-маска (токен видит только себя и прошлое) уже неявно передаёт достаточно информации о порядке.</p>
+      <p>Интуиция: в causal-модели структура «кто кого видит» сама по себе асимметрична и зависит от позиции — механизм attention в принципе способен вывести относительный порядок из одной только маски, без явного сигнала. Исследования показали, что NoPE иногда экстраполирует на длину даже <b>лучше</b>, чем RoPE, именно потому что ему нечего «путать» на непривычно больших углах поворота.</p>
+      <div class="note warn">Статус: не мейнстрим для крупных производственных LLM — большинство лабораторий по-прежнему используют RoPE как более предсказуемый и изученный выбор, но NoPE — активная область экспериментов, особенно в контексте гибридных архитектур (некоторые слои с RoPE, некоторые — без).</div>
+      <div class="usedin"><span>research, отдельные слои в некоторых гибридных LLM</span></div>
+    </section>
+
+    <!-- 11 STATEPOS -->
+    <section class="topic" id="statepos">
+      <div class="topic-head">
+        <h2><span class="idx">11</span>Позиция в RWKV / Mamba / RetNet: неявно, через сам механизм</h2>
+        <div class="badges"><span class="badge b-mainstream">архитектурная особенность</span></div>
+      </div>
+      <p class="dek">В state-based моделях (см. отдельную заметку про attention, §10–12) вопрос «как добавить позицию» часто просто не встаёт так остро — рекуррентная природа механизма сама по себе несёт понятие порядка.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>RWKV / RetNet</h4><ul>
+          <li>Обновление состояния — по построению последовательный, зависящий от порядка процесс: state<sub>t</sub> строится из state<sub>t-1</sub> — переставь входы местами, и результат изменится сам собой, без всякого явного «+position»</li>
+          <li>Decay-коэффициент (константный в RetNet, data-dependent в RWKV) неявно кодирует «как давно это было» — концептуально похоже на xPos (§07) или ALiBi (§08), но встроено в сам механизм, а не добавлено поверх attention</li>
+        </ul></div>
+        <div class="pill-box"><h4>Mamba / SSM</h4><ul>
+          <li>Аналогично — дискретизированная рекуррентность h<sub>t</sub>=Ah<sub>t-1</sub>+Bx<sub>t</sub> по своей природе зависит от порядка обработки</li>
+          <li>Отдельное позиционное кодирование обычно не требуется и не используется поверх Mamba-слоёв</li>
+        </ul></div>
+      </div>
+      <div class="note">Если в гибридной архитектуре state-механизм соседствует с обычным (или linear) attention-блоком — вопрос о RoPE встаёт заново, но только для attention-части: незачем дублировать позиционную информацию, если она уже естественным образом присутствует в рекуррентной части модели.</div>
+    </section>
+
+    <!-- 12 COMBINING -->
+    <section class="topic" id="combining">
+      <div class="topic-head">
+        <h2><span class="idx">12</span>Как комбинируют схемы на практике</h2>
+        <div class="badges"><span class="badge b-mainstream">частая продовая практика</span></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Partial RoPE</h4><ul>
+          <li>Вращать не все измерения вектора, а только часть (напр. 50%), остальные оставить без позиционного кодирования вообще</li>
+          <li>Экономит немного compute и в некоторых работах показывает не худшее качество — намёк на то, что не всей размерности вектора вообще нужна позиционная информация</li>
+        </ul></div>
+        <div class="pill-box"><h4>Разный θ (base) по слоям/головам</h4><ul>
+          <li>Не обязательно использовать один и тот же base=10000 везде — разные слои могут отвечать за разные диапазоны «зрения» по контексту, и это можно явно поддержать разными частотами</li>
+        </ul></div>
+      </div>
+      <div class="grid2">
+        <div class="pill-box"><h4>RoPE + разреженное/локальное внимание</h4><ul>
+          <li>Полностью независимые оси: RoPE решает «как кодировать позицию», sliding window/sparse (см. attention-заметку) решает «на что вообще смотреть» — комбинируются без конфликта, RoPE просто применяется к тем Q/K, что участвуют в разреженном паттерне</li>
+        </ul></div>
+        <div class="pill-box"><h4>ALiBi-подобный decay поверх RoPE</h4><ul>
+          <li>Экспериментальные схемы (в духе xPos, §07) добавляют к RoPE ещё и явное затухание амплитуды — не взаимоисключающие идеи, а два независимых рычага (угол vs амплитуда), которые можно применять одновременно</li>
+        </ul></div>
+      </div>
+      <div class="note">Общий принцип комбинирования: RoPE/ALiBi/xPos — это не альтернативные «пакеты», которые нужно выбрать целиком, а независимые рычаги (вращение угла, линейный штраф на логит, затухание амплитуды), которые в принципе можно применять по отдельности, вместе или выборочно по слоям — большинство «новых» позиционных схем последних лет — это именно новые комбинации этих трёх базовых идей, а не что-то принципиально четвёртое.</div>
+    </section>
+
+    <!-- 13 MULTIDIM -->
+    <section class="topic" id="multidim">
+      <div class="topic-head">
+        <h2><span class="idx">13</span>2D/3D RoPE — позиция не только вдоль одной оси</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      </div>
+      <p class="dek">Для изображений (ViT) или видео позиция токена — это не одно число, а координата в 2D (строка, столбец) или 3D (кадр, строка, столбец) пространстве. Прямое обобщение RoPE — выделить разные группы измерений вектора под разные пространственные оси, каждая со своим вращением.</p>
+      <div class="formula">
+        <div class="formula-label">2D RoPE (схематично)</div>
+        часть измерений вращается на угол ∝ x-координате (столбец)<br>
+        другая часть измерений вращается на угол ∝ y-координате (строка)
+      </div>
+      <div class="usedin"><span>ViT с 2D RoPE варианты</span><span>видео-трансформеры (кадр как третья ось)</span></div>
+    </section>
+
+    <!-- 14 EXTRAPOLATION -->
+    <section class="topic" id="extrapolation">
+      <div class="topic-head"><h2><span class="idx">14</span>Проблема экстраполяции: сводный график</h2></div>
+      <p class="dek">Все схемы обучаются на контексте определённой длины L. Вопрос «что будет, если на инференсе подать текст длиннее L» — и есть сердце всей темы позиционных кодировок.</p>
+      <div class="chart-box">
+        <div class="chart-title">Условное качество при выходе за пределы обученной длины</div>
+        <div class="chart-sub">X — длина контекста как множитель от обученной (1× = L); Y — условное качество (100% = как в пределах L). Иллюстративные величины по общей форме кривых из литературы.</div>
+        <svg viewBox="0 0 640 300" width="100%" style="overflow:visible;">
+          <line x1="55" y1="260" x2="620" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <line x1="55" y1="20" x2="55" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="55" y1="260.0" x2="620" y2="260.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="263" text-anchor="end">0</text>
+            <line x1="55" y1="200.0" x2="620" y2="200.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="203" text-anchor="end">25</text>
+            <line x1="55" y1="140.0" x2="620" y2="140.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="143" text-anchor="end">50</text>
+            <line x1="55" y1="80.0" x2="620" y2="80.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="83" text-anchor="end">75</text>
+            <line x1="55" y1="20.0" x2="620" y2="20.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="23" text-anchor="end">100%</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#a3a3a3" text-anchor="middle">
+            <text x="55" y="278">1×</text><text x="196" y="278">1.5×</text><text x="337" y="278">2×</text><text x="479" y="278">3×</text><text x="620" y="278">4×</text>
+          </g>
+          <path d="M 55.0 20.0 L 196.2 212.0 L 337.5 248.0 L 478.8 255.2 L 620.0 257.6" fill="none" stroke="#e0355c" stroke-width="2.2"/>
+          <path d="M 55.0 20.0 L 196.2 116.0 L 337.5 176.0 L 478.8 224.0 L 620.0 240.8" fill="none" stroke="#7c4dff" stroke-width="2.2"/>
+          <path d="M 55.0 20.0 L 196.2 92.0 L 337.5 164.0 L 478.8 224.0 L 620.0 240.8" fill="none" stroke="#2cc4d9" stroke-width="2.2"/>
+          <path d="M 55.0 20.0 L 196.2 39.2 L 337.5 56.0 L 478.8 80.0 L 620.0 104.0" fill="none" stroke="#ff3d68" stroke-width="2.2"/>
+          <path d="M 55.0 20.0 L 196.2 29.6 L 337.5 39.2 L 478.8 56.0 L 620.0 72.8" fill="none" stroke="#3ecf8e" stroke-width="2.2"/>
+        </svg>
+        <div class="legend">
+          <span><i style="background:#e0355c"></i>Absolute/Learned — обрывается сразу за L</span>
+          <span><i style="background:#7c4dff"></i>Sinusoidal — слабая экстраполяция</span>
+          <span><i style="background:#2cc4d9"></i>RoPE (без scaling) — умеренная</span>
+          <span><i style="background:#ff3d68"></i>ALiBi — хорошая «из коробки»</span>
+          <span><i style="background:#3ecf8e"></i>RoPE + YaRN — восстановлена целевым дообучением</span>
+        </div>
+      </div>
+      <div class="note">Важная оговорка: RoPE+YaRN на графике выглядит лучше ALiBi не потому, что RoPE «превосходит» ALiBi сам по себе — а потому что YaRN представляет собой <i>целевое дообучение под конкретную новую длину</i>, тогда как остальные кривые — поведение «из коробки» без дополнительного обучения. Это разные сравнения по методологии, не только по схеме кодирования.</div>
+    </section>
+
+    <!-- 15 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">15</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Схема</th><th>Где применяется</th><th>Экстраполяция без дообучения</th><th>Compute overhead</th><th>Статус</th></tr>
+        <tr><td><b>Absolute/Learned</b></td><td>складывается с эмбеддингом</td><td class="bad">нет вообще</td><td>минимальный</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>Sinusoidal</b></td><td>складывается с эмбеддингом</td><td class="bad">слабая</td><td>минимальный</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>Relative (Shaw/Transf-XL)</b></td><td>внутри attention-логита</td><td class="mid">средняя</td><td>высокий</td><td><span class="badge b-legacy">legacy как реализация</span></td></tr>
+        <tr><td><b>RoPE</b></td><td>вращение Q,K</td><td class="mid">умеренная</td><td>низкий</td><td><span class="badge b-mainstream">де-факто стандарт</span></td></tr>
+        <tr><td><b>RoPE + YaRN/NTK</b></td><td>вращение Q,K + масштаб частот</td><td class="good">хорошая (с коротким дообучением)</td><td>низкий</td><td><span class="badge b-mainstream">mainstream для long-context</span></td></tr>
+        <tr><td><b>xPos</b></td><td>вращение Q,K + decay амплитуды</td><td class="good">хорошая</td><td>низкий</td><td><span class="badge b-niche">niche</span></td></tr>
+        <tr><td><b>ALiBi</b></td><td>штраф к логиту</td><td class="good">хорошая «из коробки»</td><td class="good">минимальный</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>T5 relative bias</b></td><td>обучаемый штраф к логиту</td><td class="mid">средняя</td><td>средний</td><td><span class="badge b-niche">niche</span></td></tr>
+        <tr><td><b>NoPE</b></td><td>ничего — только causal-маска</td><td class="good">хорошая (по некоторым исследованиям)</td><td class="good">нулевой</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>State-based (RWKV/Mamba)</b></td><td>встроено в рекуррентность</td><td class="good">хорошая по построению</td><td>—</td><td><span class="badge b-mainstream">архитектурная особенность</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 16 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">16</span>Таймлайн</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">2017</div><h5>Sinusoidal PE</h5><p>Первая позиционная схема трансформеров — фиксированная формула вместо обучаемой таблицы.</p></div>
+        <div class="tl-item"><div class="yr">2018</div><h5>Absolute/Learned в BERT/GPT</h5><p>Простая обучаемая таблица позиций становится массовым выбором на несколько лет.</p></div>
+        <div class="tl-item"><div class="yr">2018–2019</div><h5>Relative Position (Shaw), Transformer-XL</h5><p>Первый явный сдвиг мысли: важна относительная разница позиций, а не абсолютное значение.</p></div>
+        <div class="tl-item"><div class="yr">2020</div><h5>T5 relative bias</h5><p>Практичная, дешёвая по памяти реализация той же идеи через бакеты расстояний.</p></div>
+        <div class="tl-item"><div class="yr">2021</div><h5>RoPE (RoFormer), ALiBi</h5><p>Два принципиально разных, но оба успешных решения задачи «относительная позиция дёшево»: вращение векторов и линейный штраф к логиту.</p></div>
+        <div class="tl-item"><div class="yr">2022</div><h5>xPos</h5><p>Попытка объединить преимущества RoPE и explicit decay (в духе ALiBi) в одной схеме.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>Position Interpolation, NTK-aware scaling, YaRN</h5><p>Взрыв интереса к расширению контекста существующих RoPE-моделей без полного переобучения — драйвер: спрос на длинный контекст в проде.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>NoPE — доказательство, что можно и без явной схемы</h5><p>Контринтуитивный результат для causal-моделей подогревает интерес к минимализму в позиционном кодировании.</p></div>
+        <div class="tl-item"><div class="yr">2024–2025</div><h5>2D/3D RoPE, гибридные partial-RoPE схемы</h5><p>Фокус смещается на мультимодальные применения и на комбинирование нескольких рычагов (угол + decay + разреженность) в одной модели.</p></div>
+      </div>
+      <h4 style="margin-top:32px; font-size:17px;">Почему конкретно отказались</h4>
+      <div class="grid2">
+        <div class="pill-box con"><h4>Absolute/Learned positional embeddings</h4><ul><li>Жёсткий потолок max_seq_len, зашитый в размер таблицы — архитектурно несовместимо с расширением контекста без изменения архитектуры</li></ul></div>
+        <div class="pill-box con"><h4>Sinusoidal как основной подход</h4><ul><li>Теоретическая «способность экстраполировать» на практике оказалась слабой — RoPE и ALiBi дали заметно лучшие результаты при сравнимой простоте</li></ul></div>
+        <div class="pill-box con"><h4>Relative Position (Shaw/Transformer-XL) как конкретная реализация</h4><ul><li>Дороже вычислительно, чем RoPE/ALiBi, при сравнимом или худшем качестве — сама идея «важна относительная позиция» пережила эту конкретную реализацию</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 17 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">17</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек проекта: RoPE уже заложен в конфиг positional/ как часть архитектуры (RWKV-state + linear attention).</p>
+      <div class="rec-card">
+        <h4>RoPE, скорее всего, нужен только части архитектуры, а не всей <span class="tag">§11</span></h4>
+        <p>Если RWKV-state в NOVA TITAN уже несёт позиционную информацию неявно через порядок обновления состояния (§11), применение RoPE именно к local linear attention части — разумное разделение труда, а не дублирование одной и той же информации дважды в разных частях сети.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Фабрика позиционных схем (positional/) — хорошее место для partial-RoPE и per-head θ <span class="tag">§12</span></h4>
+        <p>Раз в проекте уже заложена фабрика rope/xpos/alibi, стоит явно поддержать конфигурацию «вращать не все измерения» и «разный base θ по слоям» как параметры, а не считать сами схемы взаимоисключающими альтернативами — это те самые независимые рычаги из §12, которые можно комбинировать.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Если цель — очень длинная память (2M+ токенов, как у Titans), ALiBi/xPos-подобный decay стоит рассмотреть отдельно от RoPE в attention-части <span class="tag">§07 §08</span></h4>
+        <p>Для контекстов такой длины экстраполяция «из коробки» (ALiBi) или явное затухание амплитуды (xPos) может оказаться надёжнее, чем полагаться исключительно на RoPE+scaling с дообучением под каждый новый порог длины.</p>
+      </div>
+    </section>
+
+    <!-- 18 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">18</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">2017</span> — <b>Attention Is All You Need</b> (Vaswani et al.) — sinusoidal PE</li>
+        <li><span class="yr">2018</span> — <b>Self-Attention with Relative Position Representations</b> (Shaw et al.)</li>
+        <li><span class="yr">2019</span> — <b>Transformer-XL</b> (Dai et al.)</li>
+        <li><span class="yr">2021</span> — <b>RoFormer: Enhanced Transformer with Rotary Position Embedding</b> (Su et al.)</li>
+        <li><span class="yr">2021</span> — <b>Train Short, Test Long: ALiBi</b> (Press et al.)</li>
+        <li><span class="yr">2022</span> — <b>A Length-Extrapolatable Transformer</b> (Sun et al.) — xPos</li>
+        <li><span class="yr">2023</span> — <b>Extending Context Window via Position Interpolation</b> (Chen et al., Meta)</li>
+        <li><span class="yr">2023</span> — <b>YaRN: Efficient Context Window Extension of Large Language Models</b> (Peng et al.)</li>
+        <li><span class="yr">2023</span> — <b>The Impact of Positional Encoding on Length Generalization</b> (Kazemnejad et al.) — NoPE</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>

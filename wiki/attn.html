@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attention Mechanisms — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(124,77,255,0.35);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+/* ---------- SIDEBAR / TOC ---------- */
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:16px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+
+/* mobile toc */
+.toc-mobile{display:none;}
+
+/* ---------- MAIN ---------- */
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+/* ---------- HERO ---------- */
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:640px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+/* pattern strip — signature element */
+.pattern-legend{display:flex; flex-wrap:wrap; gap:8px 20px; align-items:center; margin-top:30px; padding:11px 16px; background:var(--surface); border:1px solid var(--border-soft); border-radius:8px;}
+.pattern-legend .lg-item{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim); white-space:nowrap;}
+.pattern-legend .lg-item i{width:10px; height:10px; border-radius:2px; display:inline-block; flex-shrink:0;}
+.pattern-legend .lg-on{background:linear-gradient(135deg,#ff3d68,#a01340);}
+.pattern-legend .lg-off{background:rgba(255,255,255,0.05); border:1px solid var(--border);}
+.pattern-legend .lg-axis{font-family:var(--mono); font-size:11.5px; color:var(--text-faint); border-left:1px solid var(--border-soft); padding-left:18px;}
+.pattern-strip{display:flex; gap:22px; margin-top:18px; flex-wrap:wrap; align-items:flex-end;}
+.pattern-card{width:150px;}
+.pattern-card .cap{font-family:var(--mono); font-size:11px; color:var(--text-dim); margin-top:9px; display:flex; justify-content:space-between;}
+.pattern-card .cap b{color:var(--text); font-weight:500;}
+.axis-top{font-family:var(--mono); font-size:9px; color:var(--text-faint); margin-bottom:4px; padding-left:17px; letter-spacing:.02em;}
+.axis-row{display:flex; align-items:stretch; gap:5px;}
+.axis-left{writing-mode:vertical-rl; transform:rotate(180deg); font-family:var(--mono); font-size:9px; color:var(--text-faint); display:flex; align-items:center; justify-content:center; width:12px; flex-shrink:0; letter-spacing:.02em;}
+.axis-row .heatmap{flex:1; min-width:0;}
+.hmrow.hl{outline:2px solid #fff; outline-offset:0; border-radius:2px; position:relative; z-index:1;}
+
+.pattern-explainer{margin-top:26px; padding:18px 20px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px;}
+.pattern-explainer p{font-size:13.6px; color:var(--text-dim); margin:0 0 12px;}
+.pattern-explainer p:last-child{margin-bottom:0;}
+.pattern-explainer .ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+.pattern-explainer .lg-row{display:flex; flex-wrap:wrap; gap:8px 20px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed var(--border-soft);}
+.pattern-explainer .lg-item{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim); white-space:nowrap;}
+.pattern-explainer .lg-item i{width:10px; height:10px; border-radius:2px; display:inline-block; flex-shrink:0;}
+.pattern-explainer .lg-on{background:linear-gradient(135deg,#ff3d68,#a01340);}
+.pattern-explainer .lg-off{background:rgba(255,255,255,0.05); border:1px solid var(--border);}
+.pattern-explainer .lg-hl{background:transparent; border:2px solid #fff;}
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.heatmap{display:grid; gap:2px; background:var(--bg-alt); padding:6px; border-radius:8px; border:1px solid var(--border-soft);}
+.hmrow{display:flex; gap:2px;}
+.hmrow i{width:100%; aspect-ratio:1; display:block; border-radius:1.5px;}
+.hmrow i.off{background:rgba(255,255,255,0.04);}
+.hmrow i.on{background:var(--amber);}
+.m-full .hmrow i.on{background:linear-gradient(135deg,#7c4dff,#dc3d4c);}
+.m-causal .hmrow i.on{background:linear-gradient(135deg,#7c4dff,#8a1a5e);}
+.m-sliding .hmrow i.on{background:linear-gradient(135deg,#2cc4d9,#7c4dff);}
+.m-sparse .hmrow i.on{background:linear-gradient(135deg,#3ecf8e,#2cc4d9);}
+.pattern-linear{height:auto; display:flex; flex-direction:column; gap:5px; justify-content:center; padding:18px 10px;}
+.pattern-linear .bar{height:9px; border-radius:2px;}
+.pattern-linear .bar1{width:100%; background:linear-gradient(90deg,#7c4dff,#2cc4d9);}
+.pattern-linear .bar2{width:34%; background:linear-gradient(90deg,#7c4dff,#dc3d4c); align-self:flex-end;}
+.pattern-linear .arrow{font-family:var(--mono); font-size:11px; color:var(--text-faint); text-align:center; letter-spacing:0;}
+
+/* ---------- SECTION SCAFFOLDING ---------- */
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(91,101,132,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+
+/* ---------- TABLES ---------- */
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+/* ---------- CHARTS ---------- */
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+/* ---------- TIMELINE ---------- */
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+/* ---------- RECS ---------- */
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+/* ---------- MISC ---------- */
+.tag-row{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px;}
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>attention / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>QKV и формула</a>
+      <a href="#full-attention"><span class="n">01</span>Full self-attention</a>
+      <a href="#multihead"><span class="n">02</span>Multi-Head</a>
+      <a href="#causal-cross"><span class="n">03</span>Causal / Cross</a>
+      <a href="#complexity"><span class="n">04</span>Проблема O(n²)</a>
+      <div class="grp-label">Эффективные варианты</div>
+      <a href="#sparse"><span class="n">05</span>Sparse Attention</a>
+      <a href="#sliding"><span class="n">06</span>Sliding Window</a>
+      <a href="#linear"><span class="n">07</span>Linear Attention</a>
+      <a href="#mqa-gqa"><span class="n">08</span>MQA / GQA</a>
+      <a href="#flash"><span class="n">09</span>FlashAttention</a>
+      <div class="grp-label">Attention-free / гибриды</div>
+      <a href="#rwkv"><span class="n">10</span>RWKV</a>
+      <a href="#mamba"><span class="n">11</span>Mamba / SSM</a>
+      <a href="#retnet"><span class="n">12</span>RetNet</a>
+      <a href="#titans"><span class="n">13</span>Titans</a>
+      <div class="grp-label">Новое (2024–2025)</div>
+      <a href="#mla"><span class="n">14</span>MLA (DeepSeek)</a>
+      <a href="#diff"><span class="n">15</span>Differential Attn</a>
+      <a href="#nsa"><span class="n">16</span>Native Sparse Attn</a>
+      <a href="#posenc"><span class="n">17</span>Позиционные схемы</a>
+      <div class="grp-label">Итог</div>
+      <a href="#comparison"><span class="n">18</span>Сравнительная таблица</a>
+      <a href="#timeline"><span class="n">19</span>Таймлайн and отказы</a>
+      <a href="#recommendation"><span class="n">20</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">21</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning</div>
+      <h1>Все виды attention: механика, различия, зачем и почему одни вытеснили другие</h1>
+      <p class="lede">От оригинального <b>scaled dot-product attention</b> (2017) до <b>linear attention</b>, <b>RWKV</b>, <b>Mamba</b>, <b>Titans</b> и <b>MLA</b> — с формулами, сложностью, кто где использует и когда стоит выбирать что-то нестандартное.</p>
+
+      <div class="pattern-strip">
+        <div class="pattern-card">
+          <div class="axis-top">key j →</div>
+          <div class="axis-row"><div class="axis-left">query i ↓</div>
+          <div class="heatmap m-full"><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+          </div>
+          <div class="cap"><b>Full</b><span>O(n²)</span></div>
+        </div>
+        <div class="pattern-card">
+          <div class="heatmap m-causal"><div class="hmrow"><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow hl"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+          <div class="cap"><b>Causal</b><span>O(n²)/2</span></div>
+        </div>
+        <div class="pattern-card">
+          <div class="heatmap m-sliding"><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i></div><div class="hmrow hl"><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i></div><div class="hmrow"><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i></div></div>
+          <div class="cap"><b>Sliding</b><span>O(n·w)</span></div>
+        </div>
+        <div class="pattern-card">
+          <div class="heatmap m-sparse"><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="on"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="on"></i></div><div class="hmrow hl"><i class="on"></i><i class="off"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="off"></i></div><div class="hmrow"><i class="on"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><div class="hmrow"><i class="on"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="off"></i><i class="on"></i><i class="on"></i></div></div>
+          <div class="cap"><b>Sparse</b><span>O(n√n)</span></div>
+        </div>
+        <div class="pattern-card">
+          <div class="heatmap pattern-linear">
+            <div class="bar bar1"></div>
+            <div class="arrow">Q·(Kᵀ·V) — без n×n</div>
+            <div class="bar bar2"></div>
+          </div>
+          <div class="cap"><b>Linear</b><span>O(n)</span></div>
+        </div>
+      </div>
+
+      <div class="pattern-explainer">
+        <div class="lg-row">
+          <span class="lg-item"><i class="lg-on"></i>клетка закрашена — токен участвует во внимании</span>
+          <span class="lg-item"><i class="lg-off"></i>клетка пустая — не считается вообще</span>
+          <span class="lg-item"><i class="lg-hl"></i>обведённая строка — один и тот же токен для сравнения</span>
+        </div>
+        <p><b>Как читать эти сетки.</b> Возьмём предложение из 10 токенов, пронумерованных 1…10. Каждая сетка — это таблица 10×10: <b>строка</b> — это токен-«вопрошающий» (query), <b>столбец</b> — токен-«источник» (key). Если клетка на пересечении строки i и столбца j закрашена — значит, при вычислении нового представления для токена i модель <i>реально использует</i> информацию токена j. Пустая клетка — эта пара вообще не участвует в расчёте (экономия compute).</p>
+        <p>Чтобы сравнить схемы напрямую, в Causal / Sliding / Sparse белой рамкой обведён один и тот же <span class="ex-token">7-й токен</span> — сравните, что именно он «видит» в каждом варианте (в Full рамку не рисуем: там любая строка выглядит одинаково — весь ряд закрашен целиком):</p>
+        <ul class="walk-list">
+          <li><b>Full</b> — 7-й токен видит все 10 токенов сразу, включая те, что идут после него. Так работает BERT: у него нет понятия «будущее», весь текст дан целиком.</li>
+          <li><b>Causal</b> — 7-й токен видит только токены 1–7 (себя и всё, что было раньше); клетки 8, 9, 10 пустые. Это маска для авторегрессии: при генерации текста токены 8-10 ещё физически не существуют, «подглядывать» в них нельзя.</li>
+          <li><b>Sliding</b> — 7-й токен видит только близких соседей (примерно 5–9-й), а токены 1–4 и 10-й — нет, даже если они важны. Дальняя информация должна дойти окольным путём — через соседние слои модели.</li>
+          <li><b>Sparse</b> — 7-й токен видит смесь: 1-й токен (он «глобальный» — его видят все и он видит всех), несколько ближайших соседей и один случайный дальний токен. Компромисс между Sliding (дёшево, но слепо к дальнему) и Full (видит всё, но дорого).</li>
+          <li><b>Linear</b> — здесь вообще нет отдельной таблицы 10×10 на токен. Все токены 1–7 заранее сжаты в одно «состояние» фиксированного размера (как бегущий итог), и 7-й токен читает это состояние целиком, а не выбирает конкретные клетки — поэтому для Linear рисуют не сетку, а «поток» (см. иконку выше).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>QKV и базовая формула</h2></div>
+      <p class="dek">Всё, что описано ниже — вариации одной идеи: для каждого токена вычислить, какие другие токены важны, и смешать их представления с этим весом.</p>
+      <div class="formula">
+        <div class="formula-label">Scaled Dot-Product Attention</div>
+        Attention(Q, K, V) = softmax( Q·Kᵀ / √d<sub>k</sub> ) · V
+      </div>
+      <p><b>Q (Query)</b> — «что я ищу», <b>K (Key)</b> — «что я могу предложить», <b>V (Value)</b> — «что я отдам, если меня выбрали». Все три получаются линейной проекцией входных эмбеддингов: Q=XW<sub>Q</sub>, K=XW<sub>K</sub>, V=XW<sub>V</sub>.</p>
+      <p>Деление на √d<sub>k</sub> — не косметика: без него дисперсия скалярного произведения растёт с размерностью, softmax «залипает» в one-hot и градиенты затухают. Это заметили ещё авторы Transformer в 2017-м.</p>
+      <div class="note">Именно матрица <code>Q·Kᵀ</code> размера n×n — источник всех проблем со сложностью. Все «эффективные» варианты ниже — это способы либо не строить эту матрицу целиком, либо не строить её вообще.</div>
+    </section>
+
+    <!-- 01 FULL -->
+    <section class="topic" id="full-attention">
+      <div class="topic-head">
+        <h2><span class="idx">01</span>Full (vanilla) Self-Attention</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span><span class="badge b-complexity">O(n²)</span></div>
+      </div>
+      <p class="dek">Transformer, Vaswani et al., 2017. Каждый токен видит каждый — включая себя. База для encoder-стека (BERT) и, в маскированном виде, для decoder-стека (GPT).</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Максимальная выразительность — прямой путь между любыми двумя токенами (path length = 1)</li>
+          <li>Отлично распараллеливается на GPU (в отличие от RNN)</li>
+          <li>Простая, хорошо изученная, стабильно обучается</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Compute растёт как n², память под attention-матрицу — так же</li>
+          <li>KV-кеш при инференсе линейно растёт с длиной контекста и числом голов</li>
+          <li>На очень длинном контексте (100K+) становится доминирующей статьёй расходов</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>Transformer (2017)</span><span>BERT</span><span>GPT-1/2</span><span>ViT</span><span>T5 (encoder)</span></div>
+    </section>
+
+    <!-- 02 MULTIHEAD -->
+    <section class="topic" id="multihead">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>Multi-Head Attention (MHA)</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Не новый механизм, а способ параллельно запустить несколько «под-attention» с меньшей размерностью, чтобы модель могла ловить разные типы зависимостей одновременно.</p>
+      <div class="formula">
+        <div class="formula-label">Multi-Head</div>
+        head<sub>i</sub> = Attention(QW<sub>i</sub><sup>Q</sup>, KW<sub>i</sub><sup>K</sup>, VW<sub>i</sub><sup>V</sup>)<br>
+        MultiHead(Q,K,V) = Concat(head<sub>1</sub>, …, head<sub>h</sub>) · W<sup>O</sup>
+      </div>
+      <p>Каждая голова работает в подпространстве размерности d<sub>model</sub>/h — суммарный compute почти не меняется относительно одной «толстой» головы, но выразительность растёт: одна голова может специализироваться на синтаксисе, другая — на кореференции, третья — на позиционных паттернах (это реально наблюдали в интерпретируемости, напр. BertViz).</p>
+      <div class="note">Ключевая деталь для инференса: у полного MHA <b>каждая</b> голова хранит свои K и V в кеше — отсюда и родилась проблема, которую решают MQA/GQA (см. §08).</div>
+    </section>
+
+    <!-- 03 CAUSAL/CROSS -->
+    <section class="topic" id="causal-cross">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>Causal (masked) vs Bidirectional vs Cross-Attention</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Это не отдельные «архитектуры», а маски/источники K,V поверх того же QKV-механизма — но различие принципиально для того, что модель умеет.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Вариант</th><th>Кто видит кого</th><th>Где</th><th>Зачем</th></tr>
+        <tr><td class="hl">Bidirectional</td><td>токен видит всех — и слева, и справа</td><td>BERT, encoder T5/ViT</td><td>понимание всего контекста сразу (классификация, эмбеддинги)</td></tr>
+        <tr><td class="hl">Causal (masked)</td><td>токен видит только себя и предыдущие</td><td>GPT-семейство, LLaMA, почти все совр. LLM</td><td>авторегрессивная генерация — нельзя «подглядывать» в будущее</td></tr>
+        <tr><td class="hl">Cross-attention</td><td>Q из одной последовательности, K/V — из другой</td><td>encoder-decoder (T5, Whisper, оригинальный Transformer-переводчик)</td><td>смешивать информацию между двумя разными последовательностями (напр. текст ↔ аудио)</td></tr>
+      </table></div>
+      <div class="note">Causal-маска реализуется прибавлением -∞ к верхнему треугольнику матрицы <code>QKᵀ</code> перед softmax — сам механизм не меняется, но фактическая работа сокращается вдвое (для полного attention это единственная «бесплатная» оптимизация — отсюда O(n²)/2 на картинке выше).</div>
+    </section>
+
+    <!-- 04 COMPLEXITY -->
+    <section class="topic" id="complexity">
+      <div class="topic-head"><h2><span class="idx">04</span>Проблема O(n²): почему вообще что-то изобретали</h2></div>
+      <p class="dek">При росте контекста с 1K до 128K токенов полный attention растёт в <b>16 384 раза</b> по compute, тогда как линейные механизмы — всего в 128 раз. Это и есть вся мотивация разделов 05–17.</p>
+      <div class="chart-box">
+        <div class="chart-title">Relative compute vs sequence length</div>
+        <div class="chart-sub">Условные единицы, логарифмическая шкала по Y. Иллюстрирует порядок роста, не точные FLOPs конкретной модели.</div>
+        <svg viewBox="0 0 640 300" width="100%" style="overflow:visible;">
+          <line x1="60" y1="260" x2="620" y2="260" stroke="#232c40" stroke-width="1"/>
+          <line x1="60" y1="20" x2="60" y2="260" stroke="#232c40" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#5b6584">
+            <line x1="60" y1="260.0" x2="620" y2="260.0" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="263.5" text-anchor="end">1</text>
+            <line x1="60" y1="203.1" x2="620" y2="203.1" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="206.6" text-anchor="end">10</text>
+            <line x1="60" y1="146.1" x2="620" y2="146.1" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="149.6" text-anchor="end">100</text>
+            <line x1="60" y1="89.2" x2="620" y2="89.2" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="92.7" text-anchor="end">1K</text>
+            <line x1="60" y1="32.2" x2="620" y2="32.2" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="35.7" text-anchor="end">16K</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#98a2ba" text-anchor="middle">
+            <text x="60" y="278">1K</text><text x="200" y="278">4K</text><text x="340" y="278">16K</text><text x="480" y="278">64K</text><text x="620" y="278">128K</text>
+          </g>
+          <path d="M 60.0 260.0 L 200.0 191.4 L 340.0 122.9 L 480.0 54.3 L 620.0 20.0" fill="none" stroke="#e0355c" stroke-width="2.2"/>
+          <path d="M 60.0 225.7 L 200.0 191.4 L 340.0 157.1 L 480.0 122.9 L 620.0 105.7" fill="none" stroke="#2cc4d9" stroke-width="2.2"/>
+          <path d="M 60.0 260.0 L 200.0 204.8 L 340.0 156.6 L 480.0 112.7 L 620.0 91.8" fill="none" stroke="#7c4dff" stroke-width="2.2"/>
+          <path d="M 60.0 260.0 L 200.0 225.7 L 340.0 191.4 L 480.0 157.1 L 620.0 140.0" fill="none" stroke="#3ecf8e" stroke-width="2.2"/>
+          <g>
+            <circle cx="620" cy="20.0" r="3.2" fill="#e0355c"/>
+            <circle cx="620" cy="105.7" r="3.2" fill="#2cc4d9"/>
+            <circle cx="620" cy="91.8" r="3.2" fill="#7c4dff"/>
+            <circle cx="620" cy="140.0" r="3.2" fill="#3ecf8e"/>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><i style="background:#e0355c"></i>Full attention · O(n²)</span>
+          <span><i style="background:#2cc4d9"></i>Sliding window (w=4K) · O(n·w)</span>
+          <span><i style="background:#7c4dff"></i>Sparse (~n·log n)</span>
+          <span><i style="background:#3ecf8e"></i>Linear / RWKV / Mamba · O(n)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 SPARSE -->
+    <section class="topic" id="sparse">
+      <div class="topic-head">
+        <h2><span class="idx">05</span>Sparse Attention</h2>
+        <div class="badges"><span class="badge b-legacy">largely legacy</span><span class="badge b-complexity">O(n√n) / O(n log n)</span></div>
+      </div>
+      <p class="dek">Идея: вместо всех n² пар считать только заранее заданный паттерн — локальные соседи + немного «глобальных» токенов + немного случайных.</p>
+      <p><b>Sparse Transformer</b> (OpenAI, 2019) чередовал strided и local паттерны по слоям. <b>Longformer</b> (2020) добавил «global tokens» (напр. [CLS]), которые видят и которых видят все. <b>BigBird</b> (2020) доказал, что комбинация local + global + random attention сохраняет теоретическую выразительность полного Transformer (universal approximator) при линейной-ish сложности.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Формальные теоретические гарантии выразительности (BigBird)</li>
+          <li>Существенно дешевле на длинных последовательностях</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Паттерн <b>фиксирован заранее</b> — не адаптируется к содержимому</li>
+          <li>Сложность реализации на GPU — нерегулярный доступ к памяти плохо ложится на матричные ядра</li>
+          <li>На практике FlashAttention сделал полный attention «достаточно быстрым», убив часть мотивации</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>Sparse Transformer</span><span>Longformer</span><span>BigBird</span><span>GPT-3 (чередование dense/sparse слоёв)</span></div>
+      <div class="note warn">Почему statusом стало «legacy»: жёстко заданный паттерн — это архитектурное решение вместо выученного. Современные модели (NSA, §16) переизобретают ту же идею, но <b>обучаемую</b>, а не хардкод.</div>
+      <details class="deep">
+        <summary>Развернуть: как устроен паттерн BigBird</summary>
+        <div class="inner">
+          <p>Три компонента маски суммируются (OR): <b>window</b> — каждый токен видит w соседей; <b>global</b> — фиксированный набор токенов (напр. первые g) видят и видимы всеми; <b>random</b> — r случайных дополнительных связей на токен. Итоговая плотность матрицы ~ (w+g+r)/n вместо 1 — при n≫w,g,r сложность приближается к линейной.</p>
+          <h5>Почему random-часть вообще нужна</h5>
+          <p>Она эмулирует свойство «small-world graph» — случайные рёбра резко сокращают путь между произвольными двумя узлами графа внимания (как в модели Erdős–Rényi), что математически и даёт гарантию universal approximation при полиномиальном числе слоёв.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 06 SLIDING -->
+    <section class="topic" id="sliding">
+      <div class="topic-head">
+        <h2><span class="idx">06</span>Sliding Window / Local Attention</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream (в гибридах)</span><span class="badge b-complexity">O(n·w)</span></div>
+      </div>
+      <p class="dek">Частный, но самый практичный случай sparse attention: каждый токен видит только фиксированное окно из w последних токенов. Просто, предсказуемо, отлично оптимизируется.</p>
+      <p><b>Mistral 7B</b> (2023) популяризировал это в применении к LLM с окном 4096, показав, что за счёт стека слоёв receptive field растёт линейно с глубиной (слой L видит эффективно L×w токенов назад — похоже на receptive field в CNN).</p>
+      <div class="note">Ключевой инсайт: «эффективный контекст» sliding window ≠ размер окна. При 32 слоях и окне 4096 теоретический receptive field — <b>32×4096 ≈ 131K</b> токенов, хотя каждый отдельный слой видит лишь 4K.</div>
+      <div class="usedin"><span>Mistral 7B / Mixtral</span><span>GPT-3 (чередующиеся слои)</span><span>Longformer (компонент)</span><span>Gemma 2 (чередование local/global)</span></div>
+      <div class="note warn">Слабое место: информация, которой больше w×L шагов назад, физически не может дойти напрямую — модель полагается на то, что она уже «сжалась» в состояние промежуточных токенов. Для задач retrieval на весь контекст (найти факт в начале документа) это узкое место — отсюда тренд на <b>гибриды</b>: чередовать local-слои с редкими full/global слоями (Gemma 2, GPT-OSS).</div>
+    </section>
+
+    <!-- 07 LINEAR -->
+    <section class="topic" id="linear">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>Linear Attention (kernel-based)</h2>
+        <div class="badges"><span class="badge b-niche">niche / research</span><span class="badge b-complexity">O(n)</span></div>
+      </div>
+      <p class="dek">Ключевой трюк: заменить softmax(QKᵀ)V на φ(Q)(φ(K)ᵀV) — произведение ассоциативно, поэтому можно сначала перемножить K и V (получив матрицу d×d, не зависящую от n), и только потом домножить на Q. n×n матрица никогда не материализуется.</p>
+      <div class="formula">
+        <div class="formula-label">Linear Attention</div>
+        softmax(QKᵀ)V &nbsp;<span class="cm">// n×n, O(n²)</span><br>
+        ≈ φ(Q)·(φ(K)ᵀ·V) &nbsp;<span class="cm">// (φ(K)ᵀV) — это d×d, O(n) по n</span>
+      </div>
+      <p>φ — некая feature map, которая приближает ядро softmax. <b>Linear Transformers</b> (Katharopoulos et al., 2020) использовали φ(x)=elu(x)+1. <b>Performer</b> (Google, 2020) применил FAVOR+ — случайные ортогональные признаки (random features), несмещённо приближающие softmax-ядро.</p>
+      <p>Важное следствие: в causal-режиме это можно переписать как рекуррентность — S<sub>t</sub> = S<sub>t-1</sub> + φ(k<sub>t</sub>)v<sub>t</sub>ᵀ, y<sub>t</sub> = φ(q<sub>t</sub>)ᵀS<sub>t</sub>. Отсюда прямая связь с RWKV/RetNet/Mamba (§10–12) — все они, по сути, варианты linear attention с разными правилами обновления состояния S.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Истинно O(n) и по compute, и по памяти</li>
+          <li>Естественно переходит в рекуррентную форму — O(1) память на шаг генерации</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Аппроксимация softmax почти всегда теряет качество на длинном контексте — состояние S фиксированного размера d×d не может хранить всё, что помнит полный KV-кеш</li>
+          <li>На практике проигрывали FlashAttention по факической скорости при коротком/среднем контексте</li>
+          <li>Обучение менее стабильно без доп. трюков (gating, нормализация состояния)</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>Linear Transformers</span><span>Performer</span><span>Linformer</span><span>RWKV (эволюция идеи)</span><span>RetNet (эволюция идеи)</span></div>
+      <div class="note warn">Почему не взлетело в чистом виде: качество аппроксимации softmax оказалось главным bottleneck, а не скорость — как только вышел FlashAttention (§09), полный attention стал достаточно быстрым, и «размен качества на скорость» перестал быть выгодным для большинства задач. Идея выжила не как замена softmax, а как <b>другая парадигма</b> (state-based) — см. RWKV/Mamba/RetNet.</div>
+    </section>
+
+    <!-- 08 MQA/GQA -->
+    <section class="topic" id="mqa-gqa">
+      <div class="topic-head">
+        <h2><span class="idx">08</span>Multi-Query (MQA) и Grouped-Query Attention (GQA)</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Это не про compute при обучении — это про инференс. Проблема не FLOPs, а <b>memory bandwidth</b>: на каждом шаге генерации нужно прочитать весь KV-кеш из HBM, и именно это, а не арифметика, доминирует по времени при генерации токен-за-токеном.</p>
+      <p><b>MQA</b> (Shazeer, 2019): все Q-головы остаются, но K и V — <b>общие на все головы</b>, всего одна K/V-проекция. KV-кеш уменьшается в h раз (h — число голов). <b>GQA</b> (2023, LLaMA 2/3, Mistral) — компромисс: головы делятся на группы, внутри группы K/V общие. Например 32 Q-головы → 8 KV-групп.</p>
+      <div class="chart-box">
+        <div class="chart-title">Относительный размер KV-кеша на токен</div>
+        <div class="chart-sub">MHA = 100% (базовая линия), при равном числе голов и head_dim</div>
+        <svg viewBox="0 0 640 260" width="100%">
+          <line x1="60" y1="220" x2="620" y2="220" stroke="#232c40" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#5b6584">
+            <line x1="60" y1="220" x2="620" y2="220" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="223" text-anchor="end">0</text>
+            <line x1="60" y1="170" x2="620" y2="170" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="173" text-anchor="end">25</text>
+            <line x1="60" y1="120" x2="620" y2="120" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="123" text-anchor="end">50</text>
+            <line x1="60" y1="70" x2="620" y2="70" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="73" text-anchor="end">75</text>
+            <line x1="60" y1="20" x2="620" y2="20" stroke="#1a2233" stroke-dasharray="2 3"/><text x="46" y="23" text-anchor="end">100%</text>
+          </g>
+          <rect x="84.5" y="20.0" width="91" height="200" fill="#e0355c" rx="3"/>
+          <rect x="224.5" y="170.0" width="91" height="50" fill="#7c4dff" rx="3"/>
+          <rect x="364.5" y="213.8" width="91" height="6.2" fill="#2cc4d9" rx="3"/>
+          <rect x="504.5" y="206.6" width="91" height="13.4" fill="#ff3d68" rx="3"/>
+          <g font-family="IBM Plex Mono" font-size="12" fill="#e7ebf5" text-anchor="middle">
+            <text x="130" y="14">100%</text><text x="270" y="164">25%</text><text x="410" y="207">3.1%</text><text x="550" y="200">6.7%</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="11" fill="#98a2ba" text-anchor="middle">
+            <text x="130" y="238">MHA</text><text x="270" y="238">GQA (8 групп)</text><text x="410" y="238">MQA</text><text x="550" y="238">MLA</text>
+          </g>
+        </svg>
+      </div>
+      <div class="note">GQA — это дефолт почти всех современных open-weight LLM (LLaMA 3, Mistral, Qwen 2, Gemma 2). Чистый MQA даёт максимальную экономию, но иногда заметно теряет в качестве по сравнению с MHA; GQA — практический sweet spot.</div>
+      <div class="usedin"><span>LLaMA 2/3</span><span>Mistral / Mixtral</span><span>Qwen 2/2.5</span><span>Gemma 2</span><span>PaLM (MQA)</span></div>
+    </section>
+
+    <!-- 09 FLASH -->
+    <section class="topic" id="flash">
+      <div class="topic-head">
+        <h2><span class="idx">09</span>FlashAttention</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span><span class="badge b-niche">не архитектура</span></div>
+      </div>
+      <p class="dek">Частая путаница: FlashAttention — это <b>не новый тип attention</b>. Это IO-aware алгоритм, который считает математически точно тот же full attention, но иначе организует доступ к памяти GPU.</p>
+      <p>Идея (Dao et al., 2022): не материализовать n×n матрицу в медленной HBM целиком. Вместо этого — tiling: разбить Q,K,V на блоки, которые помещаются в быструю SRAM, и считать softmax инкрементально (online softmax, тот же трюк, что в logsumexp-стабилизации), обновляя результат блок за блоком.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Точный результат — не аппроксимация (в отличие от linear attention)</li>
+          <li>2–4× ускорение и кратное снижение памяти относительно наивной реализации</li>
+          <li>Убил значительную часть мотивации для sparse/linear attention на средних длинах</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Всё ещё O(n²) по compute — просто с меньшей константой и без O(n²) памяти</li>
+          <li>На экстремально длинном контексте (1M+) даже с Flash это дорого</li>
+        </ul></div>
+      </div>
+      <div class="note">FlashAttention-2 (2023) и FlashAttention-3 (2024, для Hopper/H100) продолжили выжимать эффективность из железа. Это причина, по которой множество «эффективных attention» из 2020–2021 не пошли в продакшн — оказалось выгоднее оптимизировать точный алгоритм под железо, чем аппроксимировать математику.</div>
+    </section>
+
+    <!-- 10 RWKV -->
+    <section class="topic" id="rwkv">
+      <div class="topic-head">
+        <h2><span class="idx">10</span>RWKV — attention-free рекуррентность</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span><span class="badge b-complexity">O(n) / O(1) на шаг</span></div>
+      </div>
+      <p class="dek">RWKV (Receptance Weighted Key Value) полностью отказывается от attention-матрицы. Вместо неё — линейная рекуррентность, вдохновлённая RNN, но параллелизуемая при обучении, как Transformer.</p>
+      <p>Название — по компонентам: <b>R</b>eceptance (насколько прошлая информация «принимается» сейчас, гейт), <b>W</b>eight (обучаемый, зависящий от позиции decay-фактор), <b>K</b>ey, <b>V</b>alue. Обучение идёт в параллельной, «WKV»-свёрточной форме; инференс — в рекуррентной, с состоянием фиксированного размера (не растущим KV-кешем!).</p>
+      <div class="formula">
+        <div class="formula-label">WKV — упрощённая рекуррентность (RWKV-4)</div>
+        state<sub>t</sub> = decay·state<sub>t-1</sub> + exp(k<sub>t</sub>)·v<sub>t</sub><br>
+        y<sub>t</sub> = R<sub>t</sub> ⊙ (state<sub>t</sub> / norm<sub>t</sub>)
+      </div>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Инференс — O(1) память и compute на токен (не растёт с длиной контекста!)</li>
+          <li>Обучение параллелится почти как Transformer</li>
+          <li>Нет KV-кеша вообще — критично для edge/мобильного инференса</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Состояние фиксированного размера — теоретический потолок на «точный recall» очень старой информации (в отличие от полного KV-кеша, где старый токен доступен всегда точно)</li>
+          <li>Экосистема/тулинг менее зрелые, чем у Transformer</li>
+          <li>Сложнее «дообучать» интуиции о поведении, накопленные под Transformer</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>RWKV-4/5/6 (Eagle, Finch)</span><span>RWKV-7 (Goose)</span></div>
+      <div class="note">Прямая связь с §07: RWKV можно рассматривать как linear attention с data-dependent decay вместо константы — что отличает его и от простого Linear Transformer, и роднит с Mamba (§11) и RetNet (§12). Это семейство иногда называют «linear RNN» или «SSM-like» моделями.</div>
+    </section>
+
+    <!-- 11 MAMBA -->
+    <section class="topic" id="mamba">
+      <div class="topic-head">
+        <h2><span class="idx">11</span>Mamba / State Space Models (SSM)</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span><span class="badge b-complexity">O(n)</span></div>
+      </div>
+      <p class="dek">Формально не attention вовсе — родословная из теории управления (state space models), но решает ту же задачу и часто сравнивается напрямую. Важно понимать разницу, раз речь про NOVA TITAN, где рядом стоит RWKV-state.</p>
+      <p><b>S4</b> (Gu et al., 2021) впервые показал, что дискретизированные непрерывные SSM (h'(t)=Ah(t)+Bx(t), y(t)=Ch(t)) можно эффективно обучать на длинных последовательностях через специальную структурированную параметризацию матрицы A (HiPPO). <b>Mamba</b> (Gu & Dao, 2023) добавил <b>selectivity</b>: A, B, C стали зависеть от входа (data-dependent), а не быть константами — это и есть «S6». Ключевая инженерная часть — hardware-aware parallel scan, позволяющий обучать это быстро на GPU несмотря на рекуррентную природу.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Истинно O(n) при обучении и O(1) на шаг при инференсе</li>
+          <li>Selective SSM способен «забывать» нерелевантное и «запоминать» важное избирательно (в отличие от constant-decay RNN)</li>
+          <li>Сильные результаты на длинных последовательностях (геномика, аудио)</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Слабее чистого attention на задачах точного copy/retrieval из контекста (см. работы про "induction heads")</li>
+          <li>Отсюда тренд на гибриды: Mamba-слои + немного attention-слоёв (Jamba, Zamba)</li>
+        </ul></div>
+      </div>
+      <div class="usedin"><span>Mamba / Mamba-2</span><span>Jamba (AI21, гибрид с attention)</span><span>Zamba</span><span>Codestral Mamba</span></div>
+      <details class="deep">
+        <summary>Развернуть: Mamba-2 и связь с linear attention</summary>
+        <div class="inner">
+          <p>Mamba-2 (2024) формально доказал, что selective SSM и linear attention (§07) — частные случаи одного семейства "structured state space duality" (SSD): при определённой параметризации SSM-рекуррентность эквивалентна linear attention с матричным (не скалярным) состоянием. Это важная теоретическая рамка — RWKV, RetNet, Mamba и linear attention формально сближаются в одну алгебру «state + decay + gating», различаясь деталями параметризации.</p>
+        </div>
+      </details>
+    </section>
+
+    <!-- 12 RETNET -->
+    <section class="topic" id="retnet">
+      <div class="topic-head">
+        <h2><span class="idx">12</span>RetNet — Retentive Network</h2>
+        <div class="badges"><span class="badge b-niche">niche</span><span class="badge b-complexity">O(n) / O(1)</span></div>
+      </div>
+      <p class="dek">Microsoft, 2023. Заявлен как «преемник Transformer» с тезисом «impossible triangle решён»: одновременно параллельное обучение, низкая стоимость инференса и хорошее качество.</p>
+      <p>Механизм — retention — очень похож на linear attention с экспоненциальным decay, но, в отличие от RWKV, decay <b>не зависит от данных</b> (constant per-head decay γ), что упрощает математику и позволяет три эквивалентные формы вычисления одного и того же: <b>parallel</b> (для обучения, похоже на attention), <b>recurrent</b> (для инференса токен-за-токеном, O(1)) и <b>chunkwise recurrent</b> (гибрид — компромисс для длинных последовательностей, считать блоками).</p>
+      <div class="usedin"><span>RetNet</span><span>YOCO (производная работа)</span></div>
+      <div class="note warn">Почему не стало мейнстримом: constant (не data-dependent) decay оказался менее выразительным, чем selective-механизмы Mamba/RWKV-6+ — на практике селективность (умение решать, что забыть) даёт больше качества, чем выигрыш в простоте от константного decay. Идея chunkwise-вычисления, впрочем, прижилась и используется в других linear-attention реализациях.</div>
+    </section>
+
+    <!-- 13 TITANS -->
+    <section class="topic" id="titans">
+      <div class="topic-head">
+        <h2><span class="idx">13</span>Titans — обучаемая долговременная память</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span><span class="badge b-niche">2024, Google Research</span></div>
+      </div>
+      <p class="dek">Напрямую relevant для NOVA TITAN. Titans (Behrouz et al., Google, дек. 2024) — не замена attention, а <b>дополнительный модуль памяти</b>, который учится запоминать во время инференса (test-time learning), а не только во время обучения.</p>
+      <p>Ключевая идея — <b>«surprise»-based memory</b>: модуль памяти (сам по себе — маленькая MLP) обновляется по градиенту собственной внутренней ошибки предсказания — токены, которые сильно «удивляют» память (высокий градиент), запоминаются сильнее; ожидаемые, предсказуемые токены — слабее. Это прямая аналогия с человеческой памятью: неожиданное запоминается лучше рутинного.</p>
+      <div class="formula">
+        <div class="formula-label">Surprise-based memory update (упрощённо)</div>
+        M<sub>t</sub> = (1 − α<sub>t</sub>)·M<sub>t-1</sub> + θ<sub>t</sub>·S<sub>t</sub> &nbsp;<span class="cm">// α — забывание (decay), θ — темп обучения</span><br>
+        S<sub>t</sub> = η·S<sub>t-1</sub> − γ<sub>t</sub>·∇ℓ(M<sub>t-1</sub>; x<sub>t</sub>) &nbsp;<span class="cm">// S — «momentum» удивления, ℓ — internal loss памяти</span>
+      </div>
+      <p>Авторы предлагают три схемы интеграции с attention: <b>MAC</b> (Memory as Context — память подмешивается как доп. токены в контекст перед attention), <b>MAG</b> (Memory as Gate — память гейтится с output attention), <b>MAL</b> (Memory as Layer — память как отдельный слой в стеке). MAC показал наилучшие результаты на длинном контексте (2M+ токенов) в оригинальной работе.</p>
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы</h4><ul>
+          <li>Память обновляется <b>во время инференса</b>, а не только в обучении — ближе к «настоящей» памяти, а не просто длинному контексту</li>
+          <li>Комбинируется с любым attention/state-механизмом (не конкурент, а надстройка)</li>
+          <li>Явное разделение на short-term (attention) и long-term (нейронная память) — концептуально близко к когнитивной архитектуре</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы</h4><ul>
+          <li>Молодая идея (конец 2024) — мало проверена в масштабе, мало open-source воспроизведений</li>
+          <li>Внутренний градиентный шаг памяти на каждом токене — дополнительные вычисления и нетривиальная стабильность обучения</li>
+        </ul></div>
+      </div>
+      <div class="note">Для трёхуровневой Working/Short/Long памяти, которую планируется делать в NOVA TITAN — MAC-подобная схема (память как дополнительный «слой контекста» перед основным attention/state) выглядит самой естественной точкой интеграции с RWKV-state, т.к. не требует переписывать сам механизм внимания/рекуррентности.</div>
+      <div class="usedin"><span>Titans (Google, 2024)</span><span>концептуально близко: Neural Turing Machines, DNC, MemGPT (но это другой, orchestration-уровень)</span></div>
+    </section>
+
+    <!-- 14 MLA -->
+    <section class="topic" id="mla">
+      <div class="topic-head">
+        <h2><span class="idx">14</span>Multi-Head Latent Attention (MLA)</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span><span class="badge b-mainstream">уже в проде</span></div>
+      </div>
+      <p class="dek">DeepSeek-V2 (2024), затем V3/R1. Другой путь к маленькому KV-кешу, чем MQA/GQA: не уменьшать число голов, а <b>сжимать K и V в низкоразмерный латентный вектор</b> перед кешированием, разворачивая обратно «на лету».</p>
+      <p>Вместо кеширования полных K,V для каждой головы кешируется один компактный latent-вектор c<sub>t</sub> (напр. размерности 512 вместо тысяч), из которого K и V каждой головы восстанавливаются через обучаемые матрицы декомпрессии в момент использования. По заявлениям DeepSeek, это даёт экономию KV-кеша, сравнимую с MQA, но с качеством, близким к полному MHA — потому что сжатие обучаемое и специфично для данных, а не структурное урезание числа голов.</p>
+      <div class="usedin"><span>DeepSeek-V2</span><span>DeepSeek-V3</span><span>DeepSeek-R1</span></div>
+      <div class="note">MLA и GQA решают одну задачу (маленький KV-кеш) принципиально по-разному: GQA — это <b>меньше независимых KV-проекций</b>, MLA — это <b>сжатие информации</b> в latent-пространство. На графике в §08 видно, что MLA почти догоняет MQA по размеру кеша, не жертвуя так же сильно качеством.</div>
+    </section>
+
+    <!-- 15 DIFF -->
+    <section class="topic" id="diff">
+      <div class="topic-head">
+        <h2><span class="idx">15</span>Differential Attention</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span><span class="badge b-niche">Microsoft, 2024</span></div>
+      </div>
+      <p class="dek">DIFF Transformer (Ye et al., Microsoft, 2024). Идея взята из электроники — дифференциальные усилители подавляют общий шум, вычитая два сигнала.</p>
+      <div class="formula">
+        <div class="formula-label">Differential Attention</div>
+        DiffAttn(X) = ( softmax(Q<sub>1</sub>K<sub>1</sub>ᵀ/√d) − λ·softmax(Q<sub>2</sub>K<sub>2</sub>ᵀ/√d) ) · V
+      </div>
+      <p>Вычисляются <b>две</b> обычные softmax-attention карты (удвоенное число Q/K проекций той же суммарной размерности, что и одна голова MHA) и вычитаются с обучаемым коэффициентом λ. Идея — «шумные», нерелевантные веса attention похожи в обеих картах и взаимно гасятся, тогда как значимые (релевантные) веса различаются и усиливаются относительно шума.</p>
+      <div class="note">Заявленный эффект — более «острое», менее размазанное распределение внимания, что авторы связывают с лучшим long-context retrieval и меньшей склонностью к галлюцинациям. Статус — пока research-stage, не замечен массово в проде.</div>
+      <div class="usedin"><span>DIFF Transformer</span></div>
+    </section>
+
+    <!-- 16 NSA -->
+    <section class="topic" id="nsa">
+      <div class="topic-head">
+        <h2><span class="idx">16</span>Native Sparse Attention (NSA) и обучаемая разреженность</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span><span class="badge b-niche">DeepSeek, 2025</span></div>
+      </div>
+      <p class="dek">Возврат к идее §05 (sparse), но с уроком, извлечённым за 5 лет: паттерн разреженности должен быть <b>обучаемым и hardware-aligned</b>, а не хардкод.</p>
+      <p>NSA (DeepSeek, начало 2025) сочетает три параллельные ветки на каждый запрос: <b>compressed</b> (грубое, сжатое представление далёких блоков токенов), <b>selected</b> (модель сама, через обучаемый gating, выбирает наиболее релевантные блоки для точного внимания) и <b>sliding window</b> (недавний локальный контекст всегда точно). Результаты веток смешиваются обучаемым гейтом. Критически — авторы спроектировали это так, чтобы блочная структура ложилась на реальные GPU-ядра (в духе FlashAttention), а не была «теоретически разреженной, но медленной на железе», как ранние sparse-методы.</p>
+      <div class="note">Это иллюстрирует общий тренд 2024–2025: граница между «sparse attention», «linear attention» и «attention + retrieval» размывается — современные схемы почти всегда <b>гибридные и обучаемые</b>, а не одна чистая идея на весь стек.</div>
+      <div class="usedin"><span>NSA (DeepSeek)</span><span>концептуально близко: MoBA (Kimi), routing-attention подходы</span></div>
+    </section>
+
+    <!-- 17 POSENC -->
+    <section class="topic" id="posenc">
+      <div class="topic-head">
+        <h2><span class="idx">17</span>Позиционные схемы: как attention вообще узнаёт про порядок</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream</span></div>
+      </div>
+      <p class="dek">Сам механизм attention <b>перестановочно-инвариантен</b> — без явной добавки он не отличит «кот съел мышь» от «мышь съела кота». Позиционная схема — не вид attention, но выбор сильно завязан на то, какой attention используется.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Схема</th><th>Идея</th><th>Экстраполяция на большую длину</th><th>Где</th></tr>
+        <tr><td class="hl">Absolute (learned)</td><td>таблица эмбеддингов по индексу позиции</td><td class="bad">плохая — вне обученного диапазона неопределена</td><td>GPT-1/2, оригинальный Transformer</td></tr>
+        <tr><td class="hl">Sinusoidal</td><td>фиксированные sin/cos разных частот, складываются с эмбеддингом</td><td class="mid">слабая</td><td>Transformer (2017)</td></tr>
+        <tr><td class="hl">RoPE</td><td>поворот пар координат Q,K на угол ∝ позиции — относительная позиция «встроена» в скалярное произведение</td><td class="mid">средняя, но методы вроде NTK-scaling/YaRN сильно улучшают</td><td>LLaMA, Qwen, Mistral — почти весь совр. open-weight</td></tr>
+        <tr><td class="hl">ALiBi</td><td>прибавка линейного штрафа −m·|i−j| прямо к attention-логитам, без изменения Q/K</td><td class="good">хорошая, обучалась изначально ради экстраполяции</td><td>BLOOM, MPT</td></tr>
+        <tr><td class="hl">Без позиц. кодирования (NoPE)</td><td>только causal-маска — модель выучивает позицию неявно</td><td class="good">неожиданно хорошая в некоторых работах 2023+</td><td>research, отдельные слои в гибридах</td></tr>
+      </table></div>
+      <div class="note">RoPE стал де-факто стандартом не потому что лучший теоретически, а потому что удачно сочетается именно с dot-product attention (поворот сохраняет норму, относительная позиция получается «бесплатно» из свойств вращения) — но с state-based механизмами (RWKV/Mamba) позиционная информация чаще встроена иначе, через сам decay/state, отдельного RoPE там обычно не требуется.</div>
+    </section>
+
+    <!-- 18 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">18</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Механизм</th><th>Compute (train)</th><th>Память / инференс</th><th>KV-кеш</th><th>Точный recall</th><th>Статус</th></tr>
+        <tr><td><b>Full MHA</b></td><td>O(n²)</td><td>O(n²) / O(n)</td><td>растёт линейно с n</td><td class="good">отличный</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>GQA / MQA</b></td><td>O(n²)</td><td>O(n²) / O(n)</td><td>в 4–32× меньше MHA</td><td class="good">хороший</td><td><span class="badge b-mainstream">mainstream</span></td></tr>
+        <tr><td><b>MLA</b></td><td>O(n²)</td><td>O(n²) / O(n)</td><td>≈ как MQA, качество ≈ MHA</td><td class="good">хороший</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>Sliding Window</b></td><td>O(n·w)</td><td>O(n·w) / O(w)</td><td>константный (окно)</td><td class="mid">ограничен окном×слои</td><td><span class="badge b-mainstream">в гибридах</span></td></tr>
+        <tr><td><b>Sparse (BigBird)</b></td><td>O(n√n)</td><td>O(n√n)</td><td>меньше, но нерегулярно</td><td class="mid">средний</td><td><span class="badge b-legacy">legacy</span></td></tr>
+        <tr><td><b>Linear Attention</b></td><td>O(n)</td><td>O(n) / O(1)</td><td>state фикс. размера</td><td class="bad">слабый</td><td><span class="badge b-niche">niche</span></td></tr>
+        <tr><td><b>RWKV</b></td><td>O(n)</td><td>O(n) / O(1)</td><td>state фикс. размера</td><td class="mid">средний</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>Mamba / SSM</b></td><td>O(n)</td><td>O(n) / O(1)</td><td>state фикс. размера</td><td class="mid">средний</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>RetNet</b></td><td>O(n)</td><td>O(n) / O(1)</td><td>state фикс. размера</td><td class="mid">средний</td><td><span class="badge b-niche">niche</span></td></tr>
+        <tr><td><b>Titans (память)</b></td><td>+доп. к базовому</td><td>+доп. к базовому</td><td>отдельный neural-memory модуль</td><td class="good">хороший (long-term)</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td><b>NSA</b></td><td>~O(n) эффективно</td><td>низкое</td><td>компактный, блочный</td><td class="good">хороший (обучаемо)</td><td><span class="badge b-emerging">emerging</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 19 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">19</span>Таймлайн и «кто от чего отказался»</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">2017</div><h5>Scaled Dot-Product + Multi-Head Attention</h5><p>"Attention Is All You Need" — база всего, что ниже.</p></div>
+        <div class="tl-item"><div class="yr">2019</div><h5>Sparse Transformer, MQA</h5><p>Первые попытки укротить O(n²): фиксированные паттерны разреженности и общий KV на все головы.</p></div>
+        <div class="tl-item"><div class="yr">2020</div><h5>Linformer, Performer, Longformer, BigBird</h5><p>Пик исследований «эффективного attention» — множество линейных аппроксимаций softmax.</p></div>
+        <div class="tl-item"><div class="yr">2021</div><h5>S4 (structured state spaces)</h5><p>Первый сигнал, что state-space модели могут конкурировать с attention на длинных последовательностях.</p></div>
+        <div class="tl-item"><div class="yr">2022</div><h5>FlashAttention</h5><p>Переломный момент: точный full attention стал достаточно быстрым — резко снизилась мотивация аппроксимировать softmax ради скорости. Многие идеи 2020 года потеряли практическую актуальность.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>RWKV масштабируется, RetNet, GQA в LLaMA 2, Mistral (sliding window)</h5><p>Attention-free и гибридные подходы впервые показывают качество, сравнимое с Transformer в разумном масштабе. GQA становится индустриальным стандартом.</p></div>
+        <div class="tl-item"><div class="yr">2023–2024</div><h5>Mamba, Mamba-2</h5><p>Selective SSM — первая state-based архитектура, конкурирующая с Transformer на языковом моделировании «на равных» в независимых бенчмарках, а не только в статьях авторов.</p></div>
+        <div class="tl-item"><div class="yr">2024</div><h5>DeepSeek-V2 (MLA), Titans, DIFF Transformer</h5><p>Фокус смещается с «убрать attention» на «сделать KV-кеш умнее» (MLA) и «добавить память сверху» (Titans), а не заменять сам механизм.</p></div>
+        <div class="tl-item"><div class="yr">2025</div><h5>NSA, RWKV-7, гибридные архитектуры (Jamba-подобные)</h5><p>Консенсус смещается к гибридам: обучаемая разреженность + state-механизмы + немного полного attention для recall — а не «победа» одного чистого подхода.</p></div>
+      </div>
+      <h4 style="margin-top:32px; font-size:17px;">Почему конкретно отказались</h4>
+      <div class="grid2">
+        <div class="pill-box con"><h4>Sparse Transformer / фикс. паттерны</h4><ul><li>Паттерн задан руками, не данными — модель не может адаптироваться</li><li>FlashAttention сделал dense attention достаточно быстрым для большинства длин</li></ul></div>
+        <div class="pill-box con"><h4>Чистый Linear Attention (Performer и др.)</h4><ul><li>Аппроксимация softmax теряет качество recall на длинном контексте</li><li>Проиграли по факту скорости оптимизированному точному FlashAttention</li></ul></div>
+        <div class="pill-box con"><h4>RetNet (constant decay)</h4><ul><li>Data-independent decay менее выразителен, чем selective-механизмы (Mamba/RWKV-6+)</li></ul></div>
+        <div class="pill-box con"><h4>Absolute positional embeddings</h4><ul><li>Не экстраполируются за пределы обученной длины — RoPE/ALiBi вытеснили почти везде</li></ul></div>
+      </div>
+    </section>
+
+    <!-- 20 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">20</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек проекта: Titans-память + RWKV-state + local linear attention + RoPE.</p>
+      <div class="rec-card">
+        <h4>RWKV-state как «рабочая память» (fast, O(1) на шаг) <span class="tag">§10</span></h4>
+        <p>Хороший выбор для базового потока информации между токенами без растущего KV-кеша — совместим с целью «модель, а не просто длинный контекст». Ограничение (фикс. размер state → слабый точный recall) — ровно то, что должен компенсировать отдельный memory-модуль.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Local linear attention рядом с RWKV — не избыточность, а разделение задач <span class="tag">§07</span></h4>
+        <p>Если RWKV даёт «сжатую сводку» истории, локальное linear/windowed attention рядом может обеспечить точный доступ к недавнему контексту — похоже на то, зачем гибриды типа Jamba держат немного полного attention рядом с Mamba-слоями (§11).</p>
+      </div>
+      <div class="rec-card">
+        <h4>Titans-модуль — самое естественное место для Working/Short/Long памяти <span class="tag">§13</span></h4>
+        <p>MAC-схема (Memory as Context) не требует переписывать сам механизм внимания — память просто подмешивается как дополнительные «токены контекста» перед основным блоком. Это совместимо с планом на трёхуровневую память с promotion/decay/removal: у каждого уровня может быть свой decay-коэффициент α<sub>t</sub> и свой «internal loss» ℓ, определяющий, что считается «удивительным» для этого уровня.</p>
+      </div>
+      <div class="rec-card">
+        <h4>RoPE — стоит проверить, нужен ли он вообще там, где уже есть RWKV-state <span class="tag">§17</span></h4>
+        <p>State-механизмы обычно несут позиционную информацию неявно через сам процесс рекуррентного обновления. Если RoPE применяется только к «линейной attention»-части, а не к RWKV-части — это осмысленно; если дублируется поверх state — стоит явно проверить эмпирически, не мешает ли он.</p>
+      </div>
+    </section>
+
+    <!-- 21 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">21</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">2017</span> — <b>Attention Is All You Need</b> (Vaswani et al.) — оригинальный Transformer</li>
+        <li><span class="yr">2020</span> — <b>Rethinking Attention with Performers</b> (Choromanski et al.) — FAVOR+, linear attention</li>
+        <li><span class="yr">2020</span> — <b>Big Bird: Transformers for Longer Sequences</b> (Zaheer et al.)</li>
+        <li><span class="yr">2021</span> — <b>Efficiently Modeling Long Sequences with Structured State Spaces</b> (Gu et al.) — S4</li>
+        <li><span class="yr">2022</span> — <b>FlashAttention</b> (Dao et al.) и <b>FlashAttention-2</b> (2023)</li>
+        <li><span class="yr">2023</span> — <b>RWKV: Reinventing RNNs for the Transformer Era</b> (Peng et al.)</li>
+        <li><span class="yr">2023</span> — <b>Retentive Network</b> (Sun et al.) — RetNet</li>
+        <li><span class="yr">2023</span> — <b>GQA: Training Generalized Multi-Query Transformer Models</b> (Ainslie et al.)</li>
+        <li><span class="yr">2023</span> — <b>Mamba: Linear-Time Sequence Modeling with Selective State Spaces</b> (Gu & Dao)</li>
+        <li><span class="yr">2024</span> — <b>Transformers are SSMs</b> (Mamba-2, Dao & Gu)</li>
+        <li><span class="yr">2024</span> — <b>DeepSeek-V2</b> — Multi-Head Latent Attention</li>
+        <li><span class="yr">2024</span> — <b>Titans: Learning to Memorize at Test Time</b> (Behrouz et al., Google Research)</li>
+        <li><span class="yr">2024</span> — <b>Differential Transformer</b> (Ye et al., Microsoft)</li>
+        <li><span class="yr">2025</span> — <b>Native Sparse Attention</b> (DeepSeek)</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+// build mobile nav mirror of desktop nav, and active-link highlighting
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>

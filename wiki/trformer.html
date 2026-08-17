@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformer — полный разбор</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717;
+  --bg-alt:#1c1c1c;
+  --surface:#212121;
+  --surface-2:#262626;
+  --border:#3a3a3a;
+  --border-soft:#2b2b2b;
+  --text:#eeeeee;
+  --text-dim:#a3a3a3;
+  --text-faint:#6b6b6b;
+  --violet:#7c4dff;
+  --magenta:#e0356f;
+  --amber:#ff3d68;
+  --cyan:#2cc4d9;
+  --green:#3ecf8e;
+  --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --display: 'Space Grotesk', var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,61,104,0.06), transparent 60%),
+    radial-gradient(900px 500px at 10% 0%, rgba(255,61,104,0.04), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15.5px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-0.01em; color:#fff; margin:0 0 .5em;}
+code, .mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+.wrap{display:flex; max-width:1400px; margin:0 auto;}
+
+.toc{
+  position:sticky; top:0; align-self:flex-start;
+  width:262px; flex-shrink:0; height:100vh; overflow-y:auto;
+  padding:28px 18px 40px 26px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.toc::-webkit-scrollbar{width:6px;}
+.toc::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.toc-brand{display:flex; align-items:center; gap:8px; margin-bottom:22px;}
+.toc-brand .dot{width:9px;height:9px;border-radius:2px; background:var(--heat);}
+.toc-brand span{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--text-faint); text-transform:uppercase;}
+.toc nav{display:flex; flex-direction:column; gap:1px;}
+.toc .grp-label{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 6px; padding-left:10px;}
+.toc a{
+  display:flex; align-items:baseline; gap:8px;
+  color:var(--text-dim); font-size:13.3px; padding:6px 10px; border-radius:6px;
+  border-left:2px solid transparent;
+}
+.toc a .n{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.toc a:hover{background:var(--surface); color:var(--text); text-decoration:none;}
+.toc a.active{color:#fff; border-left-color:var(--amber); background:var(--surface);}
+.toc-status{margin-top:22px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; background:var(--surface); font-size:11.5px; color:var(--text-faint); line-height:1.5;}
+.toc-status b{color:var(--text-dim); font-weight:500;}
+.toc-related{margin-top:14px; padding:12px 12px; border:1px solid var(--border-soft); border-radius:8px; font-size:11.5px; color:var(--text-faint); line-height:1.7;}
+.toc-related b{color:var(--text-dim); font-weight:500; display:block; margin-bottom:4px;}
+.toc-mobile{display:none;}
+
+main{flex:1; min-width:0; padding:0 0 120px;}
+.container{max-width:900px; margin:0 auto; padding:0 48px;}
+
+.hero{padding:64px 48px 40px; border-bottom:1px solid var(--border-soft); position:relative; overflow:hidden;}
+.hero::before{content:"";position:absolute; inset:0; background:
+  repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 64px);
+  pointer-events:none;}
+.eyebrow{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+.eyebrow::before{content:""; width:22px; height:1px; background:var(--amber);}
+.hero h1{font-size:clamp(30px,4vw,44px); max-width:820px; line-height:1.08; background:linear-gradient(180deg,#fff, #c9cfe0); -webkit-background-clip:text; background-clip:text; color:transparent;}
+.hero .lede{max-width:660px; color:var(--text-dim); font-size:16px; margin-top:14px;}
+.hero .lede b{color:var(--text);font-weight:600;}
+
+.stream-box{margin-top:32px; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:18px 20px 16px;}
+.stream-box .st-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:2px;}
+.stream-box .st-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+
+section.topic{padding:56px 0; border-bottom:1px solid var(--border-soft);}
+section.topic:last-of-type{border-bottom:none;}
+.topic-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:6px;}
+.topic-head h2{font-size:25px; display:flex; align-items:baseline; gap:12px;}
+.topic-head h2 .idx{font-family:var(--mono); font-size:13px; color:var(--text-faint); font-weight:400;}
+.badges{display:flex; gap:6px; flex-wrap:wrap;}
+.badge{font-family:var(--mono); font-size:10.5px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap; height:fit-content;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-complexity{color:var(--green); border-color:rgba(62,207,142,0.35); background:rgba(62,207,142,0.08);}
+
+.dek{color:var(--text-dim); font-size:14.5px; max-width:680px; margin-bottom:22px;}
+
+.formula{
+  font-family:var(--mono); font-size:14.5px; color:#fff; background:var(--surface);
+  border:1px solid var(--border); border-left:2px solid var(--amber);
+  padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; overflow-x:auto;
+}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px;}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:20px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px;}
+.pill-box h4{font-size:12px; text-transform:uppercase; letter-spacing:.08em; font-family:var(--mono); font-weight:500; margin-bottom:10px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:13.8px;}
+.pill-box li{margin-bottom:6px;}
+
+.usedin{display:flex; flex-wrap:wrap; gap:7px; margin:16px 0;}
+.usedin span{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border-soft); padding:4px 10px; border-radius:6px;}
+
+details.deep{margin-top:20px; border:1px solid var(--border-soft); border-radius:10px; background:var(--bg-alt); overflow:hidden;}
+details.deep summary{
+  cursor:pointer; padding:13px 18px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim);
+  display:flex; align-items:center; gap:8px; list-style:none; user-select:none;
+}
+details.deep summary::-webkit-details-marker{display:none;}
+details.deep summary::before{content:"▸"; color:var(--amber); transition:transform .15s ease; display:inline-block;}
+details.deep[open] summary::before{transform:rotate(90deg);}
+details.deep summary:hover{color:#fff;}
+details.deep .inner{padding:2px 18px 20px; color:var(--text-dim); font-size:14px;}
+details.deep .inner p:last-child{margin-bottom:0;}
+details.deep .inner h5{color:var(--text); font-size:13.5px; margin:14px 0 6px; font-family:var(--sans); font-weight:600;}
+
+.note{
+  border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06);
+  border-radius:8px; padding:12px 16px; font-size:13.6px; color:var(--text-dim); margin:18px 0;
+  display:flex; gap:10px;
+}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+.note.ref{border-color:rgba(44,196,217,0.3); background:rgba(44,196,217,0.06);}
+.note.ref::before{content:"↗"; color:var(--cyan); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:20px 0; border:1px solid var(--border-soft); border-radius:10px;}
+table{border-collapse:collapse; width:100%; min-width:640px; font-size:13.3px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border-soft); white-space:nowrap;}
+th{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface); font-weight:500;}
+td{color:var(--text-dim);}
+td.hl, td b{color:var(--text); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+td.good{color:var(--green);}
+td.bad{color:var(--red);}
+td.mid{color:var(--amber);}
+
+.chart-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:20px 20px 10px; margin:22px 0;}
+.chart-box .chart-title{font-family:var(--mono); font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+.chart-box .chart-sub{font-size:12.5px; color:var(--text-faint); margin-bottom:10px;}
+.legend{display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; padding-bottom:6px;}
+.legend span{font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px;}
+.legend i{width:10px; height:10px; border-radius:2px; display:inline-block;}
+
+.timeline{position:relative; margin:28px 0 0; padding-left:26px; border-left:1px solid var(--border);}
+.tl-item{position:relative; padding-bottom:26px;}
+.tl-item::before{content:""; position:absolute; left:-31px; top:3px; width:9px; height:9px; border-radius:50%; background:var(--bg); border:2px solid var(--amber);}
+.tl-item .yr{font-family:var(--mono); font-size:11.5px; color:var(--amber); margin-bottom:3px;}
+.tl-item h5{margin:0 0 4px; font-size:14.5px; color:#fff; font-family:var(--sans); font-weight:600;}
+.tl-item p{color:var(--text-dim); font-size:13.6px; margin:0;}
+
+.rec-card{background:linear-gradient(180deg, var(--surface), var(--bg-alt)); border:1px solid var(--border-soft); border-radius:12px; padding:22px 24px; margin:16px 0;}
+.rec-card h4{font-size:15px; display:flex; align-items:center; gap:8px;}
+.rec-card h4 .tag{font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:12px; background:rgba(62,207,142,0.12); color:var(--green); border:1px solid rgba(62,207,142,0.3);}
+.rec-card p{color:var(--text-dim); font-size:13.8px; margin:8px 0 0;}
+
+.kicker{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase;}
+footer{padding:50px 48px 10px; color:var(--text-faint); font-size:12.5px; border-top:1px solid var(--border-soft); margin-top:20px;}
+footer a{color:var(--text-dim);}
+.readlist{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+.readlist li{background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:12px 16px; font-size:13.5px; color:var(--text-dim);}
+.readlist b{color:var(--text); font-weight:500;}
+.readlist .yr{font-family:var(--mono); color:var(--text-faint); font-size:11.5px;}
+
+.walk-list{list-style:none; margin:0; padding:0; display:grid; gap:8px;}
+.walk-list li{font-size:13.4px; color:var(--text-dim); padding-left:16px; position:relative;}
+.walk-list li::before{content:"—"; position:absolute; left:0; color:var(--text-faint);}
+.walk-list b{color:var(--text); font-weight:600;}
+.ex-token{font-family:var(--mono); color:var(--text); background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:12.5px;}
+
+@media(max-width:980px){
+  .toc{display:none;}
+  .toc-mobile{display:block; position:sticky; top:0; z-index:20; background:var(--bg-alt); border-bottom:1px solid var(--border-soft);}
+  .toc-mobile summary{padding:14px 20px; font-family:var(--mono); font-size:12px; color:var(--text-dim); cursor:pointer; letter-spacing:.06em; text-transform:uppercase;}
+  .toc-mobile[open] nav{display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:0 16px 16px;}
+  .toc-mobile nav a{color:var(--text-dim); font-size:12.8px; padding:6px 8px;}
+  .container, .hero{padding-left:22px; padding-right:22px;}
+}
+</style>
+</head>
+<body>
+
+<details class="toc-mobile" id="tocMobile">
+  <summary>Оглавление</summary>
+  <nav id="navMobile"></nav>
+</details>
+
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-brand"><span class="dot"></span><span>transformer / полный разбор</span></div>
+    <nav id="navDesktop">
+      <div class="grp-label">Основы</div>
+      <a href="#basics"><span class="n">00</span>Один слой: residual stream</a>
+      <a href="#families"><span class="n">01</span>Encoder / Decoder / Enc-Dec</a>
+      <a href="#encoder"><span class="n">02</span>Encoder-only (BERT)</a>
+      <a href="#decoder"><span class="n">03</span>Decoder-only (GPT)</a>
+      <a href="#encdec"><span class="n">04</span>Encoder-Decoder (T5)</a>
+      <div class="grp-label">Обучение</div>
+      <a href="#objectives"><span class="n">05</span>MLM / CLM / span corruption</a>
+      <a href="#tokenization"><span class="n">06</span>Токенизация: BPE и родня</a>
+      <a href="#norm"><span class="n">07</span>LayerNorm vs RMSNorm</a>
+      <a href="#scaling"><span class="n">08</span>Scaling laws</a>
+      <div class="grp-label">За пределами текста</div>
+      <a href="#vit"><span class="n">09</span>Vision Transformer</a>
+      <a href="#dominance"><span class="n">10</span>Почему decoder-only победил</a>
+      <a href="#efficient"><span class="n">11</span>Длинный контекст (указатель)</a>
+      <a href="#hybrids"><span class="n">12</span>Гибриды и MoE (указатель)</a>
+      <a href="#multimodal"><span class="n">13</span>Мультимодальные transformers</a>
+      <div class="grp-label">Итог</div>
+      <a href="#timeline"><span class="n">14</span>Таймлайн семейств моделей</a>
+      <a href="#comparison"><span class="n">15</span>Сравнительная таблица</a>
+      <a href="#recommendation"><span class="n">16</span>Для NOVA TITAN</a>
+      <a href="#reading"><span class="n">17</span>Что почитать</a>
+    </nav>
+    <div class="toc-status">
+      <b>Легенда статусов:</b><br>
+      mainstream — стандарт сегодня · emerging — новое, ещё не везде · legacy — почти не используют · niche — узкое применение
+    </div>
+    <div class="toc-related">
+      <b>Смежные заметки</b>
+      Attention: все виды и разница<br>
+      Embeddings: полный курс<br>
+      MLP / FFN и активации<br>
+      Positional encoding: RoPE и др.
+    </div>
+  </aside>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">reference note · deep learning · капстоун серии</div>
+      <h1>Transformer целиком: как attention, MLP и позиция складываются в архитектуру</h1>
+      <p class="lede">Предыдущие заметки разбирали <b>детали</b> — виды attention, эмбеддинги, MLP-активации, позиционные схемы. Эта — про то, как они <b>собираются вместе</b> в слой, слой — в стек, а стек — в конкретные семейства моделей (BERT / GPT / T5), и почему индустрия в итоге почти целиком сошлась на одном из трёх вариантов.</p>
+
+      <div class="stream-box">
+        <div class="st-title">Один слой Transformer — residual stream</div>
+        <div class="st-sub">Central object — не attention и не MLP, а сам поток x: оба блока читают из него и дописывают обратно свой вклад</div>
+        <svg viewBox="0 0 620 300" width="100%" style="overflow:visible;">
+          <text x="90" y="14" font-family="IBM Plex Mono" font-size="11" fill="#a3a3a3" text-anchor="middle">x (вход слоя)</text>
+          <line x1="90" y1="20" x2="90" y2="280" stroke="#ff3d68" stroke-width="2.5"/>
+          <text x="90" y="296" font-family="IBM Plex Mono" font-size="10.5" fill="#a3a3a3" text-anchor="middle">→ следующий слой</text>
+
+          <!-- branch 1: attention -->
+          <path d="M 90 55 L 180 42" stroke="#3a3a3a" stroke-width="1.5" fill="none"/>
+          <rect x="180" y="28" width="380" height="66" rx="8" fill="#212121" stroke="#3a3a3a"/>
+          <text x="370" y="55" font-family="IBM Plex Mono" font-size="12.5" fill="#eeeeee" text-anchor="middle">RMSNorm → Multi-Head Attention</text>
+          <text x="370" y="75" font-family="IBM Plex Mono" font-size="10.5" fill="#6b6b6b" text-anchor="middle">(+ RoPE, + GQA — см. заметки Attention / Positional)</text>
+          <path d="M 180 84 L 90 110" stroke="#3a3a3a" stroke-width="1.5" fill="none"/>
+          <circle cx="90" cy="110" r="11" fill="#171717" stroke="#ff3d68" stroke-width="2"/>
+          <text x="90" y="114" font-family="IBM Plex Mono" font-size="13" fill="#ff3d68" text-anchor="middle">+</text>
+
+          <!-- branch 2: MLP -->
+          <path d="M 90 155 L 180 142" stroke="#3a3a3a" stroke-width="1.5" fill="none"/>
+          <rect x="180" y="128" width="380" height="66" rx="8" fill="#212121" stroke="#3a3a3a"/>
+          <text x="370" y="155" font-family="IBM Plex Mono" font-size="12.5" fill="#eeeeee" text-anchor="middle">RMSNorm → FFN (SwiGLU)</text>
+          <text x="370" y="175" font-family="IBM Plex Mono" font-size="10.5" fill="#6b6b6b" text-anchor="middle">(см. заметку MLP / FFN)</text>
+          <path d="M 180 184 L 90 210" stroke="#3a3a3a" stroke-width="1.5" fill="none"/>
+          <circle cx="90" cy="210" r="11" fill="#171717" stroke="#ff3d68" stroke-width="2"/>
+          <text x="90" y="214" font-family="IBM Plex Mono" font-size="13" fill="#ff3d68" text-anchor="middle">+</text>
+        </svg>
+        <p style="font-size:12.8px; color:var(--text-faint); margin:10px 0 0;">Розовая линия — <b>residual stream</b>: тот же самый поток x идёт сквозь весь стек слоёв почти без изменений, attention и MLP лишь <i>добавляют</i> к нему свой вклад через «+». Это не деталь реализации — именно поэтому глубокие трансформеры вообще обучаемы (градиент имеет прямой путь через сложение, а не только через блоки).</p>
+      </div>
+    </div>
+
+    <div class="container">
+
+    <!-- 00 BASICS -->
+    <section class="topic" id="basics">
+      <div class="topic-head"><h2><span class="idx">00</span>Один слой целиком: зачем residual stream</h2></div>
+      <p class="dek">Слой Transformer — это не «attention, потом MLP» как две последовательные трансформации входа. Это attention и MLP как два <b>независимых модуля чтения-записи</b> в общий поток x, который проходит сквозь весь стек почти без изменений.</p>
+      <div class="formula">
+        <div class="formula-label">Один слой (Pre-Norm, современный стандарт)</div>
+        x = x + Attention(RMSNorm(x))<br>
+        x = x + FFN(RMSNorm(x))
+      </div>
+      <p>Почему это важно понимать именно так: каждый блок (attention/MLP) видит нормализованную копию x, вычисляет какую-то добавку, и эта добавка <b>складывается</b> с исходным x — сам x при этом никуда не «преобразуется» целиком. За N слоёв x накапливает N·2 таких добавок. Это и называют residual stream — общая метафора, которую использует, например, интерпретируемость (mechanistic interpretability): думать про модель не как про пайплайн трансформаций, а как про общую «доску», на которую разные части сети что-то пишут.</p>
+      <div class="note">Прямое следствие для градиентов: производная суммы x+f(x) по x содержит слагаемое 1 (от самого x) независимо от того, что происходит внутри f. Поэтому градиент имеет короткий путь напрямую через residual-связи, даже если f (attention или MLP) в какой-то момент почти не пропускает градиент — сеть на 80+ слоёв вообще не обучалась бы без этого свойства.</div>
+    </section>
+
+    <!-- 01 FAMILIES -->
+    <section class="topic" id="families">
+      <div class="topic-head"><h2><span class="idx">01</span>Три архитектурных семейства</h2></div>
+      <p class="dek">Из одного и того же строительного блока (§00) собирают три принципиально разных по применению архитектуры — отличие не в attention/MLP как таковых, а в том, <b>что видит каждый токен</b> и <b>чем обучающий сигнал служит моделью</b>.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Семейство</th><th>Маска внимания</th><th>Типичная задача</th><th>Пример</th></tr>
+        <tr><td class="hl">Encoder-only</td><td>bidirectional (видит всё сразу)</td><td>понимание/классификация, эмбеддинги</td><td>BERT</td></tr>
+        <tr><td class="hl">Decoder-only</td><td>causal (только себя и прошлое)</td><td>генерация текста</td><td>GPT-семейство, LLaMA</td></tr>
+        <tr><td class="hl">Encoder-Decoder</td><td>encoder — bidirectional, decoder — causal + cross-attention к encoder</td><td>seq2seq: перевод, суммаризация</td><td>T5, BART, оригинальный Transformer</td></tr>
+      </table></div>
+      <div class="note">Важно: «causal vs bidirectional» — это то же самое разделение, что уже разбиралось в заметке про attention (§03 там). Здесь это разделение поднимается на уровень архитектуры целиком, а не отдельного слоя.</div>
+    </section>
+
+    <!-- 02 ENCODER -->
+    <section class="topic" id="encoder">
+      <div class="topic-head">
+        <h2><span class="idx">02</span>Encoder-only: BERT и семья</h2>
+        <div class="badges"><span class="badge b-mainstream">для эмбеддингов/классификации</span><span class="badge b-legacy">для генерации не подходит</span></div>
+      </div>
+      <p class="dek">Каждый токен видит весь входной текст сразу — и то, что было до него, и то, что после. Это делает архитектуру непригодной для генерации текста слева-направо (модель бы «подглядывала» в будущее), но отличной там, где нужно <b>понять весь текст целиком</b>.</p>
+      <div class="usedin"><span>BERT</span><span>RoBERTa</span><span>DeBERTa</span><span>основа для sentence-эмбеддингов (см. заметку Embeddings §03–04)</span></div>
+      <div class="note">Сегодняшняя ниша encoder-only — почти исключительно генерация эмбеддингов и задачи классификации/NER, а не «общение с моделью» — эту роль перехватили decoder-only LLM (§03), которые могут делать классификацию тоже, просто через генерацию текста-ответа.</div>
+    </section>
+
+    <!-- 03 DECODER -->
+    <section class="topic" id="decoder">
+      <div class="topic-head">
+        <h2><span class="idx">03</span>Decoder-only: GPT и почти всё сегодня</h2>
+        <div class="badges"><span class="badge b-mainstream">доминирующая архитектура</span></div>
+      </div>
+      <p class="dek">Каждый токен видит только себя и предыдущие — causal-маска. Модель обучается предсказывать следующий токен (autoregressive), и это же — способ, которым она генерирует текст на инференсе: один токен за раз, каждый следующий обусловлен всеми предыдущими.</p>
+      <p>Ключевое архитектурное упрощение относительно encoder-decoder: не нужно двух разных стеков и cross-attention между ними (§04) — один и тот же стек слоёв обрабатывает и «понимание» промпта, и «генерацию» ответа, потому что для модели это буквально одна и та же операция (предсказать следующий токен), применённая непрерывно.</p>
+      <div class="usedin"><span>GPT-1/2/3/4</span><span>LLaMA / LLaMA 2/3</span><span>Mistral</span><span>Qwen</span><span>практически весь совр. фронтир LLM</span></div>
+    </section>
+
+    <!-- 04 ENCDEC -->
+    <section class="topic" id="encdec">
+      <div class="topic-head">
+        <h2><span class="idx">04</span>Encoder-Decoder: T5 и seq2seq</h2>
+        <div class="badges"><span class="badge b-niche">niche сегодня</span></div>
+      </div>
+      <p class="dek">Оригинальная архитектура Transformer (2017) — два отдельных стека. Encoder видит весь вход bidirectional и строит его представление; decoder генерирует выход авторегрессивно, но на каждом шаге ещё и смотрит на encoder через <b>cross-attention</b> (см. заметку Attention §03).</p>
+      <div class="formula">
+        <div class="formula-label">Decoder-слой в encoder-decoder архитектуре — на один блок больше</div>
+        x = x + SelfAttention(Norm(x)) &nbsp;<span class="cm">// causal, только на уже сгенерированное</span><br>
+        x = x + CrossAttention(Norm(x), encoder_output) &nbsp;<span class="cm">// Q из decoder, K/V из encoder</span><br>
+        x = x + FFN(Norm(x))
+      </div>
+      <p>Естественно подходит для задач с чётким разделением «вход одного рода → выход другого рода»: перевод (текст на языке A → текст на языке B), суммаризация (длинный текст → короткий). Explicit разделение на encoder/decoder исторически казалось архитектурно оправданным для такой асимметрии.</p>
+      <div class="usedin"><span>T5</span><span>BART</span><span>оригинальный Transformer (перевод)</span><span>Whisper (аудио→текст)</span></div>
+      <div class="note warn">Почему потеснили decoder-only: любую seq2seq-задачу можно переформулировать как одну последовательность («переведи: {текст} → {перевод}») и решить одним decoder-only стеком без отдельного encoder — см. §10 про то, почему индустрия в основном выбрала этот путь для LLM.</div>
+    </section>
+
+    <!-- 05 OBJECTIVES -->
+    <section class="topic" id="objectives">
+      <div class="topic-head"><h2><span class="idx">05</span>Чему учат модель: objectives предобучения</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Objective</th><th>Идея</th><th>Архитектура</th></tr>
+        <tr><td class="hl">MLM (Masked LM)</td><td>случайно замаскировать ~15% токенов, предсказать их по остальному (bidirectional) контексту</td><td>Encoder-only (BERT)</td></tr>
+        <tr><td class="hl">CLM (Causal LM)</td><td>предсказать следующий токен по всем предыдущим — простейшая и сегодня доминирующая цель</td><td>Decoder-only (GPT)</td></tr>
+        <tr><td class="hl">Span corruption</td><td>замаскировать не отдельные токены, а целые span'ы (несколько подряд идущих токенов), предсказать их как decoder-выход</td><td>Encoder-Decoder (T5)</td></tr>
+        <tr><td class="hl">Prefix-LM</td><td>bidirectional внимание на «префиксе» (напр. вопросе), causal — на «продолжении» (ответе), в одном стеке</td><td>Гибридная маска в decoder-only</td></tr>
+      </table></div>
+      <div class="note">CLM выиграл конкуренцию не потому, что математически превосходит MLM — а потому что это ровно та же самая задача, что нужна для генерации на инференсе. MLM-модели нужно было дообучать под generation отдельно; CLM-модель уже «из коробки» делает именно то, для чего её тренировали.</div>
+    </section>
+
+    <!-- 06 TOKENIZATION -->
+    <section class="topic" id="tokenization">
+      <div class="topic-head"><h2><span class="idx">06</span>Токенизация: как текст становится последовательностью чисел</h2></div>
+      <p class="dek">До эмбеддинга (см. заметку Embeddings) текст сначала режется на токены — и то, каким алгоритмом это сделано, ощутимо влияет на длину последовательности, качество на редких языках и способность модели работать с числами/кодом.</p>
+      <div class="table-wrap"><table>
+        <tr><th>Метод</th><th>Идея</th><th>Где</th></tr>
+        <tr><td class="hl">BPE (Byte-Pair Encoding)</td><td>жадно объединять самые частые пары символов/подслов в новые токены, пока не достигнут целевой размер словаря</td><td>GPT-2/3/4, LLaMA</td></tr>
+        <tr><td class="hl">WordPiece</td><td>похоже на BPE, но объединение выбирается по максимизации правдоподобия языковой модели, а не просто по частоте</td><td>BERT</td></tr>
+        <tr><td class="hl">Unigram / SentencePiece</td><td>обратный подход: начать с большого словаря и постепенно удалять наименее полезные токены</td><td>T5, LLaMA (через SentencePiece как обёртку)</td></tr>
+        <tr><td class="hl">Byte-level BPE</td><td>работает на уровне сырых байт UTF-8, а не символов — гарантированно нет проблемы «незнакомого символа» ни для какого языка/эмодзи</td><td>GPT-2 и новее</td></tr>
+      </table></div>
+      <div class="note">Практическое следствие для не-английских языков (включая русский): токенизатор, обученный преимущественно на английских текстах, режет кириллицу на заметно больше токенов на то же количество символов — тот же текст «стоит» дороже по контексту и compute, чем эквивалентный английский.</div>
+    </section>
+
+    <!-- 07 NORM -->
+    <section class="topic" id="norm">
+      <div class="topic-head">
+        <h2><span class="idx">07</span>LayerNorm vs RMSNorm</h2>
+        <div class="badges"><span class="badge b-mainstream">RMSNorm — совр. стандарт</span></div>
+      </div>
+      <p class="dek">Заметка про MLP уже разбирала, <i>где</i> ставить нормализацию (Pre-LN vs Post-LN) — здесь про то, <i>какую именно</i> формулу нормализации использовать.</p>
+      <div class="formula">
+        <div class="formula-label">LayerNorm vs RMSNorm</div>
+        LayerNorm(x) = γ·(x − mean(x))/√(var(x)+ε) + β &nbsp;<span class="cm">// центрирует (вычитает среднее) и масштабирует</span><br>
+        RMSNorm(x) = γ·x/√(mean(x²)+ε) &nbsp;<span class="cm">// только масштабирует по RMS, без вычитания среднего и без сдвига β</span>
+      </div>
+      <p>RMSNorm (Zhang & Sennrich, 2019) убрал вычисление среднего (mean) и сдвиг (β) — эмпирически оказалось, что именно масштабирование (re-scaling), а не центрирование (re-centering) даёт основную часть пользы нормализации. Меньше операций — быстрее вычисляется, при сравнимом качестве.</p>
+      <div class="usedin"><span>LayerNorm: BERT, GPT-2/3, T5</span><span>RMSNorm: LLaMA, Mistral, Qwen, почти весь совр. open-weight LLM</span></div>
+    </section>
+
+    <!-- 08 SCALING -->
+    <section class="topic" id="scaling">
+      <div class="topic-head">
+        <h2><span class="idx">08</span>Scaling laws: сколько модели, сколько данных</h2>
+        <div class="badges"><span class="badge b-mainstream">определяет, как обучают LLM сегодня</span></div>
+      </div>
+      <p class="dek">Kaplan et al. (2020, OpenAI) первыми показали, что loss предсказуемо убывает степенным законом от размера модели, объёма данных и compute — причём достаточно гладко, чтобы экстраполировать результаты маленьких прогонов на бюджет обучения GPT-3-масштаба.</p>
+      <div class="chart-box">
+        <div class="chart-title">Compute-optimal frontier: почему Chinchilla изменил рецепт обучения</div>
+        <div class="chart-sub">Loss (ниже = лучше) vs compute (лог-шкала). Иллюстративная кривая по общей форме результата Hoffmann et al., 2022.</div>
+        <svg viewBox="0 0 640 300" width="100%" style="overflow:visible;">
+          <line x1="55" y1="260" x2="620" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <line x1="55" y1="20" x2="55" y2="260" stroke="#3a3a3a" stroke-width="1"/>
+          <g font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b">
+            <line x1="55" y1="240.0" x2="620" y2="240.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="243" text-anchor="end">4.0</text>
+            <line x1="55" y1="190.0" x2="620" y2="190.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="193" text-anchor="end">3.5</text>
+            <line x1="55" y1="140.0" x2="620" y2="140.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="143" text-anchor="end">3.0</text>
+            <line x1="55" y1="90.0" x2="620" y2="90.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="93" text-anchor="end">2.5</text>
+            <line x1="55" y1="40.0" x2="620" y2="40.0" stroke="#2b2b2b" stroke-dasharray="2 3"/><text x="43" y="43" text-anchor="end">2.0</text>
+          </g>
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#a3a3a3" text-anchor="middle">
+            <text x="55" y="278">1e21</text><text x="196" y="278">1e22</text><text x="337" y="278">1e23</text><text x="479" y="278">1e24</text><text x="620" y="278">1e25 FLOPs</text>
+          </g>
+          <path d="M 55.0 240.0 L 69.1 218.1 L 83.2 206.9 L 97.4 197.7 L 111.5 189.8 L 125.6 182.6 L 139.8 175.9 L 153.9 169.7 L 168.0 163.9 L 182.1 158.3 L 196.2 152.9 L 210.4 147.8 L 224.5 142.9 L 238.6 138.1 L 252.7 133.5 L 266.9 129.0 L 281.0 124.6 L 295.1 120.3 L 309.3 116.1 L 323.4 112.0 L 337.5 108.0 L 351.6 104.1 L 365.7 100.3 L 379.9 96.5 L 394.0 92.8 L 408.1 89.1 L 422.3 85.6 L 436.4 82.0 L 450.5 78.5 L 464.6 75.1 L 478.8 71.7 L 492.9 68.4 L 507.0 65.1 L 521.1 61.8 L 535.2 58.6 L 549.4 55.4 L 563.5 52.3 L 577.6 49.1 L 591.8 46.1 L 605.9 43.0 L 620.0 40.0" fill="none" stroke="#3ecf8e" stroke-width="2.2"/>
+          <circle cx="408.1" cy="89.1" r="5.5" fill="#3ecf8e" stroke="#fff" stroke-width="1.5"/>
+          <text x="415" y="80" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">Chinchilla-optimal (тот же compute)</text>
+          <circle cx="408.1" cy="124.1" r="5.5" fill="#e0355c" stroke="#fff" stroke-width="1.5"/>
+          <text x="415" y="132" font-family="IBM Plex Mono" font-size="11" fill="#eeeeee">Модель как GPT-3 (недообучена)</text>
+          <line x1="408.1" y1="89.1" x2="408.1" y2="124.1" stroke="#6b6b6b" stroke-width="1" stroke-dasharray="2 3"/>
+        </svg>
+      </div>
+      <p><b>Chinchilla</b> (Hoffmann et al., 2022, DeepMind) уточнил рецепт Kaplan: при фиксированном compute-бюджете модели вроде GPT-3 оказались <b>слишком большими относительно объёма данных</b> — модель поменьше, обученная на большем числе токенов при том же суммарном compute, достигает более низкого loss. Практическое правило Chinchilla — обучать примерно на ~20 токенов данных на каждый параметр модели.</p>
+      <div class="note warn">Важная оговорка: правило «20 токенов на параметр» — оптимально только если цель одна — минимизировать loss при обучении. Если модель потом ещё и обслуживать (инференс миллионы раз), меньшая модель, переобученная на данных сверх «Chinchilla-optimal» точки, часто выгоднее по совокупной стоимости — именно поэтому многие открытые модели (LLaMA и др.) сознательно обучены дольше, чем предписывает чистый Chinchilla-рецепт.</div>
+    </section>
+
+    <!-- 09 VIT -->
+    <section class="topic" id="vit">
+      <div class="topic-head">
+        <h2><span class="idx">09</span>Vision Transformer: тот же блок, другой вход</h2>
+        <div class="badges"><span class="badge b-mainstream">mainstream в CV</span></div>
+      </div>
+      <p class="dek">ViT (Dosovitskiy et al., 2020) показал: тот же самый Transformer-блок (§00) без каких-либо архитектурных изменений в attention/MLP отлично работает на изображениях — нужно только придумать, как превратить картинку в последовательность «токенов».</p>
+      <p>Решение — разрезать изображение на неперекрывающиеся патчи (напр. 16×16 пикселей), каждый патч линейно спроецировать в вектор той же размерности, что и токен-эмбеддинг, и подать эту последовательность «патч-токенов» в обычный encoder-only Transformer с bidirectional attention (§02).</p>
+      <div class="note">Это подтверждает мысль, проходящую через все четыре заметки серии: Transformer как архитектура — на удивление модальность-агностичен. Attention/MLP/positional-схемы не знают и не заботятся о том, что именно они обрабатывают — текст, патчи изображения или что-то ещё, лишь бы вход был превращён в последовательность векторов.</div>
+      <div class="usedin"><span>ViT</span><span>DeiT</span><span>visual backbone в CLIP/SigLIP (см. заметку Embeddings §08)</span></div>
+    </section>
+
+    <!-- 10 DOMINANCE -->
+    <section class="topic" id="dominance">
+      <div class="topic-head"><h2><span class="idx">10</span>Почему decoder-only вытеснил encoder-decoder в LLM</h2></div>
+      <div class="grid2">
+        <div class="pill-box"><h4>Архитектурная простота</h4><ul>
+          <li>Один стек вместо двух — проще инфраструктура обучения и инференса, меньше типов слоёв для оптимизации</li>
+          <li>Нет отдельного cross-attention механизма, который нужно отдельно поддерживать</li>
+        </ul></div>
+        <div class="pill-box"><h4>Универсальность через формат</h4><ul>
+          <li>Любую задачу (перевод, суммаризация, QA, код) можно выразить как «продолжи текст» — не нужна архитектура под конкретный тип задачи</li>
+          <li>In-context learning (few-shot через сам промпт) естественно работает именно в авторегрессивной постановке</li>
+        </ul></div>
+      </div>
+      <div class="note">Encoder-decoder не «хуже» математически на своих исходных задачах (перевод, суммаризация) — при сравнимом бюджете параметров результаты часто сопоставимы. Победила не архитектура с лучшим качеством на фиксированной задаче, а архитектура, которая одна закрывает произвольное число задач без переобучения под каждую — то, что нужно для LLM как универсального инструмента, а не специализированной seq2seq-модели.</div>
+    </section>
+
+    <!-- 11 EFFICIENT -->
+    <section class="topic" id="efficient">
+      <div class="topic-head"><h2><span class="idx">11</span>Длинный контекст и эффективные варианты attention</h2></div>
+      <p class="dek">Полный self-attention внутри слоя — O(n²), и это узкое место всей архитектуры на длинном контексте.</p>
+      <div class="note ref">Подробный разбор — в отдельной заметке <b>Attention: все виды и разница</b>: sliding window, sparse attention, GQA/MQA/MLA, FlashAttention, RWKV/Mamba/RetNet как attention-free альтернативы, Titans как надстройка-память. Здесь не дублируем — просто фиксируем, что выбор конкретного attention-механизма (§00 внутри слоя) ортогонален архитектурному семейству (§01): GQA или sliding window одинаково применимы что в decoder-only GPT, что в encoder-only BERT.</div>
+    </section>
+
+    <!-- 12 HYBRIDS -->
+    <section class="topic" id="hybrids">
+      <div class="topic-head"><h2><span class="idx">12</span>Гибриды и Mixture-of-Experts</h2></div>
+      <p class="dek">Тот же принцип модульности: FFN-блок внутри слоя (§00) можно заменить на Mixture-of-Experts, не трогая ничего вокруг — ни attention, ни residual stream, ни архитектурное семейство.</p>
+      <div class="note ref">Подробности — в заметке <b>MLP / FFN и активации</b>: SwiGLU как стандарт, устройство MoE-routing, load balancing, Mixture-of-Depths как ещё один вид conditional compute. Общая идея, повторяющаяся в обеих смежных заметках: современные архитектуры почти всегда собраны из независимых, взаимозаменяемых блоков (какое attention + какой FFN + какая позиционная схема), а не являются монолитным неделимым дизайном.</div>
+    </section>
+
+    <!-- 13 MULTIMODAL -->
+    <section class="topic" id="multimodal">
+      <div class="topic-head">
+        <h2><span class="idx">13</span>Мультимодальные / unified transformers</h2>
+        <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      </div>
+      <p class="dek">Раз ViT (§09) показал, что изображение — это просто другая последовательность токенов, следующий логичный шаг — обрабатывать текст, изображения, аудио одним и тем же decoder-only стеком одновременно, а не склеивать отдельные энкодеры через адаптер.</p>
+      <div class="grid2">
+        <div class="pill-box"><h4>Adapter-подход (более распространён сегодня)</h4><ul>
+          <li>Отдельный visual encoder (часто CLIP-подобный, см. Embeddings §08) + проекция его выхода в пространство токенов LLM</li>
+          <li>LLM-часть остаётся decoder-only text-моделью, просто с добавленными «визуальными токенами» в начале контекста</li>
+        </ul></div>
+        <div class="pill-box"><h4>Unified-подход (более нативный, но сложнее)</h4><ul>
+          <li>Единый словарь токенов на все модальности (текст + дискретизированные изображения/аудио), одна модель, один objective (CLM) на всё сразу</li>
+          <li>Меньше архитектурных швов, но сложнее сбалансировать данные разных модальностей при обучении</li>
+        </ul></div>
+      </div>
+    </section>
+
+    <!-- 14 TIMELINE -->
+    <section class="topic" id="timeline">
+      <div class="topic-head"><h2><span class="idx">14</span>Таймлайн семейств моделей</h2></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="yr">2017</div><h5>Transformer (encoder-decoder)</h5><p>Оригинальная архитектура для машинного перевода — обе половины сразу, с cross-attention.</p></div>
+        <div class="tl-item"><div class="yr">2018</div><h5>GPT-1, BERT</h5><p>Разделение на decoder-only (генерация) и encoder-only (понимание) как два разных направления развития.</p></div>
+        <div class="tl-item"><div class="yr">2019</div><h5>GPT-2, T5, RMSNorm (публикация)</h5><p>T5 систематизирует span-corruption objective и encoder-decoder как «текст-в-текст» универсальный формат.</p></div>
+        <div class="tl-item"><div class="yr">2020</div><h5>GPT-3, ViT, Kaplan scaling laws</h5><p>Decoder-only демонстрирует few-shot in-context learning на масштабе; Transformer выходит за пределы текста.</p></div>
+        <div class="tl-item"><div class="yr">2022</div><h5>Chinchilla scaling laws</h5><p>Уточнение рецепта: меньше параметров, больше данных при том же compute — меняет то, как обучают все последующие крупные модели.</p></div>
+        <div class="tl-item"><div class="yr">2023</div><h5>LLaMA закрепляет «современный decoder-only рецепт»</h5><p>RMSNorm + SwiGLU + RoPE + GQA становится де-факто шаблоном для большинства открытых моделей.</p></div>
+        <div class="tl-item"><div class="yr">2023–2024</div><h5>Мультимодальные LLM (LLaVA, GPT-4V, Gemini)</h5><p>Adapter-подход временно доминирует как более простой путь дать текстовой LLM «зрение».</p></div>
+        <div class="tl-item"><div class="yr">2024–2025</div><h5>MoE в проде, гибриды с state-space, unified-мультимодальность</h5><p>Модульность архитектуры (§12) становится нормой — компоненты смешивают и подбирают под задачу, а не берут «одну из трёх канонических архитектур» целиком.</p></div>
+      </div>
+    </section>
+
+    <!-- 15 COMPARISON -->
+    <section class="topic" id="comparison">
+      <div class="topic-head"><h2><span class="idx">15</span>Сводная таблица</h2></div>
+      <div class="table-wrap"><table>
+        <tr><th>Семейство</th><th>Objective</th><th>Сильная сторона</th><th>Статус</th></tr>
+        <tr><td><b>Encoder-only</b></td><td>MLM</td><td>эмбеддинги, классификация</td><td><span class="badge b-mainstream">жив в своей нише</span></td></tr>
+        <tr><td><b>Decoder-only</b></td><td>CLM</td><td>универсальная генерация, in-context learning</td><td><span class="badge b-mainstream">доминирующая архитектура</span></td></tr>
+        <tr><td><b>Encoder-Decoder</b></td><td>span corruption / denoising</td><td>чёткий seq2seq (перевод, суммаризация)</td><td><span class="badge b-niche">niche сегодня</span></td></tr>
+        <tr><td><b>ViT (encoder-only на патчах)</b></td><td>классификация/contrastive</td><td>computer vision</td><td><span class="badge b-mainstream">mainstream в CV</span></td></tr>
+      </table></div>
+    </section>
+
+    <!-- 16 RECOMMENDATION -->
+    <section class="topic" id="recommendation">
+      <div class="topic-head"><h2><span class="idx">16</span>Как это соотносится с NOVA TITAN</h2></div>
+      <p class="dek">Заметка специально под текущий стек проекта: собственный block.py/model.py без готовых nn.Transformer-блоков.</p>
+      <div class="rec-card">
+        <h4>Residual stream — организующий принцип для block.py, даже с нестандартными компонентами <span class="tag">§00</span></h4>
+        <p>Раз архитектура заменяет обычное attention на RWKV-state + linear attention и добавляет Titans-память, стоит явно сохранить сам принцип residual stream (x = x + вклад_блока) как общую структуру TitanBlock — даже если то, что «пишет» в поток, нестандартно, сам механизм сложения и его роль для градиентного потока остаётся тем же самым и так же критичен на глубоком стеке.</p>
+      </div>
+      <div class="rec-card">
+        <h4>Decoder-only как архитектурное семейство — вероятно, правильный выбор по умолчанию <span class="tag">§03 §10</span></h4>
+        <p>Если цель — компаньон с памятью, ведущий диалог, а не encoder-стиль задачи (классификация/эмбеддинги отдельным вызовом), causal/decoder-only маска по всей архитектуре — естественный выбор, тот же самый, что выбрало практически всё индустрия по тем же причинам универсальности.</p>
+      </div>
+      <div class="rec-card">
+        <h4>RMSNorm — согласуется с тем, что norm.py уже сделан фабрикой <span class="tag">§07</span></h4>
+        <p>Раз выбор нормализации уже вынесен в отдельный конфигурируемый компонент, RMSNorm — разумный дефолт (дешевле LayerNorm, стандарт в LLaMA-подобном рецепте) с возможностью переключиться на LayerNorm, если для какой-то части архитектуры (напр. взаимодействие с Titans-памятью) потребуется явное центрирование сигнала.</p>
+      </div>
+    </section>
+
+    <!-- 17 READING -->
+    <section class="topic" id="reading" style="border-bottom:none;">
+      <div class="topic-head"><h2><span class="idx">17</span>Что почитать дальше</h2></div>
+      <ul class="readlist">
+        <li><span class="yr">2017</span> — <b>Attention Is All You Need</b> (Vaswani et al.) — оригинальный encoder-decoder Transformer</li>
+        <li><span class="yr">2018</span> — <b>BERT: Pre-training of Deep Bidirectional Transformers</b> (Devlin et al.)</li>
+        <li><span class="yr">2018</span> — <b>Improving Language Understanding by Generative Pre-Training</b> (Radford et al.) — GPT-1</li>
+        <li><span class="yr">2019</span> — <b>Root Mean Square Layer Normalization</b> (Zhang & Sennrich) — RMSNorm</li>
+        <li><span class="yr">2019</span> — <b>Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</b> (Raffel et al.) — T5</li>
+        <li><span class="yr">2020</span> — <b>Language Models are Few-Shot Learners</b> (Brown et al.) — GPT-3</li>
+        <li><span class="yr">2020</span> — <b>Scaling Laws for Neural Language Models</b> (Kaplan et al.)</li>
+        <li><span class="yr">2020</span> — <b>An Image is Worth 16x16 Words</b> (Dosovitskiy et al.) — ViT</li>
+        <li><span class="yr">2022</span> — <b>Training Compute-Optimal Large Language Models</b> (Hoffmann et al.) — Chinchilla</li>
+        <li><span class="yr">2023</span> — <b>LLaMA: Open and Efficient Foundation Language Models</b> (Touvron et al.)</li>
+      </ul>
+    </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Личная справочная заметка. Формулы упрощены для интуиции — перед реализацией сверяйтесь с оригинальными статьями. Часть серии: Attention · Embeddings · MLP/FFN · Positional Encoding · Transformer. · связано с проектом <span class="mono">NOVA TITAN</span>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var desktopNav = document.getElementById('navDesktop');
+  document.getElementById('navMobile').innerHTML = desktopNav.innerHTML;
+
+  var links = document.querySelectorAll('.toc a');
+  var sections = Array.from(document.querySelectorAll('section.topic[id]'));
+
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0] && sections[0].id;
+    for (var i=0;i<sections.length;i++){
+      if (sections[i].offsetTop <= y) current = sections[i].id;
+    }
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+});
+</script>
+</body>
+</html>
