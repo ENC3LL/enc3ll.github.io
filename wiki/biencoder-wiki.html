@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bi-Encoder Wiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#171717; --bg-alt:#1c1c1c; --surface:#212121; --surface-2:#262626;
+  --border:#3a3a3a; --border-soft:#2b2b2b;
+  --text:#eeeeee; --text-dim:#a3a3a3; --text-faint:#6b6b6b;
+  --violet:#7c4dff; --magenta:#e0356f; --amber:#ff3d68; --cyan:#2cc4d9; --green:#3ecf8e; --red:#e0355c;
+  --heat: linear-gradient(90deg,#5b1030 0%,#a01340 32%,#e0355c 62%,#ff3d68 88%);
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'IBM Plex Sans',-apple-system,system-ui,sans-serif;
+  --display:'Space Grotesk',var(--sans);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0; background:radial-gradient(1100px 550px at 88% -10%, rgba(255,61,104,0.06), transparent 60%), var(--bg); color:var(--text); font-family:var(--sans); font-size:15.3px; line-height:1.62; -webkit-font-smoothing:antialiased;}
+::selection{background:rgba(255,61,104,0.30);}
+a{color:var(--amber); text-decoration:none;}
+a:hover{text-decoration:underline;}
+h1,h2,h3,h4{font-family:var(--display); font-weight:600; letter-spacing:-.01em; color:#fff; margin:0 0 .5em;}
+code,.mono{font-family:var(--mono);}
+p{margin:0 0 1em;}
+
+.app{display:flex; max-width:1440px; margin:0 auto; min-height:100vh;}
+.sidebar{
+  width:290px; flex-shrink:0; height:100vh; position:sticky; top:0; overflow-y:auto;
+  padding:22px 14px 40px 22px; border-right:1px solid var(--border-soft);
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+.sidebar::-webkit-scrollbar{width:6px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border); border-radius:3px;}
+.brand{display:flex; align-items:center; gap:9px; margin-bottom:6px;}
+.brand .dot{width:10px;height:10px;border-radius:3px; background:var(--heat);}
+.brand span{font-family:var(--mono); font-size:12px; letter-spacing:.12em; color:#fff; text-transform:uppercase; font-weight:600;}
+.brand-sub{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); margin:0 0 20px 19px;}
+
+.tree{list-style:none; margin:0; padding:0;}
+.tree > li{margin-bottom:1px;}
+.tree .node{
+  display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:7px;
+  color:var(--text-dim); font-size:13.4px; cursor:pointer; border-left:2px solid transparent;
+}
+.tree .node:hover{background:var(--surface); color:#fff;}
+.tree .node.active{background:var(--surface); color:#fff; border-left-color:var(--amber);}
+.tree .node .num{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); width:20px; flex-shrink:0;}
+.tree ul{list-style:none; margin:2px 0 4px 20px; padding-left:10px; border-left:1px dashed var(--border-soft);}
+.tree ul .node{font-size:12.6px; padding:5px 10px;}
+.tree .grp{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); margin:16px 0 5px 10px;}
+
+main{flex:1; min-width:0; padding:36px 48px 100px;}
+@media(max-width:900px){main{padding:24px 20px 80px;} .sidebar{display:none;}}
+
+.stage-tracker{display:flex; gap:4px; flex-wrap:wrap; margin-bottom:28px; padding:10px 12px; background:var(--surface); border:1px solid var(--border-soft); border-radius:9px;}
+.stage-pill{font-family:var(--mono); font-size:10.5px; padding:4px 9px; border-radius:20px; color:var(--text-faint); border:1px solid var(--border-soft); white-space:nowrap;}
+.stage-pill.active{color:#fff; border-color:var(--amber); background:rgba(255,61,104,0.12);}
+
+.page{display:none;}
+.page.active{display:block;}
+
+.page-eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:9px; margin-bottom:10px;}
+.page-eyebrow::before{content:""; width:18px; height:1px; background:var(--amber);}
+.page h1{font-size:clamp(24px,3vw,32px); margin-bottom:10px;}
+.page .dek{color:var(--text-dim); font-size:14.5px; max-width:720px; margin-bottom:26px;}
+
+.badges{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;}
+.badge{font-family:var(--mono); font-size:10.3px; padding:3px 9px; border-radius:20px; border:1px solid; letter-spacing:.03em; white-space:nowrap;}
+.b-mainstream{color:var(--amber); border-color:rgba(255,61,104,0.4); background:rgba(255,61,104,0.08);}
+.b-legacy{color:var(--text-faint); border-color:var(--border); background:rgba(255,255,255,0.02); text-decoration-line:line-through; text-decoration-color:rgba(107,107,107,0.6);}
+.b-emerging{color:var(--cyan); border-color:rgba(44,196,217,0.4); background:rgba(44,196,217,0.08);}
+.b-niche{color:var(--violet); border-color:rgba(124,77,255,0.4); background:rgba(124,77,255,0.08);}
+.b-bad{color:var(--red); border-color:rgba(224,53,92,0.4); background:rgba(224,53,92,0.08);}
+
+.formula{font-family:var(--mono); font-size:14px; color:#fff; background:var(--surface); border:1px solid var(--border); border-left:2px solid var(--amber); padding:13px 17px; border-radius:0 8px 8px 0; margin:16px 0; overflow-x:auto;}
+.formula .cm{color:var(--text-faint);}
+.formula-label{font-family:var(--mono); font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; margin-bottom:7px;}
+
+.code-block{background:#141414; border:1px solid var(--border); border-radius:9px; margin:16px 0; overflow:hidden;}
+.code-block .cb-label{font-family:var(--mono); font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em; padding:9px 15px; border-bottom:1px solid var(--border-soft); background:var(--surface);}
+.code-block pre{margin:0; padding:15px 17px; overflow-x:auto; font-family:var(--mono); font-size:12.6px; line-height:1.65; color:#d8dce6;}
+.code-block .c1{color:var(--text-faint);}
+.code-block .kw{color:var(--amber);}
+.code-block .fn{color:var(--cyan);}
+
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0;}
+@media(max-width:700px){.grid2{grid-template-columns:1fr;}}
+.pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:9px; padding:15px 17px;}
+.pill-box h4{font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; font-family:var(--mono); font-weight:500; margin-bottom:9px;}
+.pill-box.pro h4{color:var(--green);}
+.pill-box.con h4{color:var(--red);}
+.pill-box ul{margin:0; padding-left:17px; color:var(--text-dim); font-size:13.5px;}
+.pill-box li{margin-bottom:5px;}
+
+.lib-box{background:linear-gradient(180deg,var(--surface),var(--bg-alt)); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px; margin:18px 0;}
+.lib-box h4{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--cyan); margin-bottom:10px; display:flex; align-items:center; gap:7px;}
+.lib-box h4::before{content:"⚙"; color:var(--cyan);}
+.lib-table{width:100%; border-collapse:collapse; font-size:13px;}
+.lib-table td{padding:6px 8px; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top;}
+.lib-table td:first-child{color:#fff; font-family:var(--mono); font-size:12.3px; white-space:nowrap; width:1%;}
+.lib-table tr:last-child td{border-bottom:none;}
+
+.note{border:1px solid rgba(255,61,104,0.25); background:rgba(255,61,104,0.06); border-radius:8px; padding:12px 15px; font-size:13.3px; color:var(--text-dim); margin:16px 0; display:flex; gap:9px;}
+.note::before{content:"◆"; color:var(--amber); flex-shrink:0;}
+.note.warn{border-color:rgba(224,53,92,0.3); background:rgba(224,53,92,0.06);}
+.note.warn::before{content:"!"; color:var(--red); font-weight:700;}
+.note.ref{border-color:rgba(44,196,217,0.3); background:rgba(44,196,217,0.06);}
+.note.ref::before{content:"↗"; color:var(--cyan); font-weight:700;}
+
+.table-wrap{overflow-x:auto; margin:16px 0; border:1px solid var(--border-soft); border-radius:9px;}
+table.data{border-collapse:collapse; width:100%; min-width:520px; font-size:13px;}
+table.data th,table.data td{text-align:left; padding:9px 13px; border-bottom:1px solid var(--border-soft);}
+table.data th{font-family:var(--mono); font-size:10.3px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); background:var(--surface);}
+table.data td{color:var(--text-dim);}
+table.data td b{color:var(--text);}
+table.data tr:last-child td{border-bottom:none;}
+.good{color:var(--green);} .bad{color:var(--red);} .mid{color:var(--amber);}
+
+.diagram-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px 14px; margin:18px 0;}
+.diagram-box .dt{font-family:var(--mono); font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px;}
+
+.hub-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0;}
+@media(max-width:700px){.hub-grid{grid-template-columns:1fr;}}
+.hub-card{background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; padding:16px 18px; cursor:pointer; transition:border-color .1s;}
+.hub-card:hover{border-color:var(--amber);}
+.hub-card h4{font-size:14.5px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.hub-card p{font-size:13px; color:var(--text-dim); margin:0;}
+
+.pagenav{display:flex; justify-content:space-between; align-items:center; margin-top:44px; padding-top:22px; border-top:1px solid var(--border-soft);}
+.pagenav a{font-family:var(--mono); font-size:12.5px; color:var(--text-dim); border:1px solid var(--border-soft); padding:9px 15px; border-radius:8px; display:flex; align-items:center; gap:6px;}
+.pagenav a:hover{color:#fff; border-color:var(--amber); text-decoration:none;}
+.pagenav .sp{flex:1;}
+
+.checklist{list-style:none; margin:0; padding:0; display:grid; gap:9px;}
+.checklist li{display:flex; gap:10px; align-items:flex-start; font-size:13.6px; color:var(--text-dim); background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:11px 14px;}
+.checklist li .chk{color:var(--red); font-family:var(--mono); font-size:13px; flex-shrink:0; margin-top:1px;}
+.checklist b{color:#fff;}
+
+footer{padding:40px 48px 10px; color:var(--text-faint); font-size:12px; border-top:1px solid var(--border-soft); margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="dot"></span><span>Bi-Encoder Wiki</span></div>
+    <div class="brand-sub">архитектура · компоненты · реализация</div>
+
+    <ul class="tree" id="tree">
+      <li><div class="node" data-page="overview"><span class="num">0</span>Что такое Bi-Encoder</div></li>
+
+      <li><div class="grp">Вход</div></li>
+      <li><div class="node" data-page="tokenizer"><span class="num">1</span>Tokenizer</div></li>
+      <li><div class="node" data-page="embedding"><span class="num">2</span>Token Embedding Matrix</div></li>
+      <li><div class="node" data-page="positional"><span class="num">3</span>Positional Encoding</div></li>
+
+      <li><div class="grp">Context Mixing</div></li>
+      <li><div class="node" data-page="mixing-overview"><span class="num">4</span>Обзор: какой механизм выбрать</div></li>
+      <li><div class="node" data-page="mixing-attention"><span class="num">4.1</span>Bidirectional Attention</div></li>
+      <li><div class="node" data-page="mixing-state"><span class="num">4.2</span>State-based (RWKV / Mamba)</div></li>
+
+      <li><div class="grp">Блок и стек</div></li>
+      <li><div class="node" data-page="normalization"><span class="num">5</span>Normalization</div></li>
+      <li><div class="node" data-page="residual"><span class="num">6</span>Residual + стек слоёв</div></li>
+
+      <li><div class="grp">Выход и обучение</div></li>
+      <li><div class="node" data-page="pooling"><span class="num">7</span>Pooling</div></li>
+      <li><div class="node" data-page="loss"><span class="num">8</span>Contrastive Learning</div></li>
+      <li><div class="node" data-page="finetuning"><span class="num">9</span>Дообучение под домен</div></li>
+
+      <li><div class="grp">Справочно</div></li>
+      <li><div class="node" data-page="libraries"><span class="num">10</span>Библиотеки и инструменты</div></li>
+      <li><div class="node" data-page="checklist"><span class="num">11</span>Чеклист / частые ошибки</div></li>
+    </ul>
+  </aside>
+
+  <main>
+    <div class="stage-tracker" id="stageTracker">
+      <span class="stage-pill" data-stage="tokenizer">Tokenizer</span>
+      <span class="stage-pill" data-stage="embedding">Embedding</span>
+      <span class="stage-pill" data-stage="positional">Positional</span>
+      <span class="stage-pill" data-stage="mixing">Context Mixing</span>
+      <span class="stage-pill" data-stage="normalization">Norm</span>
+      <span class="stage-pill" data-stage="residual">Residual / Stack</span>
+      <span class="stage-pill" data-stage="pooling">Pooling</span>
+      <span class="stage-pill" data-stage="loss">Loss</span>
+    </div>
+
+    <!-- ============ 0. OVERVIEW ============ -->
+    <section class="page active" id="page-overview" data-stage="">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 0</div>
+      <h1>Что такое Bi-Encoder</h1>
+      <p class="dek">Bi-Encoder — архитектура, которая превращает произвольный текст в один вектор фиксированной размерности так, что смысловая близость двух текстов измеряется расстоянием между их векторами. Query и document кодируются одним и тем же энкодером независимо друг от друга — сначала оба превращаются в векторы, и только потом сравниваются.</p>
+
+      <div class="formula">
+        <div class="formula-label">Формально</div>
+        E: text → R^d &nbsp;<span class="cm">// один и тот же энкодер E для любого текста</span><br>
+        sim(text_a, text_b) = cos( E(text_a), E(text_b) ) &nbsp;<span class="cm">// сравнение — после кодирования, не во время него</span>
+      </div>
+
+      <h2 style="font-size:19px; margin-top:32px;">Bi-Encoder — не «просто энкодер»</h2>
+      <p>Название описывает не один слой и не одну операцию, а целый конвейер обработки, в котором каждый компонент решает свою отдельную задачу и передаёт результат следующему. Ни один из компонентов по отдельности не производит эмбеддинг — эмбеддинг является результатом всей цепочки целиком.</p>
+
+      <div class="diagram-box">
+        <div class="dt">Полный пайплайн Bi-Encoder</div>
+        <svg viewBox="0 0 760 130" width="100%" style="overflow:visible;">
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#eeeeee" text-anchor="middle">
+            <rect x="20" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#3a3a3a"/><text x="58" y="52">Token-</text><text x="58" y="65">izer</text>
+            <rect x="110" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#3a3a3a"/><text x="148" y="52">Token</text><text x="148" y="65">Embedding</text>
+            <rect x="200" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#3a3a3a"/><text x="238" y="52">Positional</text><text x="238" y="65">(опц.)</text>
+            <rect x="290" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#ff3d68" stroke-width="2"/><text x="328" y="52" fill="#ff3d68">Context</text><text x="328" y="65" fill="#ff3d68">Mixing</text>
+            <rect x="380" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#3a3a3a"/><text x="418" y="52">Norm +</text><text x="418" y="65">Residual</text>
+            <rect x="470" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#7c4dff" stroke-width="1.6"/><text x="508" y="52" fill="#7c4dff">× N</text><text x="508" y="65" fill="#7c4dff">слоёв</text>
+            <rect x="560" y="30" width="76" height="50" rx="7" fill="#212121" stroke="#3a3a3a"/><text x="598" y="52">Pooling</text>
+            <rect x="650" y="30" width="90" height="50" rx="7" fill="#212121" stroke="#3ecf8e" stroke-width="1.6"/><text x="695" y="52" fill="#3ecf8e">Sentence</text><text x="695" y="65" fill="#3ecf8e">Embedding</text>
+          </g>
+          <g stroke="#6b6b6b" stroke-width="1.3" fill="none" marker-end="url(#ov)">
+            <path d="M96 55 L108 55"/><path d="M186 55 L198 55"/><path d="M276 55 L288 55"/><path d="M366 55 L378 55"/><path d="M456 55 L468 55"/><path d="M546 55 L558 55"/><path d="M636 55 L648 55"/>
+          </g>
+          <text x="380" y="112" font-family="IBM Plex Mono" font-size="10" fill="#6b6b6b" text-anchor="middle">Contrastive Loss (§8) обучает всю цепочку целиком — это не отдельный блок пайплайна, а то, что задаёт всем блокам их веса</text>
+          <defs><marker id="ov" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6b6b6b"/></marker></defs>
+        </svg>
+      </div>
+
+      <p>Каждая стрелка на этой схеме — точка, где нужно принять архитектурное решение: какой токенизатор, какая размерность эмбеддинга, нужна ли позиционная схема, каким механизмом смешивать контекст между токенами, сколько слоёв, как из N векторов токенов получить один вектор текста, и какой функцией потерь всё это обучать. Ни один выбор не независим от остальных — например, выбор Context Mixing (§4) определяет, нужна ли вообще позиционная схема (§3).</p>
+
+      <h2 style="font-size:19px; margin-top:32px;">Bi-Encoder, Cross-Encoder, ColBERT</h2>
+      <p>Bi-Encoder — не единственный способ сравнивать тексты нейросетью. Три архитектуры решают одну задачу («насколько похожи два текста») с разным компромиссом между скоростью и точностью.</p>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Архитектура</th><th>Как считает</th><th>Скорость</th><th>Точность</th><th>Когда использовать</th></tr>
+        <tr><td class="hl"><b>Bi-Encoder</b></td><td>каждый текст кодируется отдельно, сравнение — после, через cosine</td><td class="good">эмбеддинг документа считается один раз и кешируется; поиск по миллионам через ANN-индекс</td><td class="mid">хорошая</td><td>поиск/retrieval по большой базе, где нужна скорость</td></tr>
+        <tr><td class="hl">Cross-Encoder</td><td>оба текста подаются в модель <i>вместе</i>, на выходе — сразу число похожести</td><td class="bad">нужно заново прогонять модель на каждую пару текстов</td><td class="good">выше — видит явное взаимодействие токенов между текстами</td><td>точное ранжирование малого числа кандидатов (reranking)</td></tr>
+        <tr><td class="hl">ColBERT (multi-vector)</td><td>вектор на каждый токен, сравнение через late interaction (MaxSim)</td><td class="mid">дороже по хранению, но эмбеддинги документа тоже кешируются заранее</td><td class="good">близко к Cross-Encoder</td><td>когда нужна точность выше bi-encoder, а полный Cross-Encoder на всю базу — слишком дорого</td></tr>
+      </table></div>
+
+      <div class="note">Стандартная продовая связка — не «выбрать одно», а комбинация: Bi-Encoder быстро находит top-100 кандидатов из миллионов через ANN-поиск, затем Cross-Encoder точно переранжирует именно эту сотню. Bi-Encoder редко используется как единственный компонент системы поиска — эта вики описывает именно его, но он почти всегда часть более крупного пайплайна.</div>
+
+      <h2 style="font-size:19px; margin-top:32px;">Что обязательно требуется архитектуре</h2>
+      <div class="grid2">
+        <div class="pill-box"><h4>Всегда обязательно</h4><ul>
+          <li>Токенизатор — текст физически не может попасть в нейросеть иначе, чем через последовательность целых чисел</li>
+          <li>Обучаемая матрица эмбеддингов — единственный способ превратить ID токена в вектор, с которым можно вычислять</li>
+          <li>Механизм смешивания контекста между токенами (Context Mixing) — без него модель обрабатывает каждый токен изолированно, не учитывая остальной текст</li>
+          <li>Pooling — механизм сжатия N векторов токенов в один вектор текста</li>
+          <li>Функция потерь, обучающая под similarity — без неё эмбеддинги остаются случайными</li>
+        </ul></div>
+        <div class="pill-box"><h4>Опционально, зависит от выбора §4</h4><ul>
+          <li>Позиционная схема — нужна для attention-based Context Mixing, не нужна для рекуррентных механизмов</li>
+          <li>Multi-head разбиение — применимо к attention, не имеет аналога в RWKV/Mamba в том же виде</li>
+          <li>Явная маска внимания — актуально только для attention-based вариантов</li>
+        </ul></div>
+      </div>
+
+      <div class="pagenav">
+        <span class="sp"></span>
+        <a href="#" onclick="showPage('tokenizer');return false;">Дальше: Tokenizer →</a>
+      </div>
+    </section>
+
+    <!-- ============ 1. TOKENIZER ============ -->
+    <section class="page" id="page-tokenizer" data-stage="tokenizer">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 1</div>
+      <h1>Tokenizer</h1>
+      <p class="dek">Первый шаг любого текстового пайплайна: превратить строку символов в последовательность целых чисел (token ID), которые дальше сможет обработать матрица эмбеддингов (§2).</p>
+
+      <div class="formula">
+        <div class="formula-label">Задача токенизатора</div>
+        text: "Кошка сидит на столе"<br>
+        → tokens: ["Кош", "ка", " сидит", " на", " столе"]<br>
+        → token_ids: [4821, 102, 5390, 88, 6721] &nbsp;<span class="cm">// индексы в словаре фиксированного размера</span>
+      </div>
+
+      <p>Токенизатор — не нейросеть и не обучается тем же градиентным спуском, что остальная модель: это отдельный, обычно предобученный на корпусе алгоритм сегментации текста. Размер его словаря напрямую определяет первую размерность матрицы эмбеддингов (§2) — токенизатор фиксируется раньше, чем начинается обучение самой модели.</p>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Схема</th><th>Идея</th><th>Когда выбрать</th></tr>
+        <tr><td class="hl">BPE / byte-level BPE</td><td>жадно объединяет самые частые пары символов/подслов в новые токены</td><td>дефолт для большинства современных моделей, хороший баланс размера словаря и длины последовательности</td></tr>
+        <tr><td class="hl">WordPiece</td><td>похоже на BPE, но объединение выбирается по максимизации правдоподобия</td><td>если ориентируешься на BERT-подобные рецепты</td></tr>
+        <tr><td class="hl">Unigram / SentencePiece</td><td>обратный подход — начать с большого словаря и постепенно удалять наименее полезные токены</td><td>многоязычные/не-английские корпуса, не требует предварительной сегментации по пробелам</td></tr>
+        <tr><td class="hl">Символьная / посимвольная</td><td>каждый символ — отдельный токен</td><td class="bad">почти не используется — последовательности становятся неоправданно длинными для того же текста</td></tr>
+      </table></div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — использование готового токенизатора</div>
+        <pre><span class="c1"># BPE/WordPiece/Unigram обучаются на корпусе один раз, отдельно от модели</span>
+tokenizer = <span class="fn">load_tokenizer</span>(<span class="kw">"path/to/vocab"</span>)
+
+ids = tokenizer.<span class="fn">encode</span>(<span class="kw">"Кошка сидит на столе"</span>)
+<span class="c1"># → [4821, 102, 5390, 88, 6721]</span>
+
+<span class="c1"># для батча текстов разной длины — паддинг до одной длины:</span>
+batch_ids, attention_mask = tokenizer.<span class="fn">encode_batch</span>(
+    [<span class="kw">"текст один"</span>, <span class="kw">"текст номер два подлиннее"</span>],
+    padding=<span class="kw">True</span>
+)</pre>
+      </div>
+
+      <div class="lib-box">
+        <h4>Библиотеки</h4>
+        <table class="lib-table">
+          <tr><td>huggingface tokenizers</td><td>быстрый (Rust), поддерживает обучение собственного BPE/WordPiece на своём корпусе</td></tr>
+          <tr><td>sentencepiece</td><td>от Google, для Unigram или мультиязычности без предварительной сегментации по пробелам</td></tr>
+          <tr><td>tiktoken</td><td>от OpenAI, byte-level BPE в стиле GPT — быстрый, но словарь не переобучить под свой корпус так же гибко</td></tr>
+        </table>
+      </div>
+
+      <div class="note warn">Размер словаря — компромисс: маленький словарь даёт длинные последовательности (дороже по compute на Context Mixing, §4), большой — раздувает матрицу эмбеддингов (§2) и требует больше данных, чтобы редкие токены встречались достаточно часто для обучения их представлений.</div>
+
+      <div class="pagenav">
+        <span class="sp"></span>
+        <a href="#" onclick="showPage('embedding');return false;">Дальше: Token Embedding Matrix →</a>
+      </div>
+    </section>
+
+    <!-- ============ 2. EMBEDDING ============ -->
+    <section class="page" id="page-embedding" data-stage="embedding">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 2</div>
+      <h1>Token Embedding Matrix</h1>
+      <p class="dek">Превращает целочисленный ID токена в плотный вектор — точка входа в собственно нейросетевую часть пайплайна. До этого момента данные — просто индексы; после — числа, с которыми можно вычислять градиенты.</p>
+
+      <div class="formula">
+        <div class="formula-label">Embedding lookup</div>
+        E ∈ R^(vocab_size × d_model) &nbsp;<span class="cm">// обучаемая матрица — одна строка на каждый токен словаря</span><br>
+        x_i = E[token_id_i] &nbsp;<span class="cm">// взять нужную строку — это и есть "поиск" (lookup)</span><br>
+        X = [x_1, x_2, ..., x_N] ∈ R^(N × d_model) &nbsp;<span class="cm">// вся последовательность как матрица</span>
+      </div>
+
+      <div class="diagram-box">
+        <div class="dt">Форма данных на входе и выходе</div>
+        <svg viewBox="0 0 620 90" width="100%">
+          <g font-family="IBM Plex Mono" font-size="11" fill="#eeeeee" text-anchor="middle">
+            <rect x="10" y="20" width="130" height="46" rx="7" fill="#212121" stroke="#3a3a3a"/><text x="75" y="40">[4821,102,</text><text x="75" y="54">5390,...]</text>
+            <text x="180" y="46" fill="#6b6b6b">→ E[...] →</text>
+            <rect x="250" y="20" width="150" height="46" rx="7" fill="#212121" stroke="#ff3d68" stroke-width="1.8"/><text x="325" y="40" fill="#ff3d68">X: [N, d]</text><text x="325" y="54" font-size="9.5" fill="#6b6b6b">N токенов × d_model</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — numpy (для понимания механики)</div>
+        <pre><span class="c1"># инициализация — масштаб важен, см. note ниже</span>
+E = np.random.randn(vocab_size, d_model) * (<span class="kw">1.0</span> / np.sqrt(d_model))
+
+<span class="c1"># forward: просто индексация — differentiable в любом фреймворке с автоградом</span>
+<span class="kw">def</span> <span class="fn">token_embed</span>(token_ids, E):
+    <span class="kw">return</span> E[token_ids]  <span class="c1"># fancy indexing → [N, d_model]</span></pre>
+      </div>
+      <div class="code-block">
+        <div class="cb-label">то же самое — pytorch</div>
+        <pre>embedding = nn.Embedding(vocab_size, d_model, padding_idx=<span class="kw">0</span>)
+X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиент течёт сам</span></pre>
+      </div>
+
+      <div class="grid2">
+        <div class="pill-box"><h4>Выбор d_model</h4><ul>
+          <li>Больше d_model → выше выразительность, но дороже каждый последующий слой Context Mixing (§4) — размерность пронизывает весь пайплайн, не только сам эмбеддинг</li>
+          <li>Типичный диапазон для небольших энкодеров: 256–1024; для крупных production-моделей — до нескольких тысяч</li>
+        </ul></div>
+        <div class="pill-box"><h4>Инициализация</h4><ul>
+          <li>Слишком большой масштаб → нестабильность обучения с первых шагов, до того как дело дойдёт до loss (§8)</li>
+          <li>Стандартная практика: N(0, 1/√d_model) или аналогичный по порядку масштаб</li>
+        </ul></div>
+      </div>
+
+      <div class="note">padding_idx: если батчируешь тексты разной длины (§1), токен-заполнитель [PAD] не должен нести смысловой градиент — padding_idx фиксирует его эмбеддинг в нуле и не обновляет его при обучении.</div>
+
+      <div class="note ref">Архитектурная рекомендация: держать модуль эмбеддинга полностью отдельным от Context Mixing (§4) — его единственная ответственность: TokenID→Vector. Следующий модуль не должен быть завязан на его внутреннюю реализацию, и наоборот.</div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('tokenizer');return false;">← Tokenizer</a>
+        <a href="#" onclick="showPage('positional');return false;">Дальше: Positional Encoding →</a>
+      </div>
+    </section>
+
+    <!-- ============ 3. POSITIONAL ============ -->
+    <section class="page" id="page-positional" data-stage="positional">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 3</div>
+      <h1>Positional Encoding</h1>
+      <p class="dek">Сам по себе Context Mixing через attention не различает порядок токенов — операция softmax(QKᵀ)V перестановочно-инвариантна. Позиционная схема — способ явно передать модели информацию о порядке. Нужна она или нет — зависит от того, что выбрано в §4.</p>
+
+      <div class="note">Рекуррентные механизмы (RWKV, Mamba — §4.2) устроены иначе: state обновляется последовательно, шаг за шагом, поэтому порядок токенов уже неявно закодирован в самом процессе вычисления. Явная позиционная схема для них избыточна.</div>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Схема</th><th>Идея</th><th>Экстраполяция на большую длину</th></tr>
+        <tr><td class="hl">Absolute / Learned</td><td>обучаемая таблица по индексу позиции</td><td class="bad">плохая — фиксированный максимум длины</td></tr>
+        <tr><td class="hl">Sinusoidal</td><td>фиксированные sin/cos разных частот</td><td class="mid">слабая</td></tr>
+        <tr><td class="hl">RoPE</td><td>поворот пар координат Q,K на угол, пропорциональный позиции</td><td class="mid">умеренная, хорошо изучена, стандарт сегодня</td></tr>
+        <tr><td class="hl">ALiBi</td><td>линейный штраф к attention-логиту, зависящий от расстояния между токенами</td><td class="good">хорошая «из коробки»</td></tr>
+        <tr><td class="hl">Без схемы (NoPE)</td><td>только сама структура вычислений несёт порядок</td><td class="good">работает для рекуррентных механизмов; для attention без causal-маски — не рекомендуется</td></tr>
+      </table></div>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Context Mixing (§4)</th><th>Нужна явная позиционная схема?</th></tr>
+        <tr><td class="hl">Bidirectional Attention (§4.1)</td><td class="bad">да, обязательно — без неё модель не различает порядок токенов вообще</td></tr>
+        <tr><td class="hl">RWKV / Mamba (§4.2)</td><td class="good">как правило нет — порядок уже в самой рекуррентности</td></tr>
+      </table></div>
+
+      <div class="note warn">Позиционная схема выбирается для конкретного механизма, а не один раз на всю архитектуру. Если в модели одновременно используются attention-слои и рекуррентные слои (гибридная схема), позиционная схема нужна именно для attention-части, а не для всей модели целиком.</div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('embedding');return false;">← Token Embedding Matrix</a>
+        <a href="#" onclick="showPage('mixing-overview');return false;">Дальше: Context Mixing →</a>
+      </div>
+    </section>
+
+    <!-- ============ 4. MIXING OVERVIEW ============ -->
+    <section class="page" id="page-mixing-overview" data-stage="mixing">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 4</div>
+      <h1>Context Mixing: обзор и выбор механизма</h1>
+      <p class="dek">Это центральный компонент энкодера. Без него каждый токен обрабатывается изолированно — эмбеддинг слова «банк» был бы одинаковым в «сидел на берегу» и в «взял кредит в банке». Context Mixing — это то, что позволяет представлению каждого токена зависеть от остальных токенов в тексте.</p>
+
+      <div class="formula">
+        <div class="formula-label">Общая задача Context Mixing</div>
+        h_i = f(x_1, x_2, ..., x_N) &nbsp;<span class="cm">// представление токена i зависит от всей последовательности, не только от x_i</span>
+      </div>
+
+      <h2 style="font-size:18px; margin-top:28px;">Ключевое требование именно для Bi-Encoder: двунаправленность</h2>
+      <p>Bi-Encoder должен видеть весь текст сразу — и то, что было до токена, и то, что после. Это принципиально отличает его от decoder-only языковых моделей (GPT-подобных), где токен видит только прошлое (causal-маска) — там это нужно для авторегрессивной генерации, здесь такого ограничения нет и оно только вредит качеству эмбеддинга.</p>
+
+      <div class="note warn">Любой механизм Context Mixing, изначально спроектированный как <b>causal</b> (однонаправленный) — обычный decoder-only attention, RWKV/Mamba в их языковой-модели форме — <b>не подходит для Bi-Encoder без модификации</b>. Использовать его «как есть» означает, что правая половина каждого текста никогда не влияет на представление левой половины.</div>
+
+      <h2 style="font-size:18px; margin-top:28px;">Сравнение доступных механизмов</h2>
+      <div class="table-wrap"><table class="data">
+        <tr><th>Механизм</th><th>Compute</th><th>Требует positional?</th><th>Требует модификации для bi-directional?</th><th>Статус</th></tr>
+        <tr><td class="hl"><b>Full Bidirectional Attention</b></td><td>O(n²)</td><td>да</td><td class="good">нет — bidirectional «из коробки», просто не ставить маску</td><td><span class="badge b-mainstream">стандарт (BERT-подобные)</span></td></tr>
+        <tr><td class="hl">Sliding Window Attention</td><td>O(n·w)</td><td>да</td><td class="good">нет</td><td><span class="badge b-mainstream">для очень длинных текстов</span></td></tr>
+        <tr><td class="hl"><b>RWKV (bidirectional)</b></td><td>O(n)</td><td>нет</td><td class="bad">да — исходно однонаправленный, нужен forward+backward проход</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td class="hl"><b>Mamba / SSM (bidirectional)</b></td><td>O(n)</td><td>нет</td><td class="bad">да — та же причина, что у RWKV</td><td><span class="badge b-emerging">emerging</span></td></tr>
+        <tr><td class="hl">Causal attention / causal RWKV / causal Mamba «как есть»</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-bad">не подходит без модификации</span></td></tr>
+      </table></div>
+
+      <h2 style="font-size:18px; margin-top:28px;">Что не имеет смысла переносить из decoder-only LLM</h2>
+      <div class="grid2">
+        <div class="pill-box con"><h4>MQA / GQA (сжатие KV-кеша)</h4><ul>
+          <li>Вся мотивация multi-query/grouped-query attention — ускорить <i>авторегрессивную генерацию токен-за-токеном</i>, где узкое место — чтение растущего KV-кеша</li>
+          <li>Bi-Encoder не генерирует ничего авторегрессивно и не хранит KV-кеш между вызовами — каждый forward-проход независимый и однократный</li>
+          <li>Экономия от MQA/GQA здесь не даёт того же выигрыша, ради которого она придумана — можно использовать обычный multi-head attention без потери актуальности этой оптимизации</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Speculative decoding, KV-кеш паджинг и т.п.</h4><ul>
+          <li>Вся категория техник инференс-оптимизации, построенных вокруг авторегрессивной генерации, не имеет отношения к Bi-Encoder — он не генерирует текст, а один раз считает представление</li>
+        </ul></div>
+      </div>
+
+      <h2 style="font-size:18px; margin-top:28px;">Куда пойти дальше</h2>
+      <div class="hub-grid">
+        <div class="hub-card" onclick="showPage('mixing-attention')">
+          <h4>4.1 Bidirectional Attention <span class="badge b-mainstream">mainstream</span></h4>
+          <p>Стандартный, наиболее изученный путь — тот же механизм, что в BERT. Начинать стоит отсюда, если нет специфической причины для альтернативы.</p>
+        </div>
+        <div class="hub-card" onclick="showPage('mixing-state')">
+          <h4>4.2 State-based (RWKV / Mamba) <span class="badge b-emerging">emerging</span></h4>
+          <p>O(n) вместо O(n²), но требует явной бидирекциональной модификации и меньше проверенной практики именно для энкодеров.</p>
+        </div>
+      </div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('positional');return false;">← Positional Encoding</a>
+        <a href="#" onclick="showPage('mixing-attention');return false;">Дальше: Bidirectional Attention →</a>
+      </div>
+    </section>
+
+    <!-- ============ 4.1 ATTENTION ============ -->
+    <section class="page" id="page-mixing-attention" data-stage="mixing">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 4.1</div>
+      <div class="badges"><span class="badge b-mainstream">стандартный выбор</span></div>
+      <h1>Bidirectional Attention</h1>
+      <p class="dek">Механизм, использованный в BERT и его семействе — сегодня самый изученный и наименее рискованный путь построения Context Mixing для Bi-Encoder.</p>
+
+      <div class="formula">
+        <div class="formula-label">Проекции Q, K, V</div>
+        Q = X·W_Q, &nbsp; K = X·W_K, &nbsp; V = X·W_V &nbsp;<span class="cm">// W_Q,W_K,W_V ∈ R^(d_model × d_model), обучаемые</span>
+      </div>
+      <div class="formula">
+        <div class="formula-label">Scaled dot-product attention</div>
+        S = Q·K^T / √d &nbsp;<span class="cm">// S ∈ R^(N×N) — «сколько токен i должен внимать токену j»</span><br>
+        A = softmax(S) &nbsp;<span class="cm">// по строкам — веса суммируются в 1 для каждого токена</span><br>
+        Output = A·V &nbsp;<span class="cm">// [N,N]×[N,d] = [N,d] — новое представление каждого токена</span>
+      </div>
+
+      <div class="note warn">Никакой маски по времени не ставится — каждый токен видит все остальные, включая те, что идут после него. Это единственное, но принципиальное отличие от decoder-only attention, где верхний треугольник матрицы S маскируется значением -∞ перед softmax.</div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — численно стабильная реализация</div>
+        <pre><span class="kw">def</span> <span class="fn">bidirectional_attention</span>(X, Wq, Wk, Wv):
+    Q = X @ Wq; K = X @ Wk; V = X @ Wv         <span class="c1"># [N, d]</span>
+    d = X.shape[-<span class="kw">1</span>]
+    scores = (Q @ K.T) / np.sqrt(d)             <span class="c1"># [N, N]</span>
+
+    <span class="c1"># стабильный softmax — вычитаем max каждой строки перед exp(),</span>
+    <span class="c1"># иначе при больших значениях scores exp() уходит в переполнение</span>
+    scores_max = np.<span class="fn">max</span>(scores, axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
+    exp_scores = np.<span class="fn">exp</span>(scores - scores_max)
+    A = exp_scores / np.<span class="fn">sum</span>(exp_scores, axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
+
+    <span class="kw">return</span> A @ V                             <span class="c1"># [N, d] — маски по времени НЕТ</span></pre>
+      </div>
+
+      <h2 style="font-size:17px; margin-top:28px;">Multi-head</h2>
+      <p>На практике attention почти всегда применяется в multi-head форме: та же операция запускается параллельно в h подпространствах меньшей размерности, а результаты конкатенируются — так модель может одновременно ловить разные типы зависимостей (синтаксис, кореференцию, тематическую близость) в разных головах.</p>
+
+      <h2 style="font-size:17px; margin-top:28px;">Эффективные варианты для длинных текстов</h2>
+      <p>Полный O(n²) attention становится дорогим на длинных документах. Для Bi-Encoder, кодирующего длинные тексты, есть более дешёвые варианты того же принципа:</p>
+      <div class="table-wrap"><table class="data">
+        <tr><th>Вариант</th><th>Идея</th><th>Компромисс</th></tr>
+        <tr><td class="hl">Sliding Window</td><td>каждый токен видит только соседей в пределах окна ±w</td><td>дешевле, но дальние зависимости требуют нескольких слоёв, чтобы «дойти» через промежуточные токены</td></tr>
+        <tr><td class="hl">Sparse (BigBird-style)</td><td>локальное окно + несколько «глобальных» токенов + случайные связи</td><td>сохраняет теоретические гарантии выразительности при меньшем compute, сложнее в реализации</td></tr>
+      </table></div>
+
+      <div class="lib-box">
+        <h4>Библиотеки</h4>
+        <table class="lib-table">
+          <tr><td>torch.nn.MultiheadAttention</td><td>готовая реализация с multi-head «из коробки» — для bidirectional не передавать causal-маску / <code>is_causal=False</code></td></tr>
+          <tr><td>transformers (HuggingFace) BertModel</td><td>полностью готовая encoder-архитектура, если не требуется собственная реализация с нуля</td></tr>
+          <tr><td>ручная реализация</td><td>для полного контроля над архитектурой — код выше почти дословно переносится на PyTorch/JAX заменой np на соответствующий фреймворк</td></tr>
+        </table>
+      </div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('mixing-overview');return false;">← Обзор Context Mixing</a>
+        <a href="#" onclick="showPage('mixing-state');return false;">Альтернатива: State-based →</a>
+      </div>
+    </section>
+
+    <!-- ============ 4.2 STATE-BASED ============ -->
+    <section class="page" id="page-mixing-state" data-stage="mixing">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 4.2</div>
+      <div class="badges"><span class="badge b-emerging">emerging</span></div>
+      <h1>State-based Context Mixing: RWKV и Mamba</h1>
+      <p class="dek">Альтернатива attention: вместо явной N×N матрицы весов — рекуррентное состояние фиксированного размера, обновляемое последовательно по мере обработки токенов. Compute растёт линейно с длиной текста, а не квадратично.</p>
+
+      <div class="note warn">Оба механизма в их стандартной, наиболее распространённой форме — <b>однонаправленные</b> (спроектированы для авторегрессивных языковых моделей, где следующий токен предсказывается по всем предыдущим). Для Bi-Encoder это ограничение снимается явным дублированием прохода — см. ниже.</div>
+
+      <h2 style="font-size:18px; margin-top:26px;">RWKV — механика Time-Mix</h2>
+      <div class="formula">
+        <div class="formula-label">Time-Mix (упрощённо, версия RWKV-4)</div>
+        r_t, k_t, v_t = X_t·W_r, X_t·W_k, X_t·W_v &nbsp;<span class="cm">// проекции, аналог Q/K/V, но с другими ролями</span><br>
+        state_t = decay·state_{t-1} + exp(k_t)·v_t &nbsp;<span class="cm">// рекуррентное накопление</span><br>
+        out_t = σ(r_t) ⊙ (state_t / norm_t) &nbsp;<span class="cm">// receptance-гейт — «сколько пропустить»</span>
+      </div>
+      <p>Помимо Time-Mix, полный RWKV-блок включает Channel-Mix — второй подблок, работающий независимо по каждой позиции (аналог position-wise FFN), не требующий рекуррентности и, соответственно, не требующий отдельной bidirectional-модификации.</p>
+
+      <h2 style="font-size:18px; margin-top:26px;">Mamba — механика Selective SSM</h2>
+      <div class="formula">
+        <div class="formula-label">Selective State Space (упрощённо)</div>
+        B_t, C_t, Δ_t = f(x_t) &nbsp;<span class="cm">// параметры рекуррентности зависят от содержимого текущего токена</span><br>
+        h_t = Ā_t·h_{t-1} + B̄_t·x_t &nbsp;<span class="cm">// дискретизированное обновление состояния</span><br>
+        y_t = C_t·h_t
+      </div>
+
+      <h2 style="font-size:18px; margin-top:26px;">Обязательная двунаправленная модификация</h2>
+      <div class="formula">
+        <div class="formula-label">Общая схема для RWKV и для Mamba одинаково</div>
+        H_forward = StateModel(X) &nbsp;<span class="cm">// обычный проход слева направо</span><br>
+        H_backward = StateModel(reverse(X)) &nbsp;<span class="cm">// тот же механизм, но на развёрнутой последовательности</span><br>
+        H = [H_forward ; reverse(H_backward)] &nbsp;<span class="cm">// конкатенация по последней размерности → удваивает d, либо</span><br>
+        H = H_forward + reverse(H_backward) &nbsp;<span class="cm">// сумма — сохраняет исходную размерность d</span>
+      </div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — RWKV Time-Mix, однонаправленная версия (numpy, без батча)</div>
+        <pre><span class="kw">def</span> <span class="fn">rwkv_time_mix</span>(X, Wr, Wk, Wv, decay):
+    N, d = X.shape
+    R = <span class="fn">sigmoid</span>(X @ Wr)
+    K = X @ Wk
+    V = X @ Wv
+
+    state = np.zeros(d)
+    out = np.zeros((N, d))
+    <span class="kw">for</span> t <span class="kw">in</span> <span class="fn">range</span>(N):
+        state = decay * state + np.<span class="fn">exp</span>(K[t]) * V[t]
+        out[t] = R[t] * (state / (t + <span class="kw">1</span>))     <span class="c1"># норм. упрощена для примера</span>
+    <span class="kw">return</span> out</pre>
+      </div>
+      <div class="code-block">
+        <div class="cb-label">псевдокод — двунаправленная обёртка (одинаково применимо к RWKV и к Mamba)</div>
+        <pre><span class="kw">def</span> <span class="fn">bidirectional_state_mixing</span>(X, state_model, params):
+    h_fwd = state_model(X, *params)
+    h_bwd = state_model(X[::-<span class="kw">1</span>], *params)[::-<span class="kw">1</span>]  <span class="c1"># проход в обратном порядке, затем развернуть обратно</span>
+    <span class="kw">return</span> h_fwd + h_bwd                            <span class="c1"># либо np.concatenate([h_fwd, h_bwd], axis=-1)</span></pre>
+      </div>
+
+      <div class="grid2">
+        <div class="pill-box pro"><h4>Плюсы для Bi-Encoder</h4><ul>
+          <li>O(n) compute вместо O(n²) — существенно дешевле на очень длинных текстах</li>
+          <li>Не требует позиционной схемы (§3)</li>
+        </ul></div>
+        <div class="pill-box con"><h4>Минусы для Bi-Encoder</h4><ul>
+          <li>Требует нестандартной, самостоятельно реализуемой bidirectional-модификации — готовые библиотеки почти всегда рассчитаны на causal-версию для языковых моделей</li>
+          <li>Меньше проверенной практики именно как encoder — большинство публикаций и открытых чекпоинтов RWKV/Mamba — decoder-only языковые модели</li>
+          <li>Численная стабильность рекуррентности (переполнение exp(k_t) в RWKV) требует того же внимания, что и softmax в attention, но менее стандартизирована в готовых реализациях</li>
+        </ul></div>
+      </div>
+
+      <div class="lib-box">
+        <h4>Библиотеки</h4>
+        <table class="lib-table">
+          <tr><td>официальные репозитории RWKV / Mamba</td><td>референсные реализации — полезны для сверки, но рассчитаны на causal LM, не на bidirectional encoder</td></tr>
+          <tr><td>transformers (RwkvModel / MambaModel)</td><td>есть встроенные классы, тоже causal по умолчанию — bidirectional-обёртку нужно писать поверх</td></tr>
+          <tr><td>собственная реализация</td><td>для полного контроля и учебной цели — рекуррентность несложно реализовать самостоятельно, как в псевдокоде выше</td></tr>
+        </table>
+      </div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('mixing-attention');return false;">← Bidirectional Attention</a>
+        <a href="#" onclick="showPage('normalization');return false;">Дальше: Normalization →</a>
+      </div>
+    </section>
+
+    <!-- ============ 5. NORMALIZATION ============ -->
+    <section class="page" id="page-normalization" data-stage="normalization">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 5</div>
+      <h1>Normalization</h1>
+      <p class="dek">Стабилизирует масштаб активаций на входе в каждый подблок — без неё глубокие сети (§6) обучаются существенно менее надёжно, независимо от того, какой механизм Context Mixing выбран в §4.</p>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th></th><th>LayerNorm</th><th>RMSNorm</th></tr>
+        <tr><td class="hl">Формула</td><td class="mono">γ·(x−mean(x))/√(var(x)+ε) + β</td><td class="mono">γ·x/√(mean(x²)+ε)</td></tr>
+        <tr><td class="hl">Компоненты</td><td>центрирование + масштабирование + сдвиг</td><td>только масштабирование</td></tr>
+        <tr><td class="hl">Compute</td><td>выше</td><td class="good">ниже</td></tr>
+        <tr><td class="hl">Статус</td><td><span class="badge b-mainstream">классика, BERT и др.</span></td><td><span class="badge b-mainstream">стандарт в совр. моделях</span></td></tr>
+      </table></div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — RMSNorm</div>
+        <pre><span class="kw">def</span> <span class="fn">rmsnorm</span>(x, gamma, eps=<span class="kw">1e-6</span>):
+    rms = np.<span class="fn">sqrt</span>(np.<span class="fn">mean</span>(x**<span class="kw">2</span>, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>) + eps)
+    <span class="kw">return</span> gamma * x / rms</pre>
+      </div>
+
+      <h2 style="font-size:17px; margin-top:26px;">Где ставить нормализацию: Pre-Norm vs Post-Norm</h2>
+      <div class="table-wrap"><table class="data">
+        <tr><th></th><th>Post-Norm</th><th>Pre-Norm</th></tr>
+        <tr><td class="hl">Формула</td><td class="mono">x + Sublayer(x); затем Norm</td><td class="mono">x + Sublayer(Norm(x))</td></tr>
+        <tr><td class="hl">Стабильность на глубоких стеках</td><td class="bad">требует аккуратного warmup learning rate</td><td class="good">заметно надёжнее без специальной настройки</td></tr>
+      </table></div>
+      <p>Pre-Norm — рекомендуемый выбор по умолчанию, особенно при увеличении числа слоёв (§6): чистый residual-путь без нормализации внутри него даёт градиенту прямой путь от выхода к входу, что снижает риск затухания на глубине.</p>
+
+      <div class="lib-box">
+        <h4>Библиотеки</h4>
+        <table class="lib-table">
+          <tr><td>torch.nn.LayerNorm</td><td>встроен — это LayerNorm, не RMSNorm</td></tr>
+          <tr><td>RMSNorm вручную</td><td>несколько строк кода (см. выше) — реализовать проще, чем искать готовую под конкретный фреймворк</td></tr>
+        </table>
+      </div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('mixing-state');return false;">← State-based Context Mixing</a>
+        <a href="#" onclick="showPage('residual');return false;">Дальше: Residual + стек слоёв →</a>
+      </div>
+    </section>
+
+    <!-- ============ 6. RESIDUAL ============ -->
+    <section class="page" id="page-residual" data-stage="residual">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 6</div>
+      <h1>Residual-связи и стек слоёв</h1>
+      <p class="dek">Здесь Context Mixing (§4) и Normalization (§5) объединяются в один полный блок, а блоки складываются в стек — то, что превращает единичный механизм смешивания контекста в настоящую глубокую модель.</p>
+
+      <div class="formula">
+        <div class="formula-label">Один блок целиком (Pre-Norm)</div>
+        x = x + ContextMixing(Norm(x)) &nbsp;<span class="cm">// §4.1 или §4.2</span><br>
+        x = x + FFN(Norm(x)) &nbsp;<span class="cm">// или Channel-Mix, если Context Mixing — RWKV</span>
+      </div>
+
+      <p>Residual-связь (сложение, а не замена) — не деталь реализации, а причина, по которой глубокие сети вообще обучаемы: производная суммы x+f(x) по x содержит слагаемое 1 независимо от того, что происходит внутри f — градиент имеет прямой путь через сложение, даже если f в какой-то момент почти не пропускает градиент.</p>
+
+      <div class="diagram-box">
+        <div class="dt">Стек из N блоков</div>
+        <svg viewBox="0 0 620 100" width="100%">
+          <g font-family="IBM Plex Mono" font-size="10.5" fill="#eeeeee" text-anchor="middle">
+            <rect x="10" y="15" width="90" height="40" rx="6" fill="#212121" stroke="#3a3a3a"/><text x="55" y="39">X [N,d]</text>
+            <rect x="150" y="15" width="80" height="40" rx="6" fill="#212121" stroke="#ff3d68" stroke-width="1.6"/><text x="190" y="39" fill="#ff3d68">Блок 1</text>
+            <rect x="260" y="15" width="80" height="40" rx="6" fill="#212121" stroke="#ff3d68" stroke-width="1.6"/><text x="300" y="39" fill="#ff3d68">Блок 2</text>
+            <text x="380" y="39" font-size="16" fill="#6b6b6b">...</text>
+            <rect x="410" y="15" width="90" height="40" rx="6" fill="#212121" stroke="#ff3d68" stroke-width="1.6"/><text x="455" y="39" fill="#ff3d68">Блок N</text>
+            <rect x="530" y="15" width="90" height="40" rx="6" fill="#212121" stroke="#3ecf8e" stroke-width="1.6"/><text x="575" y="39" fill="#3ecf8e">H [N,d]</text>
+          </g>
+          <g stroke="#6b6b6b" stroke-width="1.3" fill="none" marker-end="url(#rs)">
+            <path d="M100 35 L148 35"/><path d="M230 35 L258 35"/><path d="M340 35 L408 35"/><path d="M500 35 L528 35"/>
+          </g>
+          <defs><marker id="rs" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6b6b6b"/></marker></defs>
+        </svg>
+      </div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — полный энкодер</div>
+        <pre><span class="kw">def</span> <span class="fn">encoder_block</span>(x, params):
+    x = x + <span class="fn">context_mixing</span>(<span class="fn">rmsnorm</span>(x, params.g1), params.mixing)   <span class="c1"># §4</span>
+    x = x + <span class="fn">ffn</span>(<span class="fn">rmsnorm</span>(x, params.g2), params.ffn)
+    <span class="kw">return</span> x
+
+<span class="kw">def</span> <span class="fn">encoder</span>(token_ids, all_params, n_layers):
+    x = <span class="fn">token_embed</span>(token_ids, all_params.embedding)     <span class="c1"># §2</span>
+    <span class="kw">for</span> layer <span class="kw">in</span> <span class="fn">range</span>(n_layers):
+        x = <span class="fn">encoder_block</span>(x, all_params.layers[layer])
+    <span class="kw">return</span> x                                            <span class="c1"># [N, d] — контекстные представления</span></pre>
+      </div>
+
+      <div class="note warn">Число слоёв N — параметр, который стоит подбирать эмпирически, начиная с малого значения на небольшом датасете, прежде чем масштабировать: отладить нестабильность обучения на 4–6 слоях в разы проще, чем на 24, а типичные причины ошибок на старте не зависят от глубины.</div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('normalization');return false;">← Normalization</a>
+        <a href="#" onclick="showPage('pooling');return false;">Дальше: Pooling →</a>
+      </div>
+    </section>
+
+    <!-- ============ 7. POOLING ============ -->
+    <section class="page" id="page-pooling" data-stage="pooling">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 7</div>
+      <h1>Pooling</h1>
+      <p class="dek">Стек блоков (§6) отдаёт по одному вектору на каждый токен — [N, d]. Для сравнения двух текстов нужен один вектор на весь текст — [d]. Pooling — сжатие N векторов в один, финальный шаг перед тем, как результат станет «эмбеддингом».</p>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Способ</th><th>Формула</th><th>Комментарий</th></tr>
+        <tr><td class="hl"><b>Mean pooling</b></td><td class="mono">z = mean(H, axis=0)</td><td class="good">стандартный выбор для Bi-Encoder — используется в Sentence-BERT и большинстве современных моделей</td></tr>
+        <tr><td class="hl">CLS-токен</td><td class="mono">z = H[0]</td><td class="mid">требует специального [CLS]-токена на входе и явного дообучения под роль «сводки»; без него качество ниже mean pooling</td></tr>
+        <tr><td class="hl">Max pooling</td><td class="mono">z = max(H, axis=0)</td><td class="mid">по каждой размерности берётся максимальное значение среди токенов — иногда используется в комбинации с mean</td></tr>
+        <tr><td class="hl">Last-token</td><td class="mono">z = H[-1]</td><td class="mid">типично для decoder-only моделей, менее характерно для bidirectional энкодера</td></tr>
+        <tr><td class="hl">Attention pooling</td><td class="mono">z = Σ softmax(w·H)·H</td><td class="niche">обучаемые веса важности каждого токена — точнее, но добавляет параметры и сложность</td></tr>
+      </table></div>
+
+      <div class="formula">
+        <div class="formula-label">Mean pooling с учётом паддинга</div>
+        z = Σ(H_i · mask_i) / Σ(mask_i) &nbsp;<span class="cm">// mask — 0 для [PAD]-токенов, 1 для настоящих; без учёта маски паддинг искажает среднее</span>
+      </div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод</div>
+        <pre><span class="kw">def</span> <span class="fn">mean_pooling</span>(H, mask):
+    <span class="c1"># H: [N, d], mask: [N] — 1 для настоящих токенов, 0 для padding</span>
+    mask = mask[:, np.newaxis]                  <span class="c1"># [N, 1] для broadcasting</span>
+    summed = np.<span class="fn">sum</span>(H * mask, axis=<span class="kw">0</span>)
+    count = np.<span class="fn">sum</span>(mask)
+    <span class="kw">return</span> summed / count                     <span class="c1"># [d]</span></pre>
+      </div>
+
+      <div class="note warn">Забытая маска паддинга при pooling — одна из самых незаметных ошибок: модель обучается, loss падает, но короткие тексты в батче с длинным паддингом получают «размытое» среднее — код не крашится, просто тихо теряет качество.</div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('residual');return false;">← Residual + стек слоёв</a>
+        <a href="#" onclick="showPage('loss');return false;">Дальше: Contrastive Learning →</a>
+      </div>
+    </section>
+
+    <!-- ============ 8. LOSS ============ -->
+    <section class="page" id="page-loss" data-stage="loss">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 8</div>
+      <h1>Contrastive Learning</h1>
+      <p class="dek">Всё, что построено на §1–7, — это просто функция text→vector. Без функции потерь, обучающей под similarity, случайно инициализированная сеть даёт случайные, бессмысленные векторы. Contrastive learning — то, что заставляет похожие тексты сближаться в пространстве эмбеддингов, а разные — расходиться.</p>
+
+      <div class="formula">
+        <div class="formula-label">Cosine similarity</div>
+        sim(a,b) = (a·b) / (‖a‖‖b‖) &nbsp;<span class="cm">// векторы должны быть нормализованы перед сравнением</span>
+      </div>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Loss</th><th>Идея</th><th>Статус</th></tr>
+        <tr><td class="hl">Triplet loss</td><td>явные тройки (anchor, positive, negative), margin между sim(anchor,pos) и sim(anchor,neg)</td><td><span class="badge b-legacy">классика, требует явной разметки негативов</span></td></tr>
+        <tr><td class="hl">InfoNCE / Multiple Negatives Ranking Loss</td><td>каждый позитив в батче — негатив для всех остальных примеров (in-batch negatives)</td><td><span class="badge b-mainstream">стандарт сегодня</span></td></tr>
+      </table></div>
+
+      <div class="formula">
+        <div class="formula-label">InfoNCE / Multiple Negatives Ranking Loss</div>
+        L = −log( exp(sim(q,d⁺)/τ) / Σᵢ exp(sim(q,dᵢ)/τ) ) &nbsp;<span class="cm">// d⁺ — правильная пара, dᵢ — весь батч, τ — temperature</span>
+      </div>
+
+      <div class="diagram-box">
+        <div class="dt">Откуда берутся негативы внутри одного батча</div>
+        <svg viewBox="0 0 560 150" width="100%">
+          <g font-family="IBM Plex Mono" font-size="10" fill="#eeeeee" text-anchor="middle">
+            <text x="60" y="18" fill="#6b6b6b">queries</text>
+            <rect x="20" y="26" width="80" height="30" rx="5" fill="#212121" stroke="#ff3d68" stroke-width="1.6"/><text x="60" y="46" fill="#ff3d68">q1</text>
+            <rect x="20" y="66" width="80" height="30" rx="5" fill="#212121" stroke="#3a3a3a"/><text x="60" y="86">q2</text>
+            <rect x="20" y="106" width="80" height="30" rx="5" fill="#212121" stroke="#3a3a3a"/><text x="60" y="126">q3</text>
+            <text x="380" y="18" fill="#6b6b6b">documents (в том же батче)</text>
+            <rect x="340" y="26" width="80" height="30" rx="5" fill="#212121" stroke="#3ecf8e" stroke-width="1.8"/><text x="380" y="46" fill="#3ecf8e">d1 ✓</text>
+            <rect x="440" y="26" width="80" height="30" rx="5" fill="#212121" stroke="#3a3a3a"/><text x="480" y="46">d2</text>
+            <rect x="340" y="66" width="80" height="30" rx="5" fill="#212121" stroke="#3a3a3a"/><text x="380" y="86">d1</text>
+            <rect x="440" y="66" width="80" height="30" rx="5" fill="#212121" stroke="#3ecf8e" stroke-width="1.8"/><text x="480" y="86" fill="#3ecf8e">d2 ✓</text>
+          </g>
+          <path d="M100 41 L338 41" stroke="#3ecf8e" stroke-width="1.6" fill="none" stroke-dasharray="3 3"/>
+          <path d="M100 41 L438 41" stroke="#e0355c" stroke-width="1.2" fill="none" stroke-dasharray="2 2" opacity="0.5"/>
+          <text x="290" y="150" font-family="IBM Plex Mono" font-size="9.5" fill="#6b6b6b" text-anchor="middle">q1 должен быть близко к своему d1 и далеко от d2, d3... — остальной батч сам становится негативами, разметка не нужна</text>
+        </svg>
+      </div>
+
+      <div class="code-block">
+        <div class="cb-label">псевдокод — in-batch contrastive loss</div>
+        <pre><span class="kw">def</span> <span class="fn">contrastive_loss</span>(query_embs, doc_embs, temperature=<span class="kw">0.05</span>):
+    <span class="c1"># query_embs, doc_embs: [batch, d] — уже прошли encoder + pooling</span>
+    q = query_embs / np.linalg.norm(query_embs, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
+    d = doc_embs / np.linalg.norm(doc_embs, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
+
+    sims = (q @ d.T) / temperature          <span class="c1"># [batch, batch] — все пары сразу</span>
+    labels = np.arange(<span class="fn">len</span>(q))            <span class="c1"># диагональ — правильные пары</span>
+
+    sims = sims - np.<span class="fn">max</span>(sims, axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)   <span class="c1"># стабильный softmax</span>
+    probs = np.<span class="fn">exp</span>(sims) / np.<span class="fn">sum</span>(np.<span class="fn">exp</span>(sims), axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
+    loss = -np.<span class="fn">mean</span>(np.<span class="fn">log</span>(probs[np.arange(<span class="fn">len</span>(q)), labels]))
+    <span class="kw">return</span> loss</pre>
+      </div>
+
+      <div class="grid2">
+        <div class="pill-box"><h4>Temperature (τ)</h4><ul>
+          <li>Меньше τ → «острее» распределение, сильнее штраф за близкие негативы</li>
+          <li>Типичный старт: 0.05–0.1, тюнится эмпирически</li>
+        </ul></div>
+        <div class="pill-box"><h4>Hard negative mining</h4><ul>
+          <li>Случайные in-batch негативы со временем становятся «слишком лёгкими» — модель их уже уверенно различает</li>
+          <li>Hard negatives — специально подобранные, похожие, но неправильные примеры — заметно ускоряют обучение на поздних стадиях</li>
+        </ul></div>
+      </div>
+
+      <div class="lib-box">
+        <h4>Библиотеки</h4>
+        <table class="lib-table">
+          <tr><td>sentence-transformers</td><td>готовый <code>MultipleNegativesRankingLoss</code> и вся обвязка обучения bi-encoder</td></tr>
+          <tr><td>ручная реализация</td><td>код выше почти дословно переносится в PyTorch/JAX</td></tr>
+        </table>
+      </div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('pooling');return false;">← Pooling</a>
+        <a href="#" onclick="showPage('finetuning');return false;">Дальше: Дообучение под домен →</a>
+      </div>
+    </section>
+
+    <!-- ============ 9. FINETUNING ============ -->
+    <section class="page" id="page-finetuning" data-stage="">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 9</div>
+      <h1>Дообучение под домен</h1>
+      <p class="dek">Модель, обученная с нуля на общем корпусе (§8), почти всегда выигрывает от дообучения на данных конкретной предметной области — специфичный словарь, специфичные отношения похожести, которых нет в общем корпусе.</p>
+
+      <div class="grid2">
+        <div class="pill-box"><h4>Contrastive fine-tuning</h4><ul>
+          <li>Дообучение готовой модели тем же InfoNCE-лоссом (§8) на парах (query, релевантный документ) из целевого домена</li>
+          <li>Часто достаточно тысяч, а не миллионов пар — модель уже «умеет» язык, доучивается только смещать пространство под домен</li>
+        </ul></div>
+        <div class="pill-box"><h4>Hard negative mining на домене</h4><ul>
+          <li>Находить не случайные, а обманчиво похожие неправильные документы — например, через саму текущую модель (то, что она сейчас путает)</li>
+          <li>Резко повышает качество дообучения по сравнению со случайными негативами</li>
+        </ul></div>
+      </div>
+
+      <div class="note">Дистилляция как альтернатива: обучить компактную модель имитировать выходы более крупной/точной (например, Cross-Encoder-реранкер учит Bi-Encoder) — способ получить часть качества дорогой модели по цене дешёвой.</div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('loss');return false;">← Contrastive Learning</a>
+        <a href="#" onclick="showPage('libraries');return false;">Дальше: Библиотеки →</a>
+      </div>
+    </section>
+
+    <!-- ============ 10. LIBRARIES ============ -->
+    <section class="page" id="page-libraries" data-stage="">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 10 · справочно</div>
+      <h1>Библиотеки и инструменты — по стадиям</h1>
+      <p class="dek">Разный инструмент под разную стадию работы, а не единый выбор на весь проект.</p>
+
+      <div class="table-wrap"><table class="data">
+        <tr><th>Стадия</th><th>Инструмент</th><th>Зачем</th></tr>
+        <tr><td class="hl">Понимание механики</td><td><b>numpy</b></td><td>каждая операция видна явно, ничего не спрятано за автоматическим дифференцированием</td></tr>
+        <tr><td class="hl">Реальное обучение</td><td><b>PyTorch</b></td><td>автоматическое дифференцирование, GPU, готовые примитивы (Embedding, LayerNorm)</td></tr>
+        <tr><td class="hl">Токенизация</td><td>huggingface tokenizers / sentencepiece</td><td>см. §1 — на практике не пишется с нуля</td></tr>
+        <tr><td class="hl">Готовые bi-encoder утилиты</td><td>sentence-transformers</td><td>готовая, хорошо проверенная обвязка под loss и training loop конкретно для bi-encoder</td></tr>
+        <tr><td class="hl">Мониторинг обучения</td><td>Weights & Biases / TensorBoard</td><td>наблюдение за loss/градиентами в реальном времени, критично при отладке нестабильности</td></tr>
+      </table></div>
+
+      <div class="note">Практичный путь освоения: numpy — понять механику каждого узла до формулы → переписать в PyTorch с автоградом, сохранив ту же модульную структуру (отдельные компоненты для embedding, context mixing, pooling) → при необходимости подключить sentence-transformers для loss и training loop, когда архитектура уже работает и протестирована.</div>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('finetuning');return false;">← Дообучение под домен</a>
+        <a href="#" onclick="showPage('checklist');return false;">Дальше: Чеклист →</a>
+      </div>
+    </section>
+
+    <!-- ============ 11. CHECKLIST ============ -->
+    <section class="page" id="page-checklist" data-stage="">
+      <div class="page-eyebrow">bi-encoder wiki · раздел 11 · справочно</div>
+      <h1>Чеклист и частые ошибки</h1>
+      <p class="dek">Собрано по всем разделам — на чём реально спотыкаются при первой реализации Bi-Encoder.</p>
+
+      <ul class="checklist">
+        <li><span class="chk">✕</span><div><b>Softmax без вычитания max</b> — переполнение exp() на больших значениях scores. Тот же трюк нужен и в WKV-рекуррентности state-based механизмов (§4.2), и в contrastive loss (§8).</div></li>
+        <li><span class="chk">✕</span><div><b>Causal механизм вместо bidirectional</b> — если взять attention/RWKV/Mamba «как есть» из decoder-only реализации, правая половина текста не будет влиять на левую. Нужна явная модификация (§4.1, §4.2).</div></li>
+        <li><span class="chk">✕</span><div><b>Causal-маска в attention для bi-encoder</b> — если код скопирован из decoder-only модели, легко случайно унаследовать маску, которая тут не нужна (§4.1).</div></li>
+        <li><span class="chk">✕</span><div><b>Mean pooling без учёта паддинга</b> — тихо портит качество эмбеддингов, не крашится и не сразу заметно (§7).</div></li>
+        <li><span class="chk">✕</span><div><b>Векторы не нормализованы перед cosine similarity</b> — без L2-нормализации «similarity» смешивает направление и величину вектора (§8).</div></li>
+        <li><span class="chk">✕</span><div><b>Смешение ответственности модулей</b> — модуль эмбеддинга, вызывающий Context Mixing изнутри себя, нарушает разделение: эмбеддинг должен отвечать только за TokenID→Vector (§2).</div></li>
+        <li><span class="chk">✕</span><div><b>Слишком большая инициализация весов</b> — нестабильность с первых шагов обучения, до того как дело дойдёт до loss (§2, §5).</div></li>
+        <li><span class="chk">✕</span><div><b>Сразу много слоёв без проверки на малом N</b> — отладка нестабильности на глубоком стеке в разы сложнее, чем на 4–6 слоях (§6).</div></li>
+        <li><span class="chk">✕</span><div><b>MQA/GQA перенесены из decoder-only без осмысления</b> — их мотивация (экономия KV-кеша при генерации) не применима к однократному forward-проходу энкодера (§4).</div></li>
+      </ul>
+
+      <div class="pagenav">
+        <a href="#" onclick="showPage('libraries');return false;">← Библиотеки</a>
+        <a href="#" onclick="showPage('overview');return false;">К обзору ↑</a>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  Справочная вики по архитектуре Bi-Encoder. Формулы упрощены для реализации — перед продакшн-версией сверяйся с оригинальными статьями (Sentence-BERT, RoFormer, RWKV, Mamba).
+</footer>
+
+<script>
+function showPage(id){
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  var target = document.getElementById('page-' + id);
+  if(target){ target.classList.add('active'); }
+
+  document.querySelectorAll('.tree .node').forEach(function(n){ n.classList.remove('active'); });
+  var navNode = document.querySelector('.tree .node[data-page="' + id + '"]');
+  if(navNode){ navNode.classList.add('active'); }
+
+  var stage = target ? target.getAttribute('data-stage') : "";
+  document.querySelectorAll('.stage-pill').forEach(function(pill){
+    pill.classList.toggle('active', pill.getAttribute('data-stage') === stage && stage !== "");
+  });
+
+  window.scrollTo(0,0);
+  if(history.replaceState){ history.replaceState(null, "", "#" + id); }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.tree .node').forEach(function(n){
+    n.addEventListener('click', function(){ showPage(n.getAttribute('data-page')); });
+  });
+  var initial = (location.hash || "#overview").slice(1);
+  showPage(initial);
+});
+</script>
+</body>
+</html>
