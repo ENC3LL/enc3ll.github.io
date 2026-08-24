@@ -87,6 +87,24 @@ main{flex:1; min-width:0; padding:36px 48px 100px;}
 .code-block .kw{color:var(--amber);}
 .code-block .fn{color:var(--cyan);}
 
+.code-tabs{background:#141414; border:1px solid var(--border); border-radius:9px; margin:18px 0; overflow:hidden;}
+.code-tabs .tab-buttons{display:flex; border-bottom:1px solid var(--border-soft); background:var(--surface);}
+.code-tabs .tab-btn{font-family:var(--mono); font-size:10.8px; text-transform:uppercase; letter-spacing:.06em; padding:9px 16px; color:var(--text-faint); background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;}
+.code-tabs .tab-btn:hover{color:var(--text-dim);}
+.code-tabs .tab-btn.active{color:#fff; border-bottom-color:var(--amber);}
+.code-tabs .tab-content{display:none;}
+.code-tabs .tab-content.active{display:block;}
+.code-tabs .tab-content pre{margin:0; padding:15px 17px; overflow-x:auto; font-family:var(--mono); font-size:12.4px; line-height:1.65; color:#d8dce6;}
+.code-tabs .c1{color:var(--text-faint);}
+.code-tabs .kw{color:var(--amber);}
+.code-tabs .fn{color:var(--cyan);}
+.code-tabs .cls{color:var(--violet);}
+.code-tabs .lib-note{font-family:var(--mono); font-size:10.5px; color:var(--text-faint); padding:8px 17px 12px; border-top:1px solid var(--border-soft);}
+
+.quickstart{background:linear-gradient(180deg,var(--surface),var(--bg-alt)); border:1px solid var(--amber); border-radius:10px; padding:18px 20px; margin:22px 0;}
+.quickstart .qs-title{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--amber); margin-bottom:10px;}
+.quickstart pre{margin:0; font-family:var(--mono); font-size:13px; line-height:1.7; color:#d8dce6; overflow-x:auto;}
+
 .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:18px 0;}
 @media(max-width:700px){.grid2{grid-template-columns:1fr;}}
 .pill-box{background:var(--surface); border:1px solid var(--border-soft); border-radius:9px; padding:15px 17px;}
@@ -228,6 +246,16 @@ footer{padding:40px 48px 10px; color:var(--text-faint); font-size:12px; border-t
 
       <p>Каждая стрелка на этой схеме — точка, где нужно принять архитектурное решение: какой токенизатор, какая размерность эмбеддинга, нужна ли позиционная схема, каким механизмом смешивать контекст между токенами, сколько слоёв, как из N векторов токенов получить один вектор текста, и какой функцией потерь всё это обучать. Ни один выбор не независим от остальных — например, выбор Context Mixing (§4) определяет, нужна ли вообще позиционная схема (§3).</p>
 
+      <div class="quickstart">
+        <div class="qs-title">Куда всё это в итоге сворачивается — готовая модель</div>
+        <pre><span class="kw">from</span> sentence_transformers <span class="kw">import</span> SentenceTransformer
+
+model = SentenceTransformer(<span class="kw">"all-MiniLM-L6-v2"</span>)
+embedding = model.<span class="fn">encode</span>(<span class="kw">"Кошка сидит на столе"</span>)
+<span class="c1"># → numpy-массив shape (384,) — всё, что описано на страницах 1–8, уже спрятано внутри .encode()</span></pre>
+      </div>
+      <p style="font-size:13px; color:var(--text-faint);">Каждая страница этой вики показывает, из чего именно состоит эта одна строчка изнутри — и три способа написать то же самое: вручную на NumPy (чтобы понять механику), на PyTorch (чтобы обучать), и через готовую библиотеку (чтобы использовать в проде).</p>
+
       <h2 style="font-size:19px; margin-top:32px;">Bi-Encoder, Cross-Encoder, ColBERT</h2>
       <p>Bi-Encoder — не единственный способ сравнивать тексты нейросетью. Три архитектуры решают одну задачу («насколько похожи два текста») с разным компромиссом между скоростью и точностью.</p>
 
@@ -285,19 +313,51 @@ footer{padding:40px 48px 10px; color:var(--text-faint); font-size:12px; border-t
         <tr><td class="hl">Символьная / посимвольная</td><td>каждый символ — отдельный токен</td><td class="bad">почти не используется — последовательности становятся неоправданно длинными для того же текста</td></tr>
       </table></div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — использование готового токенизатора</div>
-        <pre><span class="c1"># BPE/WordPiece/Unigram обучаются на корпусе один раз, отдельно от модели</span>
-tokenizer = <span class="fn">load_tokenizer</span>(<span class="kw">"path/to/vocab"</span>)
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="c1"># токенизация — не тензорная операция, но словарь и результат удобно хранить в numpy</span>
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+vocab = {<span class="kw">"[PAD]"</span>: <span class="kw">0</span>, <span class="kw">"[UNK]"</span>: <span class="kw">1</span>, <span class="kw">"кошка"</span>: <span class="kw">2</span>, <span class="kw">"сидит"</span>: <span class="kw">3</span>, <span class="kw">"на"</span>: <span class="kw">4</span>, <span class="kw">"столе"</span>: <span class="kw">5</span>}
+
+<span class="kw">def</span> <span class="fn">simple_tokenize</span>(text, vocab):
+    words = text.lower().split()
+    ids = [vocab.get(w, vocab[<span class="kw">"[UNK]"</span>]) <span class="kw">for</span> w <span class="kw">in</span> words]
+    <span class="kw">return</span> np.array(ids, dtype=np.int64)
+
+ids = <span class="fn">simple_tokenize</span>(<span class="kw">"кошка сидит на столе"</span>, vocab)
+<span class="c1"># array([2, 3, 4, 5])</span></pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+
+<span class="kw">def</span> <span class="fn">simple_tokenize_torch</span>(text, vocab):
+    words = text.lower().split()
+    ids = [vocab.get(w, vocab[<span class="kw">"[UNK]"</span>]) <span class="kw">for</span> w <span class="kw">in</span> words]
+    <span class="kw">return</span> torch.tensor(ids, dtype=torch.long)
+
+ids = <span class="fn">simple_tokenize_torch</span>(<span class="kw">"кошка сидит на столе"</span>, vocab)
+<span class="c1"># tensor([2, 3, 4, 5])</span>
+
+<span class="c1"># для батча разной длины — паддинг встроенными средствами:</span>
+<span class="kw">from</span> torch.nn.utils.rnn <span class="kw">import</span> pad_sequence
+batch = pad_sequence([ids1, ids2], batch_first=<span class="kw">True</span>, padding_value=<span class="kw">0</span>)</pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install tokenizers  (или: pip install transformers)</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained(<span class="kw">"bert-base-multilingual-cased"</span>)
 
 ids = tokenizer.<span class="fn">encode</span>(<span class="kw">"Кошка сидит на столе"</span>)
-<span class="c1"># → [4821, 102, 5390, 88, 6721]</span>
+<span class="c1"># [101, 56567, 39575, ..., 102] — реальный BPE/WordPiece, обученный на большом корпусе</span>
 
-<span class="c1"># для батча текстов разной длины — паддинг до одной длины:</span>
-batch_ids, attention_mask = tokenizer.<span class="fn">encode_batch</span>(
+batch = tokenizer(
     [<span class="kw">"текст один"</span>, <span class="kw">"текст номер два подлиннее"</span>],
-    padding=<span class="kw">True</span>
-)</pre>
+    padding=<span class="kw">True</span>, return_tensors=<span class="kw">"pt"</span>
+)
+<span class="c1"># batch["input_ids"], batch["attention_mask"] — сразу готовые torch-тензоры</span></pre></div>
+        <div class="lib-note">Библиотека: huggingface transformers / tokenizers — реальный обученный словарь и субсловная сегментация, а не игрушечный словарь из примера выше.</div>
       </div>
 
       <div class="lib-box">
@@ -341,19 +401,38 @@ batch_ids, attention_mask = tokenizer.<span class="fn">encode_batch</span>(
         </svg>
       </div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — numpy (для понимания механики)</div>
-        <pre><span class="c1"># инициализация — масштаб важен, см. note ниже</span>
-E = np.random.randn(vocab_size, d_model) * (<span class="kw">1.0</span> / np.sqrt(d_model))
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
 
-<span class="c1"># forward: просто индексация — differentiable в любом фреймворке с автоградом</span>
+vocab_size, d_model = <span class="kw">30000</span>, <span class="kw">512</span>
+<span class="c1"># масштаб инициализации важен — см. note ниже</span>
+E = (np.random.randn(vocab_size, d_model) * (<span class="kw">1.0</span> / np.sqrt(d_model))).astype(np.float32)
+
 <span class="kw">def</span> <span class="fn">token_embed</span>(token_ids, E):
-    <span class="kw">return</span> E[token_ids]  <span class="c1"># fancy indexing → [N, d_model]</span></pre>
-      </div>
-      <div class="code-block">
-        <div class="cb-label">то же самое — pytorch</div>
-        <pre>embedding = nn.Embedding(vocab_size, d_model, padding_idx=<span class="kw">0</span>)
-X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиент течёт сам</span></pre>
+    <span class="kw">return</span> E[token_ids]  <span class="c1"># fancy indexing → [N, d_model]</span>
+
+X = <span class="fn">token_embed</span>(np.array([<span class="kw">2</span>,<span class="kw">3</span>,<span class="kw">4</span>,<span class="kw">5</span>]), E)  <span class="c1"># shape (4, 512)</span></pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+embedding = nn.Embedding(num_embeddings=<span class="kw">30000</span>, embedding_dim=<span class="kw">512</span>, padding_idx=<span class="kw">0</span>)
+
+token_ids = torch.tensor([[<span class="kw">2</span>,<span class="kw">3</span>,<span class="kw">4</span>,<span class="kw">5</span>]])  <span class="c1"># shape (1, 4)</span>
+X = embedding(token_ids)  <span class="c1"># (1, 4, 512) — градиент отслеживается автоматически</span></pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install transformers</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModel
+
+<span class="c1"># не случайная инициализация, а уже предобученная матрица эмбеддингов</span>
+model = AutoModel.from_pretrained(<span class="kw">"bert-base-multilingual-cased"</span>)
+embedding_layer = model.<span class="fn">get_input_embeddings</span>()
+
+X = embedding_layer(token_ids)  <span class="c1"># те же (1, 4, 768) — предобученные веса, не с нуля</span></pre></div>
+        <div class="lib-note">Библиотека: transformers — если старт не с нуля, а с уже предобученной матрицы эмбеддингов конкретной готовой модели.</div>
       </div>
 
       <div class="grid2">
@@ -401,6 +480,50 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
       </table></div>
 
       <div class="note warn">Позиционная схема выбирается для конкретного механизма, а не один раз на всю архитектуру. Если в модели одновременно используются attention-слои и рекуррентные слои (гибридная схема), позиционная схема нужна именно для attention-части, а не для всей модели целиком.</div>
+
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">sinusoidal_positions</span>(n, d_model):
+    position = np.arange(n)[:, <span class="kw">None</span>]
+    div_term = np.exp(np.arange(<span class="kw">0</span>, d_model, <span class="kw">2</span>) * (-np.log(<span class="kw">10000.0</span>) / d_model))
+    pe = np.zeros((n, d_model), dtype=np.float32)
+    pe[:, <span class="kw">0</span>::<span class="kw">2</span>] = np.sin(position * div_term)
+    pe[:, <span class="kw">1</span>::<span class="kw">2</span>] = np.cos(position * div_term)
+    <span class="kw">return</span> pe
+
+pe = <span class="fn">sinusoidal_positions</span>(n=<span class="kw">128</span>, d_model=<span class="kw">512</span>)
+X = X + pe[:X.shape[<span class="kw">0</span>]]   <span class="c1"># прибавляем к эмбеддингу до Context Mixing</span></pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="cls">SinusoidalPositionalEncoding</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, max_len=<span class="kw">5000</span>):
+        super().__init__()
+        position = torch.arange(max_len).unsqueeze(<span class="kw">1</span>)
+        div_term = torch.exp(torch.arange(<span class="kw">0</span>, d_model, <span class="kw">2</span>) * (-torch.log(torch.tensor(<span class="kw">10000.0</span>)) / d_model))
+        pe = torch.zeros(max_len, d_model)
+        pe[:, <span class="kw">0</span>::<span class="kw">2</span>] = torch.sin(position * div_term)
+        pe[:, <span class="kw">1</span>::<span class="kw">2</span>] = torch.cos(position * div_term)
+        self.register_buffer(<span class="kw">"pe"</span>, pe)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        <span class="kw">return</span> x + self.pe[:x.size(<span class="kw">1</span>)]</pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install rotary-embedding-torch</span>
+<span class="kw">from</span> rotary_embedding_torch <span class="kw">import</span> RotaryEmbedding
+
+rotary = RotaryEmbedding(dim=<span class="kw">64</span>)  <span class="c1"># размерность на одну голову attention</span>
+
+<span class="c1"># применяется не к X целиком, а прямо к Q и K внутри attention (§4.1):</span>
+q = rotary.<span class="fn">rotate_queries_or_keys</span>(q)
+k = rotary.<span class="fn">rotate_queries_or_keys</span>(k)</pre></div>
+        <div class="lib-note">Библиотека: rotary-embedding-torch — готовая реализация RoPE, самой распространённой схемы сегодня (см. таблицу выше).</div>
+      </div>
 
       <div class="pagenav">
         <a href="#" onclick="showPage('embedding');return false;">← Token Embedding Matrix</a>
@@ -484,9 +607,15 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
 
       <div class="note warn">Никакой маски по времени не ставится — каждый токен видит все остальные, включая те, что идут после него. Это единственное, но принципиальное отличие от decoder-only attention, где верхний треугольник матрицы S маскируется значением -∞ перед softmax.</div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — численно стабильная реализация</div>
-        <pre><span class="kw">def</span> <span class="fn">bidirectional_attention</span>(X, Wq, Wk, Wv):
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">bidirectional_attention</span>(X, Wq, Wk, Wv):
     Q = X @ Wq; K = X @ Wk; V = X @ Wv         <span class="c1"># [N, d]</span>
     d = X.shape[-<span class="kw">1</span>]
     scores = (Q @ K.T) / np.sqrt(d)             <span class="c1"># [N, N]</span>
@@ -497,7 +626,25 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
     exp_scores = np.<span class="fn">exp</span>(scores - scores_max)
     A = exp_scores / np.<span class="fn">sum</span>(exp_scores, axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
 
-    <span class="kw">return</span> A @ V                             <span class="c1"># [N, d] — маски по времени НЕТ</span></pre>
+    <span class="kw">return</span> A @ V                             <span class="c1"># [N, d] — маски по времени НЕТ</span></pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+attn = nn.MultiheadAttention(embed_dim=<span class="kw">512</span>, num_heads=<span class="kw">8</span>, batch_first=<span class="kw">True</span>)
+
+X = torch.randn(<span class="kw">1</span>, <span class="kw">10</span>, <span class="kw">512</span>)                       <span class="c1"># [batch, N, d_model]</span>
+out, _ = attn(X, X, X, need_weights=<span class="kw">False</span>)   <span class="c1"># без attn_mask — bidirectional по умолчанию</span></pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install flash-attn   (нужен CUDA GPU)</span>
+<span class="kw">from</span> flash_attn <span class="kw">import</span> flash_attn_func
+
+<span class="c1"># q, k, v: [batch, seqlen, nheads, headdim]</span>
+out = <span class="fn">flash_attn_func</span>(q, k, v, causal=<span class="kw">False</span>)  <span class="c1"># causal=False — двунаправленно, точный результат</span>
+
+<span class="c1"># либо — целый готовый BERT-энкодер вместо ручной сборки:</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModel
+encoder = AutoModel.from_pretrained(<span class="kw">"bert-base-multilingual-cased"</span>)
+H = encoder(input_ids=token_ids).last_hidden_state</pre></div>
+        <div class="lib-note">Библиотека: FlashAttention — тот же математически точный bidirectional attention, но IO-aware реализация (см. заметку Attention §09), кратно быстрее наивной.</div>
       </div>
 
       <h2 style="font-size:17px; margin-top:28px;">Multi-head</h2>
@@ -561,9 +708,19 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
         H = H_forward + reverse(H_backward) &nbsp;<span class="cm">// сумма — сохраняет исходную размерность d</span>
       </div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — RWKV Time-Mix, однонаправленная версия (numpy, без батча)</div>
-        <pre><span class="kw">def</span> <span class="fn">rwkv_time_mix</span>(X, Wr, Wk, Wv, decay):
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">sigmoid</span>(x):
+    <span class="kw">return</span> <span class="kw">1</span> / (<span class="kw">1</span> + np.exp(-x))
+
+<span class="kw">def</span> <span class="fn">rwkv_time_mix</span>(X, Wr, Wk, Wv, decay):
+    <span class="c1"># X: [N, d] — одна последовательность, без батча, для наглядности механики</span>
     N, d = X.shape
     R = <span class="fn">sigmoid</span>(X @ Wr)
     K = X @ Wk
@@ -571,17 +728,54 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
 
     state = np.zeros(d)
     out = np.zeros((N, d))
-    <span class="kw">for</span> t <span class="kw">in</span> <span class="fn">range</span>(N):
-        state = decay * state + np.<span class="fn">exp</span>(K[t]) * V[t]
-        out[t] = R[t] * (state / (t + <span class="kw">1</span>))     <span class="c1"># норм. упрощена для примера</span>
-    <span class="kw">return</span> out</pre>
-      </div>
-      <div class="code-block">
-        <div class="cb-label">псевдокод — двунаправленная обёртка (одинаково применимо к RWKV и к Mamba)</div>
-        <pre><span class="kw">def</span> <span class="fn">bidirectional_state_mixing</span>(X, state_model, params):
-    h_fwd = state_model(X, *params)
-    h_bwd = state_model(X[::-<span class="kw">1</span>], *params)[::-<span class="kw">1</span>]  <span class="c1"># проход в обратном порядке, затем развернуть обратно</span>
-    <span class="kw">return</span> h_fwd + h_bwd                            <span class="c1"># либо np.concatenate([h_fwd, h_bwd], axis=-1)</span></pre>
+    <span class="kw">for</span> t <span class="kw">in</span> <span class="fn">range</span>(N):                     <span class="c1"># честная рекуррентность — шаг за шагом</span>
+        state = decay * state + np.exp(K[t]) * V[t]
+        out[t] = R[t] * (state / (t + <span class="kw">1</span>))     <span class="c1"># нормировка упрощена для примера</span>
+    <span class="kw">return</span> out
+
+<span class="kw">def</span> <span class="fn">bidirectional_rwkv</span>(X, Wr, Wk, Wv, decay):
+    h_fwd = <span class="fn">rwkv_time_mix</span>(X, Wr, Wk, Wv, decay)
+    h_bwd = <span class="fn">rwkv_time_mix</span>(X[::-<span class="kw">1</span>], Wr, Wk, Wv, decay)[::-<span class="kw">1</span>]
+    <span class="kw">return</span> h_fwd + h_bwd</pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="cls">RWKVTimeMix</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model):
+        super().__init__()
+        self.Wr = nn.Linear(d_model, d_model, bias=<span class="kw">False</span>)
+        self.Wk = nn.Linear(d_model, d_model, bias=<span class="kw">False</span>)
+        self.Wv = nn.Linear(d_model, d_model, bias=<span class="kw">False</span>)
+        self.decay = nn.Parameter(torch.zeros(d_model))
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):                        <span class="c1"># x: [batch, N, d]</span>
+        B, N, D = x.shape
+        r = torch.sigmoid(self.Wr(x))
+        k = self.Wk(x)
+        v = self.Wv(x)
+        decay = torch.exp(-torch.exp(self.decay))  <span class="c1"># держим decay в (0,1)</span>
+
+        state = torch.zeros(B, D, device=x.device)
+        outputs = []
+        <span class="kw">for</span> t <span class="kw">in</span> <span class="fn">range</span>(N):
+            state = decay * state + torch.exp(k[:, t]) * v[:, t]
+            outputs.append(r[:, t] * state / (t + <span class="kw">1</span>))
+        <span class="kw">return</span> torch.stack(outputs, dim=<span class="kw">1</span>)
+
+    <span class="kw">def</span> <span class="fn">bidirectional</span>(self, x):
+        h_fwd = self.<span class="fn">forward</span>(x)
+        h_bwd = self.<span class="fn">forward</span>(x.flip(dims=[<span class="kw">1</span>])).flip(dims=[<span class="kw">1</span>])
+        <span class="kw">return</span> h_fwd + h_bwd</pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install mamba-ssm   (нужен CUDA GPU)</span>
+<span class="kw">from</span> mamba_ssm <span class="kw">import</span> Mamba
+
+mixer = Mamba(d_model=<span class="kw">512</span>, d_state=<span class="kw">16</span>, d_conv=<span class="kw">4</span>, expand=<span class="kw">2</span>)
+
+x = torch.randn(<span class="kw">1</span>, <span class="kw">128</span>, <span class="kw">512</span>)                <span class="c1"># [batch, N, d_model]</span>
+out_fwd = mixer(x)
+out_bwd = mixer(x.flip(dims=[<span class="kw">1</span>])).flip(dims=[<span class="kw">1</span>])
+H = out_fwd + out_bwd                          <span class="c1"># та же bidirectional-обёртка, что и в ручной версии</span></pre></div>
+        <div class="lib-note">Библиотека: mamba-ssm — официальная, оптимизированная реализация Mamba/Selective SSM; для RWKV аналогичные официальные пакеты в основном заточены под инференс готовых чекпоинтов, а не под сборку кастомного encoder — практичнее писать свой Time-Mix (см. вкладку PyTorch).</div>
       </div>
 
       <div class="grid2">
@@ -625,11 +819,44 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
         <tr><td class="hl">Статус</td><td><span class="badge b-mainstream">классика, BERT и др.</span></td><td><span class="badge b-mainstream">стандарт в совр. моделях</span></td></tr>
       </table></div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — RMSNorm</div>
-        <pre><span class="kw">def</span> <span class="fn">rmsnorm</span>(x, gamma, eps=<span class="kw">1e-6</span>):
-    rms = np.<span class="fn">sqrt</span>(np.<span class="fn">mean</span>(x**<span class="kw">2</span>, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>) + eps)
-    <span class="kw">return</span> gamma * x / rms</pre>
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">rmsnorm</span>(x, gamma, eps=<span class="kw">1e-6</span>):
+    rms = np.sqrt(np.mean(x**<span class="kw">2</span>, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>) + eps)
+    <span class="kw">return</span> gamma * x / rms
+
+gamma = np.ones(<span class="kw">512</span>, dtype=np.float32)
+X_norm = <span class="fn">rmsnorm</span>(X, gamma)</pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="cls">RMSNorm</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, eps=<span class="kw">1e-6</span>):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(d_model))
+        self.eps = eps
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        rms = x.pow(<span class="kw">2</span>).mean(dim=-<span class="kw">1</span>, keepdim=<span class="kw">True</span>).add(self.eps).sqrt()
+        <span class="kw">return</span> self.weight * x / rms
+
+norm = RMSNorm(<span class="kw">512</span>)
+X_norm = norm(X)</pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># PyTorch 2.4+ — RMSNorm теперь встроен напрямую</span>
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+norm = nn.RMSNorm(normalized_shape=<span class="kw">512</span>, eps=<span class="kw">1e-6</span>)
+
+<span class="c1"># либо — fused-версия для скорости на GPU:</span>
+<span class="c1"># pip install apex</span>
+<span class="kw">from</span> apex.normalization <span class="kw">import</span> FusedRMSNorm
+norm = FusedRMSNorm(<span class="kw">512</span>)</pre></div>
+        <div class="lib-note">Библиотека: torch.nn.RMSNorm (начиная с PyTorch 2.4) — до этой версии нужна была ручная реализация или сторонний пакет вроде apex.</div>
       </div>
 
       <h2 style="font-size:17px; margin-top:26px;">Где ставить нормализацию: Pre-Norm vs Post-Norm</h2>
@@ -686,9 +913,13 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
         </svg>
       </div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — полный энкодер</div>
-        <pre><span class="kw">def</span> <span class="fn">encoder_block</span>(x, params):
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">def</span> <span class="fn">encoder_block</span>(x, params):
     x = x + <span class="fn">context_mixing</span>(<span class="fn">rmsnorm</span>(x, params.g1), params.mixing)   <span class="c1"># §4</span>
     x = x + <span class="fn">ffn</span>(<span class="fn">rmsnorm</span>(x, params.g2), params.ffn)
     <span class="kw">return</span> x
@@ -697,7 +928,48 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
     x = <span class="fn">token_embed</span>(token_ids, all_params.embedding)     <span class="c1"># §2</span>
     <span class="kw">for</span> layer <span class="kw">in</span> <span class="fn">range</span>(n_layers):
         x = <span class="fn">encoder_block</span>(x, all_params.layers[layer])
-    <span class="kw">return</span> x                                            <span class="c1"># [N, d] — контекстные представления</span></pre>
+    <span class="kw">return</span> x                                            <span class="c1"># [N, d] — контекстные представления</span></pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="cls">EncoderBlock</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, n_heads):
+        super().__init__()
+        self.norm1 = RMSNorm(d_model)
+        self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=<span class="kw">True</span>)
+        self.norm2 = RMSNorm(d_model)
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, d_model * <span class="kw">4</span>), nn.GELU(), nn.Linear(d_model * <span class="kw">4</span>, d_model)
+        )
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        n = self.norm1(x)
+        a, _ = self.attn(n, n, n, need_weights=<span class="kw">False</span>)
+        x = x + a
+        x = x + self.ffn(self.norm2(x))
+        <span class="kw">return</span> x
+
+<span class="kw">class</span> <span class="cls">Encoder</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, vocab_size, d_model, n_layers, n_heads):
+        super().__init__()
+        self.embed = nn.Embedding(vocab_size, d_model, padding_idx=<span class="kw">0</span>)
+        self.blocks = nn.ModuleList([EncoderBlock(d_model, n_heads) <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(n_layers)])
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, token_ids):
+        x = self.embed(token_ids)
+        <span class="kw">for</span> block <span class="kw">in</span> self.blocks:
+            x = block(x)
+        <span class="kw">return</span> x   <span class="c1"># [batch, N, d_model]</span></pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install x-transformers</span>
+<span class="kw">from</span> x_transformers <span class="kw">import</span> Encoder <span class="kw">as</span> XEncoder
+
+encoder = XEncoder(dim=<span class="kw">512</span>, depth=<span class="kw">6</span>, heads=<span class="kw">8</span>)  <span class="c1"># bidirectional по умолчанию — не decoder</span>
+H = encoder(X)                             <span class="c1"># X уже прошёл embedding, [batch, N, 512]</span>
+
+<span class="c1"># либо — весь готовый BERT-энкодер сразу с нужным числом слоёв:</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> BertConfig, BertModel
+config = BertConfig(vocab_size=<span class="kw">30000</span>, hidden_size=<span class="kw">512</span>, num_hidden_layers=<span class="kw">6</span>, num_attention_heads=<span class="kw">8</span>)
+model = BertModel(config)</pre></div>
+        <div class="lib-note">Библиотека: x-transformers — гибкий конструктор encoder-стека с готовыми Pre-Norm/RMSNorm; либо transformers.BertModel — полностью готовая архитектура целиком.</div>
       </div>
 
       <div class="note warn">Число слоёв N — параметр, который стоит подбирать эмпирически, начиная с малого значения на небольшом датасете, прежде чем масштабировать: отладить нестабильность обучения на 4–6 слоях в разы проще, чем на 24, а типичные причины ошибок на старте не зависят от глубины.</div>
@@ -728,14 +1000,37 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
         z = Σ(H_i · mask_i) / Σ(mask_i) &nbsp;<span class="cm">// mask — 0 для [PAD]-токенов, 1 для настоящих; без учёта маски паддинг искажает среднее</span>
       </div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод</div>
-        <pre><span class="kw">def</span> <span class="fn">mean_pooling</span>(H, mask):
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">mean_pooling</span>(H, mask):
     <span class="c1"># H: [N, d], mask: [N] — 1 для настоящих токенов, 0 для padding</span>
     mask = mask[:, np.newaxis]                  <span class="c1"># [N, 1] для broadcasting</span>
-    summed = np.<span class="fn">sum</span>(H * mask, axis=<span class="kw">0</span>)
-    count = np.<span class="fn">sum</span>(mask)
-    <span class="kw">return</span> summed / count                     <span class="c1"># [d]</span></pre>
+    summed = np.sum(H * mask, axis=<span class="kw">0</span>)
+    count = np.sum(mask)
+    <span class="kw">return</span> summed / count                     <span class="c1"># [d]</span></pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+
+<span class="kw">def</span> <span class="fn">mean_pooling</span>(H, mask):
+    <span class="c1"># H: [batch, N, d], mask: [batch, N]</span>
+    mask = mask.unsqueeze(-<span class="kw">1</span>).<span class="fn">float</span>()               <span class="c1"># [batch, N, 1]</span>
+    summed = (H * mask).sum(dim=<span class="kw">1</span>)
+    count = mask.sum(dim=<span class="kw">1</span>).clamp(min=<span class="kw">1e-9</span>)
+    <span class="kw">return</span> summed / count                    <span class="c1"># [batch, d]</span></pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install sentence-transformers</span>
+<span class="kw">from</span> sentence_transformers <span class="kw">import</span> models
+
+pooling = models.Pooling(
+    word_embedding_dimension=<span class="kw">512</span>,
+    pooling_mode=<span class="kw">"mean"</span>
+)
+z = pooling({<span class="kw">"token_embeddings"</span>: H, <span class="kw">"attention_mask"</span>: mask})[<span class="kw">"sentence_embedding"</span>]</pre></div>
+        <div class="lib-note">Библиотека: sentence-transformers models.Pooling — учитывает маску паддинга «из коробки», поддерживает mean/max/CLS одним параметром.</div>
       </div>
 
       <div class="note warn">Забытая маска паддинга при pooling — одна из самых незаметных ошибок: модель обучается, loss падает, но короткие тексты в батче с длинным паддингом получают «размытое» среднее — код не крашится, просто тихо теряет качество.</div>
@@ -788,9 +1083,15 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
         </svg>
       </div>
 
-      <div class="code-block">
-        <div class="cb-label">псевдокод — in-batch contrastive loss</div>
-        <pre><span class="kw">def</span> <span class="fn">contrastive_loss</span>(query_embs, doc_embs, temperature=<span class="kw">0.05</span>):
+      <div class="code-tabs">
+        <div class="tab-buttons">
+          <button class="tab-btn active" data-tab="numpy">NumPy</button>
+          <button class="tab-btn" data-tab="pytorch">PyTorch</button>
+          <button class="tab-btn" data-tab="lib">Библиотека</button>
+        </div>
+        <div class="tab-content active" data-tab="numpy"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="kw">def</span> <span class="fn">contrastive_loss</span>(query_embs, doc_embs, temperature=<span class="kw">0.05</span>):
     <span class="c1"># query_embs, doc_embs: [batch, d] — уже прошли encoder + pooling</span>
     q = query_embs / np.linalg.norm(query_embs, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
     d = doc_embs / np.linalg.norm(doc_embs, axis=-<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
@@ -798,10 +1099,31 @@ X = embedding(token_ids)  <span class="c1"># [batch, N, d_model], градиен
     sims = (q @ d.T) / temperature          <span class="c1"># [batch, batch] — все пары сразу</span>
     labels = np.arange(<span class="fn">len</span>(q))            <span class="c1"># диагональ — правильные пары</span>
 
-    sims = sims - np.<span class="fn">max</span>(sims, axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)   <span class="c1"># стабильный softmax</span>
-    probs = np.<span class="fn">exp</span>(sims) / np.<span class="fn">sum</span>(np.<span class="fn">exp</span>(sims), axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
-    loss = -np.<span class="fn">mean</span>(np.<span class="fn">log</span>(probs[np.arange(<span class="fn">len</span>(q)), labels]))
-    <span class="kw">return</span> loss</pre>
+    sims = sims - np.max(sims, axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)   <span class="c1"># стабильный softmax</span>
+    probs = np.exp(sims) / np.sum(np.exp(sims), axis=<span class="kw">1</span>, keepdims=<span class="kw">True</span>)
+    loss = -np.mean(np.log(probs[np.arange(<span class="fn">len</span>(q)), labels]))
+    <span class="kw">return</span> loss</pre></div>
+        <div class="tab-content" data-tab="pytorch"><pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn.functional <span class="kw">as</span> F
+
+<span class="kw">def</span> <span class="fn">contrastive_loss</span>(query_embs, doc_embs, temperature=<span class="kw">0.05</span>):
+    q = F.normalize(query_embs, dim=-<span class="kw">1</span>)
+    d = F.normalize(doc_embs, dim=-<span class="kw">1</span>)
+    sims = q @ d.T / temperature
+    labels = torch.arange(<span class="fn">len</span>(q), device=q.device)
+    <span class="kw">return</span> F.cross_entropy(sims, labels)   <span class="c1"># уже включает стабильный softmax внутри</span></pre></div>
+        <div class="tab-content" data-tab="lib"><pre><span class="c1"># pip install sentence-transformers</span>
+<span class="kw">from</span> sentence_transformers <span class="kw">import</span> SentenceTransformer, losses, InputExample
+<span class="kw">from</span> torch.utils.data <span class="kw">import</span> DataLoader
+
+model = SentenceTransformer(<span class="kw">"path/to/base-model"</span>)
+
+train_examples = [InputExample(texts=[<span class="kw">"query text"</span>, <span class="kw">"positive document text"</span>])]
+train_loader = DataLoader(train_examples, shuffle=<span class="kw">True</span>, batch_size=<span class="kw">32</span>)
+train_loss = losses.MultipleNegativesRankingLoss(model)   <span class="c1"># in-batch negatives, готово</span>
+
+model.fit(train_objectives=[(train_loader, train_loss)], epochs=<span class="kw">1</span>)</pre></div>
+        <div class="lib-note">Библиотека: sentence-transformers — весь §1–§8 этой вики (tokenizer → embedding → context mixing → pooling → loss) внутри одного <code>model.fit()</code>.</div>
       </div>
 
       <div class="grid2">
@@ -931,6 +1253,19 @@ document.addEventListener('DOMContentLoaded', function(){
   document.querySelectorAll('.tree .node').forEach(function(n){
     n.addEventListener('click', function(){ showPage(n.getAttribute('data-page')); });
   });
+
+  document.querySelectorAll('.code-tabs').forEach(function(group){
+    group.querySelectorAll('.tab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var tab = btn.getAttribute('data-tab');
+        group.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+        group.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+        btn.classList.add('active');
+        group.querySelector('.tab-content[data-tab="' + tab + '"]').classList.add('active');
+      });
+    });
+  });
+
   var initial = (location.hash || "#overview").slice(1);
   showPage(initial);
 });
