@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>torch-drills</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--soft:#f5f5f3;--line:#e2e2dd;--text:#1c1c1a;--mute:#6b6b65;--ok:#2a7a4b;--bad:#b3392f;--warn:#9a6b00;--btn:#1c1c1a;--btn-t:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1b1a;--soft:#242423;--line:#343431;--text:#e6e6e2;--mute:#9b9b93;--ok:#5db585;--bad:#e27b70;--warn:#d9a441;--btn:#e6e6e2;--btn-t:#1b1b1a}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+header b{font-weight:600;margin-right:6px}
+.sp{flex:1}
+select,input,button{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:4px 8px}
+button{cursor:pointer}
+button:hover{background:var(--soft)}
+button.main{background:var(--btn);color:var(--btn-t);border-color:var(--btn)}
+button.main:hover{opacity:.88}
+button:disabled{opacity:.5;cursor:default}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,5fr) minmax(360px,6fr)}
+.pane{min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.pane+.pane{border-left:1px solid var(--line)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 8px}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 10px;color:var(--mute)}
+.tabs button.on{color:var(--text);border-bottom-color:var(--text)}
+.tabs button[disabled]{opacity:.4}
+.scroll{overflow:auto;padding:16px 18px;flex:1}
+h1{font-size:19px;margin:0 0 4px;font-weight:600}
+.meta{color:var(--mute);font-size:13px;margin-bottom:14px}
+.e{color:var(--ok)}.m{color:var(--warn)}.h{color:var(--bad)}
+p{margin:0 0 10px}ul{margin:0 0 10px;padding-left:20px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:var(--soft);padding:1px 4px;border-radius:3px}
+pre{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:var(--soft);padding:10px 12px;border-radius:4px;overflow:auto;margin:0 0 12px;line-height:1.5}
+details{border:1px solid var(--line);border-radius:4px;padding:6px 10px;margin-bottom:8px}
+summary{cursor:pointer;color:var(--mute)}
+.bar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line)}
+.bar span{color:var(--mute);font-size:13px}
+textarea{flex:1;min-height:120px;width:100%;resize:none;border:0;outline:0;padding:12px 14px;background:var(--bg);color:var(--text);font:13px/1.55 ui-monospace,Menlo,Consolas,monospace;tab-size:4;white-space:pre}
+#res{border-top:1px solid var(--line);max-height:42%;overflow:auto;padding:12px 14px}
+#res:empty{display:none}
+.v{font-weight:600;margin-bottom:6px}
+.v.ok{color:var(--ok)}.v.no{color:var(--bad)}
+.err{color:var(--bad)}
+.mute{color:var(--mute)}
+dialog{border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);padding:18px;width:min(440px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog label{display:block;margin:10px 0 3px;color:var(--mute);font-size:13px}
+dialog input,dialog select{width:100%}
+.row{display:flex;gap:8px}.row input{flex:1}
+@media (max-width:780px){main{grid-template-columns:1fr;grid-auto-rows:minmax(60vh,auto);overflow:auto}.pane+.pane{border-left:0;border-top:1px solid var(--line)}body{height:auto}}
+</style>
+</head>
+<body>
+<header>
+  <b>torch-drills</b>
+  <select id="topic"></select>
+  <select id="diff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select>
+  <button id="gen" class="main">Новая задача</button>
+  <span class="sp"></span>
+  <span class="mute" id="cnt"></span>
+  <button id="cfgBtn">Настройки</button>
+</header>
+<main>
+  <section class="pane">
+    <div class="tabs"><button data-t="d" class="on">Описание</button><button data-t="h">Подсказки</button><button data-t="s" id="solTab" disabled>Решение</button></div>
+    <div class="scroll" id="left"><p class="mute">Нажмите «Новая задача». Задание сгенерирует модель, она же проверит ответ.</p></div>
+  </section>
+  <section class="pane">
+    <div class="bar"><span>Python · PyTorch</span><span class="sp"></span><span id="st"></span><button id="skip" disabled>Пропустить</button><button id="chk" class="main" disabled>Проверить</button></div>
+    <textarea id="ed" spellcheck="false" placeholder="# здесь появится заготовка"></textarea>
+    <div id="res"></div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <b>Настройки API</b>
+  <label>Провайдер</label>
+  <select id="prov"><option value="groq">Groq</option><option value="gemini">Google Gemini</option><option value="openrouter">OpenRouter</option><option value="custom">Другой (OpenAI-совместимый)</option></select>
+  <label>Base URL</label><input id="url">
+  <label>Модель</label>
+  <div class="row"><input id="model" list="ml"><button id="load" type="button">Список</button></div>
+  <datalist id="ml"></datalist>
+  <label>API-ключ</label><input id="key" type="password" autocomplete="off">
+  <p class="mute" style="margin-top:10px;font-size:12.5px">Ключ хранится только в localStorage этого браузера и уходит напрямую провайдеру. Ключи: console.groq.com/keys, aistudio.google.com/apikey, openrouter.ai/keys.</p>
+  <div class="row" style="justify-content:flex-end"><button id="cancel" type="button">Закрыть</button><button id="save" class="main" type="button">Сохранить</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const PROV={groq:['https://api.groq.com/openai/v1','openai/gpt-oss-120b'],gemini:['https://generativelanguage.googleapis.com/v1beta/openai','gemini-2.5-flash'],openrouter:['https://openrouter.ai/api/v1','openai/gpt-oss-120b:free'],custom:['','']};
+const TOPICS=[
+['any','Любая тема'],
+['tensors','Тензоры и размерности: создание, reshape/view, broadcasting, einsum, индексирование'],
+['init','Создание и заполнение матриц: инициализация весов, маски, таблицы позиционных кодировок'],
+['attention','Self-attention и multi-head attention с каузальной маской'],
+['transformer','Простой transformer-блок или decoder-only модель'],
+['modern','Модернизация transformer: RMSNorm, RoPE, SwiGLU, GQA, KV-cache'],
+['pipeline','Ступени самописной LLM: токенизатор, датасет и батчи, цикл обучения, sampling'],
+['data','Скачать текст из открытой библиотеки (urllib), очистить и сохранить локально с кэшем'],
+['rag','Простой RAG: чанкинг, эмбеддинги, косинусный поиск top-k, сборка промпта'],
+['moe','Mixture of Experts: router, top-k gating, балансировка нагрузки']];
+const NAMES={easy:'Easy',medium:'Medium',hard:'Hard'};
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+let cfg=ld('td_cfg',{p:'groq',by:{}}), solved=ld('td_solved',0), S={task:null,seen:[],busy:false};
+const cur=()=>{const [u,m]=PROV[cfg.p];return Object.assign({url:u,model:m,key:''},cfg.by[cfg.p])};
+
+TOPICS.forEach(([k,t])=>$('#topic').add(new Option(k==='any'?t:t.split(':')[0],k)));
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const inl=t=>t.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+function md(s){return s.split(/```[a-z]*\n?/i).map((p,i)=>i%2?'<pre>'+esc(p.replace(/\n$/,''))+'</pre>':esc(p).split(/\n{2,}/).map(b=>{b=b.trim();if(!b)return'';const L=b.split('\n');
+ if(L.every(l=>/^\s*[-*] /.test(l)))return'<ul>'+L.map(l=>'<li>'+inl(l.replace(/^\s*[-*] /,''))+'</li>').join('')+'</ul>';
+ return'<p>'+inl(b).replace(/\n/g,'<br>')+'</p>'}).join('')).join('')}
+const tag=(s,n)=>{const m=s.match(new RegExp('<'+n+'>([\\s\\S]*?)</'+n+'>'));return m?m[1].trim():''};
+const unfence=s=>s.replace(/^```[a-z]*\n?/i,'').replace(/\n?```$/,'').trim();
+
+async function chat(messages,temperature,max){
+  const c=cur(); if(!c.key){openCfg();throw new Error('Укажите API-ключ в настройках.')}
+  const r=await fetch(c.url.replace(/\/$/,'')+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+c.key},body:JSON.stringify({model:c.model,messages,temperature,max_tokens:max})});
+  const t=await r.text(); let j; try{j=JSON.parse(t)}catch{}
+  if(!r.ok){const m=j?.error?.message||(typeof j?.error==='string'?j.error:'')||(Array.isArray(j)&&j[0]?.error?.message)||t.slice(0,200);throw new Error(r.status+': '+m)}
+  return j.choices?.[0]?.message?.content||''
+}
+
+const GEN=`Ты автор заданий для тренировки разработки LLM на PyTorch. Код пользователя НЕ запускается: его проверяет языковая модель, читая код. Поэтому задание должно быть самодостаточным и проверяемым чтением: чёткая сигнатура функции или класса, формы входов и выходов, 2–3 примера «вход → ожидаемая форма или результат», только torch и стандартная библиотека (urllib допустим в заданиях про загрузку данных). Без GPU. Условие пиши по-русски, код и идентификаторы по-английски. Размер эталонного решения: до 50 строк. Ответ строго в формате, без текста вне тегов:
+<task_title>короткое название</task_title>
+<task_desc>условие в Markdown: цель, сигнатура, формы, примеры, ограничения</task_desc>
+<task_starter>заготовка Python-кода: импорты, сигнатуры, docstring, TODO (без тройных бэктиков)</task_starter>
+<task_rubric>3–6 пунктов: что должно быть в верном решении и типичные ошибки</task_rubric>
+<task_hints>2–3 подсказки, по одной на строку, от слабой к сильной</task_hints>
+<task_solution>эталонное решение на Python (без тройных бэктиков)</task_solution>`;
+const CHK=`Ты строгий, но справедливый ревьюер кода по PyTorch. Код не запускается: мысленно выполни его на примерах из условия. Проверь формы тензоров, dim у softmax/сумм, маски, масштабирование, dtype/device, импорты, соответствие сигнатуре. Не придирайся к стилю. Любая корректная реализация принимается, даже если отличается от эталона. Ответ строго такой: первая строка «VERDICT: PASS» или «VERDICT: FAIL»; вторая строка «SUMMARY: » и одно предложение; затем список замечаний, по одному на строку, начиная с «- », с указанием строки или фрагмента. При PASS замечания только необязательные улучшения. Пиши по-русски.`;
+
+function setBusy(b,msg=''){S.busy=b;$('#gen').disabled=b;$('#chk').disabled=b||!S.task;$('#skip').disabled=b||!S.task;$('#st').textContent=msg}
+function showTab(t){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));if(!S.task)return;
+  const k=S.task;
+  if(t==='d')$('#left').innerHTML=`<h1>${esc(k.title)}</h1><div class="meta"><span class="${k.d[0]}">${NAMES[k.d]}</span> · ${esc(k.topic)}</div>`+md(k.desc);
+  if(t==='h')$('#left').innerHTML=k.hints.map((h,i)=>`<details><summary>Подсказка ${i+1}</summary><p style="margin-top:8px">${inl(esc(h))}</p></details>`).join('')||'<p class="mute">Подсказок нет.</p>';
+  if(t==='s')$('#left').innerHTML=k.revealed?'<pre>'+esc(k.solution)+'</pre>':''}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+
+async function next(){
+  if(S.busy)return;
+  S.task=null;$('#ed').value='';$('#res').innerHTML='';$('#solTab').disabled=true;showTab('d');
+  $('#left').innerHTML='<p class="mute">Генерация задания…</p>';setBusy(true,'генерация');
+  let tk=$('#topic').value;if(tk==='any')tk=TOPICS[1+Math.floor(Math.random()*(TOPICS.length-1))][0];
+  const topic=TOPICS.find(t=>t[0]===tk)[1],d=$('#diff').value;
+  try{
+    const out=await chat([{role:'system',content:GEN},{role:'user',content:`Тема: ${topic}\nСложность: ${NAMES[d]}\nУже были (не повторяй): ${S.seen.join('; ')||'нет'}`}],0.9,4000);
+    const k={title:tag(out,'task_title'),desc:tag(out,'task_desc'),starter:unfence(tag(out,'task_starter')),rubric:tag(out,'task_rubric'),solution:unfence(tag(out,'task_solution')),hints:tag(out,'task_hints').split('\n').map(s=>s.replace(/^\s*[-\d.)]+\s*/,'').trim()).filter(Boolean),d,topic:topic.split(':')[0],revealed:false};
+    if(!k.title||!k.desc||!k.starter||!k.solution)throw new Error('Модель вернула задание в неверном формате. Нажмите «Новая задача» ещё раз.');
+    S.task=k;S.seen.push(k.title);$('#ed').value=k.starter;showTab('d');setBusy(false);
+  }catch(e){$('#left').innerHTML='<p class="err">'+esc(e.message)+'</p>';setBusy(false)}
+}
+
+async function check(){
+  const k=S.task;if(!k||S.busy)return;const code=$('#ed').value;
+  if(code.trim()===k.starter.trim()){$('#res').innerHTML='<p class="mute">Решение совпадает с заготовкой.</p>';return}
+  setBusy(true,'проверка');$('#res').innerHTML='<p class="mute">Проверяю…</p>';
+  try{
+    const out=await chat([{role:'system',content:CHK},{role:'user',content:`Задание:\n${k.desc}\n\nКритерии:\n${k.rubric}\n\nЭталон (одно из возможных решений):\n${k.solution}\n\nКод пользователя:\n${code}`}],0.1,2000);
+    const pass=/VERDICT:\s*PASS/i.test(out);
+    const body=out.replace(/VERDICT:.*\n?/i,'').replace(/SUMMARY:\s*/i,'');
+    $('#res').innerHTML=`<div class="v ${pass?'ok':'no'}">${pass?'Принято':'Не принято'}</div>`+md(body)+(pass?'<button id="nx" class="main">Следующая задача</button>':'');
+    if(pass){k.revealed=true;$('#solTab').disabled=false;solved++;sv('td_solved',solved);cnt();$('#nx').onclick=next}
+  }catch(e){$('#res').innerHTML='<p class="err">'+esc(e.message)+'</p>'}
+  setBusy(false)
+}
+function skip(){const k=S.task;if(!k)return;k.revealed=true;$('#solTab').disabled=false;showTab('s');$('#res').innerHTML='<p class="mute">Эталон открыт во вкладке «Решение». Эта задача не засчитана.</p><button id="nx" class="main">Следующая задача</button>';$('#nx').onclick=next}
+
+const cnt=()=>$('#cnt').textContent='Решено: '+solved;cnt();
+function openCfg(){const c=cur();$('#prov').value=cfg.p;$('#url').value=c.url;$('#model').value=c.model;$('#key').value=c.key;$('#dlg').showModal()}
+$('#prov').onchange=()=>{cfg.p=$('#prov').value;const c=cur();$('#url').value=c.url;$('#model').value=c.model;$('#key').value=c.key;$('#ml').innerHTML=''};
+$('#save').onclick=()=>{cfg.by[cfg.p]={url:$('#url').value.trim(),model:$('#model').value.trim(),key:$('#key').value.trim()};sv('td_cfg',cfg);$('#dlg').close()};
+$('#cancel').onclick=()=>$('#dlg').close();
+$('#load').onclick=async()=>{try{const u=$('#url').value.replace(/\/$/,''),k=$('#key').value.trim();
+  const r=await fetch(u+'/models',{headers:{Authorization:'Bearer '+k}});const j=await r.json();if(!r.ok)throw new Error(j?.error?.message||r.status);
+  let ids=(j.data||j.models||[]).map(m=>(m.id||m.name||'').replace(/^models\//,'')).filter(Boolean);
+  if($('#prov').value==='openrouter')ids=ids.filter(i=>i.endsWith(':free'));
+  $('#ml').innerHTML=ids.map(i=>`<option value="${esc(i)}">`).join('');$('#load').textContent=ids.length+' шт.'}catch(e){alert('Не удалось получить список: '+e.message)}};
+$('#cfgBtn').onclick=openCfg;$('#gen').onclick=next;$('#chk').onclick=check;$('#skip').onclick=skip;
+$('#ed').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const t=e.target,s=t.selectionStart;t.setRangeText('    ',s,t.selectionEnd,'end')}
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();check()}});
+if(!cur().key)openCfg();
+</script>
+</body>
+</html>
